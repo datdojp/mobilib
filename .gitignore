@@ -1,0 +1,7 @@
+bin
+gen
+local.properties
+out
+android-api-reference
+.settings
+build.xml

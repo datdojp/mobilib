@@ -1,0 +1,40 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="10dp" >
+
+    <Button
+        android:id="@+id/take_image_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Take image"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/pick_image_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Pick image"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/take_crop_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Take and crop"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/pick_crop_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Pick and crop"
+        tools:ignore="HardcodedText" />
+
+</LinearLayout>

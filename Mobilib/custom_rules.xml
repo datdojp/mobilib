@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+
+    <target name="-pre-build" >
+
+        <exec
+            errorproperty="build.git.log.error"
+            executable="git"
+            outputproperty="build.git.log" >
+
+            <arg line="log -1 --pretty=format:%h ." />
+        </exec>
+
+        <exec
+            errorproperty="build.git.describe.error"
+            executable="git"
+            outputproperty="build.git.describe" >
+
+            <arg line="describe --always --dirty" />
+        </exec>
+
+        <script language="javascript" >
+<![CDATA[
+            var git_log = project.getProperty("build.git.log");
+            var git_describe = project.getProperty("build.git.describe");
+            if (git_log && git_log.match(/^.+$/)) {
+                var git_version = git_log;
+                if (git_describe && git_describe.match(/^.*dirty$/)) {
+                    git_version = git_version + "-dirty";
+                }
+                project.setProperty("build.git.version", git_version);
+                project.setProperty("score.build.git.version", "-" + git_version);
+            } else {
+                project.setProperty("build.git.version", "");
+            }
+]]>
+        </script>
+    </target>
+
+    <target name="-post-build" >
+
+        <copy
+            failonerror="false"
+            file="bin/classes.jar"
+            force="true"
+            overwrite="true"
+            tofile="out/mobilib${score.build.git.version}.jar" />
+    </target>
+
+    <!-- Generate javadocs for current project into ${doc.dir} -->
+
+    <property
+        name="doc.dir"
+        location="android-api-reference" />
+
+    <target name="doc" >
+
+        <javadoc
+            Encoding="UTF-8"
+            Locale="ja"
+            Public="true"
+            charset="Shift_JIS"
+            classpath="${sdk.dir}/platforms/android-19/android.jar"
+            destdir="${doc.dir}"
+            docencoding="SJIS"
+            maxmemory="32m"
+            packagenames="com.datdo.mobilib.api,com.datdo.mobilib.base,com.datdo.mobilib.event,com.datdo.mobilib.util,com.datdo.mobilib.widget"
+            sourcepath="${source.dir}"
+            windowtitle="MOBILIB ANDROID" >
+
+            <link href="http://java.sun.com/javase/6/docs/api/" />
+
+            <link
+                href="http://d.android.com/reference/"
+                offline="true"
+                packagelistLoc="misc/android_javadoc" />
+        </javadoc>
+    </target>
+
+</project>

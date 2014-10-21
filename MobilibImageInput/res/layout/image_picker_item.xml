@@ -1,0 +1,25 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" >
+
+    <com.datdo.mobilib.imageinput.MblAutoResizeSquareImageView
+            android:id="@+id/image_picker_imageview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFF"
+            android:scaleType="centerCrop" />
+
+    <View
+            android:id="@+id/image_picker_hidden_layer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#30000000" />
+
+    <View
+            android:id="@+id/image_picker_checkview"
+            android:background="@drawable/image_picker_check_state"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom|right"
+            android:layout_margin="5dp" />
+</FrameLayout>

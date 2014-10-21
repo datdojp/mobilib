@@ -1,0 +1,52 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="5dp" >
+
+        <Button
+            android:id="@+id/bt_show_toast"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="ShowToast"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_show_progress_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="ShowProgressDialog"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_close_app"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="CloseApp"
+            tools:ignore="HardcodedText" />
+        
+        <Button
+            android:id="@+id/bt_hash_key"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="HashKey"
+            tools:ignore="HardcodedText" />
+    </LinearLayout>
+
+</ScrollView>

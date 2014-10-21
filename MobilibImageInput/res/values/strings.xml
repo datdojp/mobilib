@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <string name="back">戻る</string>
+    <string name="select_photo">写真選択</string>
+    <string name="wait">お待ち下さい</string>
+    <string name="scanning">スキャン中</string>
+    <string name="select_at_most_x_photos_at_once">一度に選択できる画像は%1$d個までです。</string>
+    <string name="retake_photo">再撮影</string>
+    <string name="cancel">キャンセル</string>
+    <string name="use_photo">使用</string>
+    <string name="done">決定</string>
+    <string name="preview_photo">プレビュー</string>
+
+</resources>
