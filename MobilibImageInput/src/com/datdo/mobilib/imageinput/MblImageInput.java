@@ -3,7 +3,7 @@ package com.datdo.mobilib.imageinput;
 import android.os.Environment;
 
 public class MblImageInput {
-    static String      sFolderToSaveTakenImages     = Environment.getExternalStorageDirectory() + "/" + Environment.DIRECTORY_DCIM + "/";
+    static String      sFolderToSaveTakenImages     = Environment.getExternalStorageDirectory() + "/" + Environment.DIRECTORY_DCIM;
     static String[]    sExtensionsOfPickedImages    = new String[] {
         "jpg",
         "jpeg",
