@@ -1,17 +1,17 @@
 package com.datdo.mobilib.base;
 
-import com.datdo.mobilib.event.MblCommonEvents;
-import com.datdo.mobilib.event.MblEventCenter;
-import com.datdo.mobilib.event.MblEventListener;
-import com.datdo.mobilib.util.MblUtils;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
+
+import com.datdo.mobilib.event.MblCommonEvents;
+import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblEventListener;
+import com.datdo.mobilib.util.MblUtils;
 
 /**
  * <pre>
@@ -185,6 +185,7 @@ public class MblActivityPlugin {
         if (activity instanceof MblEventListener) {
             MblEventCenter.removeListenerFromAllEvents((MblEventListener) activity);
         }
+        MblUtils.cleanupView(mDecorView);
     }
 
     /**
