@@ -579,7 +579,7 @@ public class MblUtils {
      * For ImageView, ImageButton: set image to null.
      * For all views: set background to null.
      * This method is used when an activity/fragment is no longer used.
-     * </<pre>
+     * </pre>
      */
     public static void cleanupView(View view) {
         if (view != null) {
