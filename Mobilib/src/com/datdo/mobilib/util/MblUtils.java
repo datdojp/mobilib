@@ -73,11 +73,13 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -569,6 +571,36 @@ public class MblUtils {
         Bitmap bm = extractBitmap(imageView);
         imageView.setImageBitmap(null);
         return recycleBitmap(bm);
+    }
+
+    /**
+     * <pre>
+     * Clean up view and its children.
+     * For ImageView, ImageButton: set image to null.
+     * For all views: set background to null.
+     * This method is used when an activity/fragment is no longer used.
+     * </<pre>
+     */
+    public static void cleanupView(View view) {
+        if (view != null) {
+            if (view instanceof ImageButton) {
+                ImageButton ib = (ImageButton) view;
+                ib.setImageDrawable(null);
+            } else if (view instanceof ImageView) {
+                ImageView iv = (ImageView) view;
+                iv.setImageDrawable(null);
+            }
+
+            MblUtils.setBackgroundDrawable(view, null);
+
+            if (view instanceof ViewGroup) {
+                ViewGroup vg = (ViewGroup) view;
+                int size = vg.getChildCount();
+                for (int i = 0; i < size; i++) {
+                    cleanupView(vg.getChildAt(i));
+                }
+            }
+        }
     }
 
     /**
