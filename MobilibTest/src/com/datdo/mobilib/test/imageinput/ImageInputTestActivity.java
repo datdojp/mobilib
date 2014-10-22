@@ -1,9 +1,9 @@
 package com.datdo.mobilib.test.imageinput;
 
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.datdo.mobilib.base.MblBaseActivity;
@@ -15,6 +15,8 @@ import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
 
 public class ImageInputTestActivity extends MblBaseActivity {
+
+    private ThumbnailAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +50,10 @@ public class ImageInputTestActivity extends MblBaseActivity {
                 pickAndCropImage();
             }
         });
+        
+        ListView listview = (ListView) findViewById(R.id.thumbnail_list);
+        mAdapter = new ThumbnailAdapter();
+        listview.setAdapter(mAdapter);
     }
 
     private void takeImage() {
@@ -55,7 +61,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
 
             @Override
             public void onFinish(String path) {
-                MblUtils.showToast(path, Toast.LENGTH_SHORT);
+                mAdapter.changeData(new String[] { path });
             }
 
             @Override
@@ -70,7 +76,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
 
             @Override
             public void onFinish(String[] paths) {
-                MblUtils.showToast(TextUtils.join("\n", paths), Toast.LENGTH_SHORT);
+                mAdapter.changeData(paths);
             }
 
             @Override
@@ -85,7 +91,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
 
             @Override
             public void onFinish(String path) {
-                MblUtils.showToast(path, Toast.LENGTH_SHORT);
+                mAdapter.changeData(new String[] { path });
             }
 
             @Override
@@ -100,7 +106,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
 
             @Override
             public void onFinish(String[] paths) {
-                MblUtils.showToast(TextUtils.join("\n", paths), Toast.LENGTH_SHORT);
+                mAdapter.changeData(paths);
             }
 
             @Override
