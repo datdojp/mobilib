@@ -159,4 +159,46 @@ public abstract class MblBaseAdapter<T> extends BaseAdapter {
             }
         });
     }
+
+    /**
+     * <pre>
+     * Discard all current data and replace them by new ones.
+     * Also refresh UI automatically.
+     * </pre>
+     * @param data new data
+     */
+    public void changeData(final List<T> data) {
+        changeDataSafely(new Runnable() {
+            @Override
+            public void run() {
+                getData().clear();
+                if (data != null) {
+                    getData().addAll(data);
+                }
+                notifyDataSetChanged();
+            }
+        });
+    }
+    
+    /**
+     * <pre>
+     * Discard all current data and replace them by new ones.
+     * Also refresh UI automatically.
+     * </pre>
+     * @param data new data
+     */
+    public void changeData(final T[] data) {
+        changeDataSafely(new Runnable() {
+            @Override
+            public void run() {
+                getData().clear();
+                if (data != null) {
+                    for (T d : data) {
+                        getData().add(d);
+                    }
+                }
+                notifyDataSetChanged();
+            }
+        });
+    }
 }
