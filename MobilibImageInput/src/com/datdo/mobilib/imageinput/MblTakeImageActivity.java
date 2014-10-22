@@ -10,7 +10,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
-import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
@@ -66,6 +65,21 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         mCropFrame          = findViewById(R.id.crop_frame);
         mCropFrameMid       = mCropFrame.findViewById(R.id.mid);
 
+        if (needCrop()) {
+            // set sizes for transparent area in middle of crop frame
+            ViewGroup.LayoutParams lpOfMid = mCropFrameMid.getLayoutParams();
+            lpOfMid.width = mCropSizeWidthInPx;
+            lpOfMid.height = mCropSizeHeightInPx;
+            mCropFrameMid.setLayoutParams(lpOfMid);
+
+            // set sizes frame surrounding middle view of crop frame
+            View frameOfMid = mCropFrame.findViewById(R.id.frame);
+            ViewGroup.LayoutParams lpOfMidFrame = frameOfMid.getLayoutParams();
+            lpOfMidFrame.width = mCropSizeWidthInPx + MblUtils.pxFromDp(2);
+            lpOfMidFrame.height = mCropSizeHeightInPx + MblUtils.pxFromDp(2);
+            frameOfMid.setLayoutParams(lpOfMidFrame);
+        }
+
         if (mInputImagePath == null) { // take photo
 
             // left button
@@ -90,19 +104,6 @@ public class MblTakeImageActivity extends MblDataInputActivity {
                     cancelInput();
                 }
             });
-
-            // set sizes for transparent area in middle of crop frame
-            ViewGroup.LayoutParams lpOfMid = mCropFrameMid.getLayoutParams();
-            lpOfMid.width = mCropSizeWidthInPx;
-            lpOfMid.height = mCropSizeHeightInPx;
-            mCropFrameMid.setLayoutParams(lpOfMid);
-
-            // set sizes frame surrounding middle view of crop frame
-            View frameOfMid = mCropFrame.findViewById(R.id.frame);
-            ViewGroup.LayoutParams lpOfMidFrame = frameOfMid.getLayoutParams();
-            lpOfMidFrame.width = mCropSizeWidthInPx + MblUtils.pxFromDp(2);
-            lpOfMidFrame.height = mCropSizeHeightInPx + MblUtils.pxFromDp(2);
-            frameOfMid.setLayoutParams(lpOfMidFrame);
 
             // show crop frame
             mCropFrame.setVisibility(View.VISIBLE);
@@ -270,56 +271,51 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         MblUtils.executeOnAsyncThread(new Runnable() {
             @Override
             public void run() {
-                try {
-                    int[] sizes = MblUtils.getBitmapSizes(imagePath);
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inSampleSize =
-                            Math.round(1.0f * Math.max(sizes[0], sizes[1]) / Math.max(mPreviewImageView.getWidth(), mPreviewImageView.getHeight()));
-                    options.inPreferredConfig = Bitmap.Config.RGB_565;
-                    options.inDither = true;
-                    Bitmap bm = BitmapFactory.decodeFile(imagePath, options);
+                final Bitmap bm = MblUtils.loadBitmapMatchSpecifiedSize(-1, -1, imagePath);
 
-                    // rotate bitmap if needed
-                    bm = MblUtils.correctBitmapOrientation(imagePath, bm);
-
-                    final Bitmap finalBm = bm;
-                    MblUtils.executeOnMainThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            // display bitmap
-                            MblUtils.recycleImageView(mPreviewImageView);
-                            mPreviewImageView.setImageBitmap(finalBm);
-
-                            // set min and max for zoom
-                            float minZoom = MblImageInput.sCropMinZoom;
-                            float maxZoom = MblImageInput.sCropMaxZoom;
-                            if (needCrop()) {
-                                float scaleX = 1;
-                                if (finalBm.getWidth() < mCropSizeWidthInPx) {
-                                    scaleX = 1.0f * mCropSizeWidthInPx / finalBm.getWidth();
-                                }
-                                float scaleY = 1;
-                                if (finalBm.getHeight() < mCropSizeHeightInPx) {
-                                    scaleY = 1.0f * mCropSizeHeightInPx / finalBm.getHeight();
-                                }
-                                float fullFrameScale = Math.max(scaleX, scaleY);
-                                if (minZoom != fullFrameScale) {
-                                    float temp = maxZoom / minZoom;
-                                    minZoom = fullFrameScale;
-                                    maxZoom = minZoom * temp;
-                                }
-                            }
-                            mPreviewImageView.setOptions(
-                                    minZoom, maxZoom, minZoom,
-                                    mCropFrame.findViewById(R.id.left).getWidth(),
-                                    mCropFrame.findViewById(R.id.top).getHeight(),
-                                    mCropFrame.findViewById(R.id.right).getWidth(),
-                                    mCropFrame.findViewById(R.id.bottom).getHeight());
-                        }
-                    });
-                } catch (IOException e) {
+                if (bm == null) {
                     cancelInput();
+                    return;
                 }
+
+                MblUtils.executeOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // display bitmap
+                        MblUtils.recycleImageView(mPreviewImageView);
+                        mPreviewImageView.setImageBitmap(bm);
+
+                        // set min and max for zoom
+                        float minZoom = MblImageInput.sCropMinZoom;
+                        float maxZoom = MblImageInput.sCropMaxZoom;
+                        if (needCrop()) {
+                            float minBmWidth = minZoom * bm.getWidth();
+                            float minBmHeight = minZoom * bm.getHeight();
+                            boolean needJustify = false;
+                            if (minBmWidth < mCropSizeWidthInPx) {
+                                minBmWidth = mCropSizeWidthInPx;
+                                needJustify = true;
+                            }
+                            if (minBmHeight < mCropSizeHeightInPx) {
+                                minBmHeight = mCropSizeHeightInPx;
+                                needJustify = true;
+                            }
+                            if (needJustify) {
+                                float maxPerMin = maxZoom / minZoom;
+                                minZoom = Math.max(
+                                        minBmWidth / bm.getWidth(),
+                                        minBmHeight / bm.getHeight());
+                                maxZoom = maxPerMin * minZoom;
+                            }
+                        }
+                        mPreviewImageView.setOptions(
+                                minZoom, maxZoom, Math.min(Math.max(minZoom, 1), maxZoom),
+                                mCropFrame.findViewById(R.id.left).getWidth(),
+                                mCropFrame.findViewById(R.id.top).getHeight(),
+                                mCropFrame.findViewById(R.id.right).getWidth(),
+                                mCropFrame.findViewById(R.id.bottom).getHeight());
+                    }
+                });
             }
         });
     }
