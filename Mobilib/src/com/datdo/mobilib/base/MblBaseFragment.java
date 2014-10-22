@@ -9,11 +9,11 @@ import com.datdo.mobilib.util.MblUtils;
 public class MblBaseFragment extends Fragment {
 
     @Override
-    public void onDestroy() {
+    public void onDestroyView() {
         if (this instanceof MblEventListener) {
             MblEventCenter.removeListenerFromAllEvents((MblEventListener) this);
         }
         MblUtils.cleanupView(getView());
-        super.onDestroy();
+        super.onDestroyView();
     }
 }
