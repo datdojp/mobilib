@@ -70,6 +70,7 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.Display;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -91,6 +92,7 @@ public class MblUtils {
 
     private static SharedPreferences sPrefs;
     private static Context sCurrentContext;
+    private static LayoutInflater sLayoutInflater;
 
     public static void init(Context context) {
         sCurrentContext = context;
@@ -143,6 +145,18 @@ public class MblUtils {
         } else {
             return Locale.JAPAN;
         }
+    }
+
+    /**
+     * <pre>
+     * Get {@link LayoutInflater} instance which is essential for adapters.
+     * </pre>
+     */
+    public static LayoutInflater getLayoutInflater() {
+        if (sLayoutInflater == null) {
+            sLayoutInflater = LayoutInflater.from(getCurrentContext());
+        }
+        return sLayoutInflater;
     }
 
     /**
