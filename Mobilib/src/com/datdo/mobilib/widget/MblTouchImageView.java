@@ -1,12 +1,20 @@
 package com.datdo.mobilib.widget;
 
+import android.animation.Animator;
+import android.animation.Animator.AnimatorListener;
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.util.AttributeSet;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -34,6 +42,7 @@ public class MblTouchImageView extends ImageView {
     private int mRightDragPadding;
     private int mBottomDragPadding;
     private ScaleGestureDetector mScaleDetector;
+    private GestureDetector mGestureDetector;
     private OnTouchListener mExtraTouchListener;
 
     public MblTouchImageView(Context context) {
@@ -53,20 +62,31 @@ public class MblTouchImageView extends ImageView {
 
     private void init(Context context) {
         super.setClickable(true);
+
         mScaleDetector = new ScaleGestureDetector(context, new ScaleListener());
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                MblTouchImageView.this.onDoubleTap();
+                return true;
+            }
+        });
+
         mMatrix = new Matrix();
         mMatrixValues = new float[9];
         super.setImageMatrix(mMatrix);
         setScaleType(ScaleType.MATRIX);
 
-        setOnTouchListener(new OnTouchListener() {
+        super.setOnTouchListener(new OnTouchListener() {
 
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
                 if (mExtraTouchListener != null) mExtraTouchListener.onTouch(v, event);
 
                 mScaleDetector.onTouchEvent(event);
+                mGestureDetector.onTouchEvent(event);
                 PointF curr = new PointF(event.getX(), event.getY());
 
                 switch (event.getAction()) {
@@ -309,5 +329,102 @@ public class MblTouchImageView extends ImageView {
     public void setImageURI(Uri uri) {
         super.setImageURI(uri);
         applyOptionsIfReady();
+    }
+
+    @Override
+    public void setOnTouchListener(OnTouchListener l) {
+        // not allow
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    private void onDoubleTap() {
+        if (Build.VERSION.SDK_INT >= 11) {
+            final float currentScale = mCurrentScale;
+            final float targetScale = getJustifiedScale(Math.min(1.0f * getWidth() / mOriginWidth, 1.0f * getHeight() / mOriginHeight));
+
+            mMatrix.getValues(mMatrixValues);
+            final float currentTransX = mMatrixValues[Matrix.MTRANS_X];
+            final float currentTransY = mMatrixValues[Matrix.MTRANS_Y];
+            final float targetTransX = (getWidth() - targetScale * mOriginWidth) / 2;
+            final float targetTransY = (getHeight() - targetScale * mOriginHeight) / 2;
+
+            ValueAnimator anim = null;
+
+            if (currentScale != targetScale) {
+
+                anim = ValueAnimator.ofFloat(currentScale, targetScale);
+                anim.addUpdateListener(new AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator anim) {
+                        float scale = (Float) anim.getAnimatedValue();
+
+                        mMatrix.setScale(scale, scale);
+
+                        float transX = targetTransX + (currentTransX - targetTransX) * (scale - targetScale) / (currentScale - targetScale);
+                        float transY = targetTransY + (currentTransY - targetTransY) * (scale - targetScale) / (currentScale - targetScale);
+                        mMatrix.postTranslate(transX, transY);
+
+                        MblTouchImageView.super.setImageMatrix(mMatrix);
+                    }
+                });
+                anim.addListener(new AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator anim) {}
+
+                    @Override
+                    public void onAnimationRepeat(Animator anim) {}
+
+                    @Override
+                    public void onAnimationEnd(Animator anim) {
+                        mCurrentScale = targetScale;
+                    }
+
+                    @Override
+                    public void onAnimationCancel(Animator anim) {}
+                });
+
+            } else if (currentTransX != targetTransX) {
+
+                anim = ValueAnimator.ofFloat(currentTransX, targetTransX);
+                anim.addUpdateListener(new AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator anim) {
+
+                        mMatrix.setScale(targetScale, targetScale);
+
+                        float transX = (Float) anim.getAnimatedValue();
+                        float transY = targetTransY + (currentTransY - targetTransY) * (transX - targetTransX) / (currentTransX - targetTransX);
+                        mMatrix.postTranslate(transX, transY);
+                        MblTouchImageView.super.setImageMatrix(mMatrix);
+                    }
+                });
+
+            } else if (currentTransY != targetTransY) {
+
+                anim = ValueAnimator.ofFloat(currentTransY, targetTransY);
+                anim.addUpdateListener(new AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator anim) {
+
+                        mMatrix.setScale(targetScale, targetScale);
+
+                        float transY = (Float) anim.getAnimatedValue();
+                        float transX = targetTransX + (currentTransX - targetTransX) * (transY - targetTransY) / (currentTransY - targetTransY);
+                        mMatrix.postTranslate(transX, transY);
+                        MblTouchImageView.super.setImageMatrix(mMatrix);
+                    }
+                });
+
+            }
+
+            if (anim != null) {
+                anim.setDuration(500);
+                anim.start();
+            }
+        }
+    }
+
+    private float getJustifiedScale(float scale) {
+        return Math.min(Math.max(mMinScale, scale), mMaxScale);
     }
 }
