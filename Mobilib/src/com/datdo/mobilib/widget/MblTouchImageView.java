@@ -290,10 +290,6 @@ public class MblTouchImageView extends ImageView {
                 drawable.getIntrinsicHeight() > 0;
     }
 
-    public void setExtraTouchListener(OnTouchListener extraTouchListener) {
-        mExtraTouchListener = extraTouchListener;
-    }
-
     @Override
     public void setScaleType(ScaleType scaleType) {
         // only accept matrix scaletype
@@ -333,7 +329,7 @@ public class MblTouchImageView extends ImageView {
 
     @Override
     public void setOnTouchListener(OnTouchListener l) {
-        // not allow
+        mExtraTouchListener = l;
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
