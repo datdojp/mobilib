@@ -87,6 +87,7 @@ import android.widget.Toast;
 public class MblUtils {
     private static final String TAG = getTag(MblUtils.class);
     private static float density = 0;
+    private static float scaledDensity = 0;
     private static final String EMAIL_TYPE = "message/rfc822";
 
     private static Handler sMainThread = new Handler(Looper.getMainLooper());
@@ -318,6 +319,18 @@ public class MblUtils {
             density = getCurrentContext().getResources().getDisplayMetrics().density;
         }
         return (int) (dp * density);
+    }
+
+    /**
+     * <pre>
+     * Convert from SP to Pixel.
+     * </pre>
+     */
+    public static int pxFromSp(int sp) {
+        if (scaledDensity == 0) {
+            scaledDensity = getCurrentContext().getResources().getDisplayMetrics().scaledDensity;
+        }
+        return (int) (sp * scaledDensity);
     }
 
     /**
