@@ -5,6 +5,7 @@ Mobilib is an Android library which resolves multiple inconveniences caused by m
 Author
 ------
 Dat Do
+
 datdvt@gmail.com
 
 Version
@@ -15,7 +16,7 @@ Features
 --------
   - Event API to register/unregister an event listener and to post an event to all listeners (observer pattern). It is thread-safe and immune from memory leak threat.
   - Detect events which are not supported by pure Android via Event API: app goes to background, app goes to foreground, keyboard shown, keyboard hidden, network on, network off.
-  - HTTP/HTTPS API to send GET/POST/PUT/DELETE request and receive response. It is thread-safe and provides almost all you need for a typical HTTP/HTTPS request: parameters (InputStream parameter is also supported for uploading), headers, caching, ignore SSL Certificate (for Dev environment).
+  - HTTP/HTTPS API to send GET/POST/PUT/DELETE request and receive response. It is thread-safe and provides almost all you need for a typical HTTP/HTTPS request: parameters (InputStream and File parameter is also supported for uploading), headers, caching, ignore SSL Certificate (for Dev environment).
   - Smart image loader to load and display images for child views of an AdapterView.
   - Extra library to get image input from user: pick images from gallery, take image, crop image (MobilibImageInput).
   - And lots of utility classes and methods.
@@ -55,26 +56,6 @@ public class MyActionBarActivity extends MblBaseActionBarActivity {
 Almost all activities in your app extend one of **Activity, FragmentActivity, ActionBarActivity**. All you need to do is replacing them with **MblBaseActivity, MblBaseFragmentActivity, MblBaseActionBarActivity**.
 
 Let me know if you have an activity whose super class is not in above list. I will add a new one into Mobilib as soon as possible :)
-
-
-
-Dependencies
-----------
-If your project depends on "Mobilib" project, ignore this part.
-
-If you use a jar file for Mobilib, dependencies vary from what you use.
-
-For MblBaseFragmentActivity, add **android-support-v4.jar** to your app.
-
-For MblBaseActionBarActivity, add **android-support-v7-appcompat.jar** to your app.
-
-For post(), put(), delete() with InputStream parameters to upload, add following jars to you app:
-
-  - httpclient-4.3.1.jar
-  - httpcore-4.3.jar
-  - httpmime-4.3.1.jar
-
-All jar files are available in **Mobilib/libs**
 
 Event API
 ---------
@@ -185,7 +166,7 @@ MblApi.get(
 	true, 					// enable cache
 	1000l * 60l * 60l * 24l,// cache expires within 1 day
 	true,					// ignore invalid SSL Certificate
-	new MblApiGetCallback() {
+    new MblApiCallback() {
 
         @Override
         public void onSuccess(int statusCode, byte[] data) {
@@ -215,7 +196,7 @@ MblApi.post(
 	params,
 	headers,
 	false,  // must check SSL Certificate
-	new MblApiPostCallback() {
+    new MblApiCallback() {
 
 		@Override
 		public void onSuccess(int statusCode, String data) {
@@ -325,7 +306,7 @@ MobilibImageInput
 
 Configurations (optional, can be ignored if you want to use default values)
 ```java
-String folderToSaveTakenImages = Environment.getExternalStorageDirectory() + "/" + Environment.DIRECTORY_DCIM + "/MyGreateApp/";
+String folderToSaveTakenImages = Environment.getExternalStorageDirectory() + "/" + Environment.DIRECTORY_DCIM + "/MyGreateApp";
 String[] extensionsOfPickedImages = new String[] { "jpg", "jpeg", "png" };
 String foldersToPickImages = new String[] { Environment.DIRECTORY_DCIM };
 float cropMinZoom = 0.5f;
@@ -439,7 +420,12 @@ MblUtils.getPrefs()
 
 **Get Handler of Main Thread globally**
 ```java
-getMainThreadHandler.getMainThreadHandler()
+MblUtils.getMainThreadHandler()
+```
+
+**Get LayoutInflater instance which is essential for adapters**
+```java
+MblUtils.getLayoutInflater()
 ```
 
 **Execute an action on Main Thread**
@@ -496,9 +482,10 @@ MblUtils.showKeyboard(editText);
 MblUtils.hideKeyboard();
 ```
 
-**Convert DP to Pixel**
+**Convert DP/SP to Pixel**
 ```java
 int px = MblUtils.pxFromDp(150);
+int px = MblUtils.pxFromSp(150);
 ```
 
 **Current status check**
@@ -508,6 +495,7 @@ MblUtils.isPortraitDisplay();
 MblUtils.isNetworkConnected();
 MblUtils.isAppInForeGround();
 MblUtils.isKeyboardOn();
+MblUtils.getAppFlagDebug();
 ```
 
 **Bitmap**
@@ -516,9 +504,11 @@ MblUtils.loadBitmapMatchSpecifiedSize(150, 150, bitmapFilePath);
 MblUtils.getBitmapSizes(bitmapFilePath);
 MblUtils.recycleBitmap(bitmapObject);
 MblUtils.recycleImageView(imageView);
+MblUtils.cleanupView(view);
 MblUtils.extractBitmap(imageView);
 MblUtils.getImageRotateAngle(imagePath);
 MblUtils.correctBitmapOrientation(imagePath, bitmapObject);
+MblUtils.loadBitmapForImageView(imagePath, imageView, width, height, callback);
 ```
 
 **Logging**
@@ -552,10 +542,13 @@ MblUtils.showToast(String text, int duration);
 ```java
 MblUtils.focusNothing(activity); // remove all focus
 MblUtils.getDisplaySizes(); // get width and height of display screen
-MblUtils.md5(data);	// create MD5-hashed string for data
+MblUtils.md5(data); // create MD5-hashed string for data
 MblUtils.sendEmail(subject, emails, cc, bcc, text, title, attachmentFilenames);
 MblUtils.motionEventOnView(motionEvent, view); // check if a MotionEvent happens on a view
 MblUtils.copyTextToClipboard(text);
 MblUtils.generateDeviceId(); // generate a UDID which is unique for each device
 MblUtils.closeApp(MainActivity.class); // close this app
+MblUtils.isAppInstalled(packageName); // check if app is installed
+MblUtils.getAppPackageInfo(); // get app 's PackageInfo
+MblUtils.getKeyHash(); // get app 's key hash
 ```
