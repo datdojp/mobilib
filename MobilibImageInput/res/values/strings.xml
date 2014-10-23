@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="mbl_back">戻る</string>
-    <string name="mbl_select_photo">写真選択</string>
-    <string name="mbl_wait">お待ち下さい</string>
-    <string name="mbl_scanning">スキャン中</string>
-    <string name="mbl_select_at_most_x_photos_at_once">一度に選択できる画像は%1$d個までです。</string>
-    <string name="mbl_retake_photo">再撮影</string>
-    <string name="mbl_cancel">キャンセル</string>
-    <string name="mbl_use_photo">使用</string>
-    <string name="mbl_done">決定</string>
-    <string name="mbl_preview_photo">プレビュー</string>
+    <string name="mbl_back">Back</string>
+    <string name="mbl_select_photo">Select photo</string>
+    <string name="mbl_wait">Please wait</string>
+    <string name="mbl_scanning">Scanning</string>
+    <string name="mbl_select_at_most_x_photos_at_once">Select at most %1$d photo at once.</string>
+    <string name="mbl_retake_photo">Retake</string>
+    <string name="mbl_cancel">Cancel</string>
+    <string name="mbl_use_photo">Use</string>
+    <string name="mbl_done">Done</string>
+    <string name="mbl_preview_photo">Preview</string>
 
 </resources>
