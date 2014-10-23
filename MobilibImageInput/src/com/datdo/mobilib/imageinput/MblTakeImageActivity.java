@@ -50,7 +50,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.photo_preview_layout);
+        setContentView(R.layout.mbl_photo_preview_layout);
 
         // get data from extra
         if (getIntent().getExtras() != null) {
@@ -83,7 +83,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         if (mInputImagePath == null) { // take photo
 
             // left button
-            leftButton.setText(R.string.retake_photo);
+            leftButton.setText(R.string.mbl_retake_photo);
             leftButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -97,7 +97,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         } else { // load photo from external storage
 
             // left button
-            leftButton.setText(R.string.cancel);
+            leftButton.setText(R.string.mbl_cancel);
             leftButton.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -114,7 +114,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
         // right button
         final Button rightButton = (Button) findViewById(R.id.right_button);
-        rightButton.setText(R.string.use_photo);
+        rightButton.setText(R.string.mbl_use_photo);
         rightButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -5,7 +5,7 @@
 
     <include
         android:id="@+id/nav_bar"
-        layout="@layout/nav_bar_include" />
+        layout="@layout/mbl_nav_bar_include" />
 
     <GridView
         android:id="@+id/image_gridview"
@@ -32,11 +32,11 @@
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:layout_gravity="center"
-            android:background="@drawable/done_button_bg"
+            android:background="@drawable/mbl_done_button_bg"
             android:gravity="center"
             android:paddingLeft="15dp"
             android:paddingRight="15dp"
-            android:text="@string/done"
+            android:text="@string/mbl_done"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="normal" />

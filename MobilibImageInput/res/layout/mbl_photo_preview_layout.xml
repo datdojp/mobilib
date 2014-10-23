@@ -60,7 +60,7 @@
                 android:layout_height="190dp"
                 android:layout_centerHorizontal="true"
                 android:layout_centerVertical="true"
-                android:background="@drawable/white_frame" />
+                android:background="@drawable/mbl_white_frame" />
 
             <View
                 android:id="@+id/mid"
@@ -83,7 +83,7 @@
             android:id="@+id/left_button"
             android:layout_width="wrap_content"
             android:layout_height="44dp"
-            android:background="@drawable/send_message_button_bg"
+            android:background="@drawable/mbl_send_message_button_bg"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
             android:textColor="#fff"
@@ -97,7 +97,7 @@
             android:layout_marginRight="10dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="@string/preview_photo"
+            android:text="@string/mbl_preview_photo"
             android:textColor="#fff"
             android:textSize="20sp"
             android:textStyle="normal" />
@@ -106,7 +106,7 @@
             android:id="@+id/right_button"
             android:layout_width="wrap_content"
             android:layout_height="44dp"
-            android:background="@drawable/send_message_button_bg"
+            android:background="@drawable/mbl_send_message_button_bg"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
             android:textColor="#fff"
