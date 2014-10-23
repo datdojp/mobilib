@@ -12,7 +12,7 @@ import android.widget.ImageView.ScaleType;
 import android.widget.ListView;
 
 import com.datdo.mobilib.api.MblApi;
-import com.datdo.mobilib.api.MblApi.MblApiGetCallback;
+import com.datdo.mobilib.api.MblApi.MblApiCallback;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.base.MblBaseAdapter;
 import com.datdo.mobilib.test.R;
@@ -101,7 +101,7 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
 
             @Override
             protected void retrieveImage(String item, final MblRetrieveImageCallback cb) {
-                MblApi.get(item, null, null, true, Long.MAX_VALUE, true, new MblApiGetCallback() {
+                MblApi.get(item, null, null, true, Long.MAX_VALUE, true, new MblApiCallback() {
 
                     @Override
                     public void onSuccess(int statusCode, byte[] data) {

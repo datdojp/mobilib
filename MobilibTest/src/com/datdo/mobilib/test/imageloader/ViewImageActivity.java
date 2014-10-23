@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.view.ViewGroup;
 
 import com.datdo.mobilib.api.MblApi;
-import com.datdo.mobilib.api.MblApi.MblApiGetCallback;
+import com.datdo.mobilib.api.MblApi.MblApiCallback;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
@@ -34,7 +34,7 @@ public class ViewImageActivity extends MblBaseActivity {
         super.onResume();
         String link = getIntent().getStringExtra("link");
         if (link != null) {
-            MblApi.get(link, null, null, true, Long.MAX_VALUE, true, new MblApiGetCallback() {
+            MblApi.get(link, null, null, true, Long.MAX_VALUE, true, new MblApiCallback() {
 
                 @Override
                 public void onSuccess(int statusCode, byte[] data) {

@@ -33,12 +33,12 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
-import com.datdo.mobilib.util.MblUtils;
-
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
+
+import com.datdo.mobilib.util.MblUtils;
 
 /**
  * <pre>
@@ -57,6 +57,30 @@ public class MblApi {
 
     /**
      * <pre>
+     * Common callback for all methods.
+     * </pre> 
+     */
+    public static interface MblApiCallback {
+        /**
+         * <pre>
+         * Invoked on request success.
+         * </pre>
+         * @param statusCode HTTP status code or -1 (in case of fetching data from cache)
+         * @param data result data in byte array
+         */
+        public void onSuccess(int statusCode, byte[] data);
+        /**
+         * <pre>
+         * Invoked on request failure.
+         * </pre>
+         * @param error HTTP status code (in case status code != 2xx) or -1 (in case of unknown error)
+         * @param errorMessage cause of error (returned from server or message of local exception)
+         */
+        public abstract void onFailure(int error, String errorMessage);
+    }
+    
+    /**
+     * <pre>
      * Send GET request asynchronously.
      * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
      * otherwise it runs on calling thread.
@@ -67,7 +91,7 @@ public class MblApi {
      * @param isCacheEnabled should use cache for this request?
      * @param cacheDuration how long cache data will valid (ignore this param if isCacheEnabled is FALSE
      * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data (text or binary)
+     * @param callback callback to receive result data
      * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
      */
     @SuppressWarnings("unchecked")
@@ -78,7 +102,7 @@ public class MblApi {
             final boolean isCacheEnabled,
             final long cacheDuration,
             final boolean isIgnoreSSLCertificate,
-            final MblApiGetCallback callback,
+            final MblApiCallback callback,
             Handler callbackHandler) {
 
         Map<String, ? extends Object> paramsNoEmptyVal = getParamsIgnoreEmptyValues(params);
@@ -212,32 +236,6 @@ public class MblApi {
 
     /**
      * <pre>
-     * Callback for {@link MblApi#get(String, Map, Map, boolean, boolean, boolean, MblApiGetCallback)}.
-     * Implement {@link MblApiGetCallback#onSuccessBinary(byte[])} for binary result.
-     * Implement {@link MblApiGetCallback#onSuccessText(String)} for text result (JSON, XML, etc...)
-     * </pre> 
-     */
-    public static interface MblApiGetCallback {
-        /**
-         * <pre>
-         * Invoked on request success.
-         * </pre>
-         * @param statusCode HTTP status code or -1 (in case of fetching data from cache)
-         * @param data result data in byte array
-         */
-        public void onSuccess(int statusCode, byte[] data);
-        /**
-         * <pre>
-         * Invoked on request failure.
-         * </pre>
-         * @param error HTTP status code (in case status code != 2xx) or -1 (in case of unknown error)
-         * @param errorMessage error message returned from server
-         */
-        public abstract void onFailure(int error, String errorMessage);
-    }
-
-    /**
-     * <pre>
      * Get absolute path to cache file of a URL.
      * </pre>
      * @param url starts with "http://" or "https://"
@@ -277,7 +275,7 @@ public class MblApi {
             Map<String, ? extends Object> params,
             Map<String, String> headerParams,
             boolean isIgnoreSSLCertificate,
-            MblApiPostCallback callback,
+            MblApiCallback callback,
             Handler callbackHandler) {
 
         sendRequestWithBody(
@@ -289,13 +287,6 @@ public class MblApi {
                 callback,
                 callbackHandler);
     }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#post(String, Map, Map, boolean, MblApiPostCallback)}
-     * </pre>
-     */
-    public static interface MblApiPostCallback extends MblSendRequestWithBodyCallback {}
 
     private static enum Method {
         POST,
@@ -323,7 +314,7 @@ public class MblApi {
             Map<String, ? extends Object> params,
             final Map<String, String> headerParams,
             final boolean isIgnoreSSLCertificate,
-            final MblSendRequestWithBodyCallback callback,
+            final MblApiCallback callback,
             Handler callbackHandler) {
 
         Assert.assertNotNull(method);
@@ -433,7 +424,7 @@ public class MblApi {
                         return;
                     }
 
-                    final String data = EntityUtils.toString(response.getEntity());
+                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
 
                     if (callback != null) {
                         fCallbackHandler.post(new Runnable() {
@@ -459,26 +450,6 @@ public class MblApi {
         });
     }
 
-    private static interface MblSendRequestWithBodyCallback {
-        /**
-         * <pre>
-         * Invoked on request success.
-         * </pre>
-         * @param statusCode HTTP status code
-         * @param data result data in text
-         */
-        public void onSuccess(int statusCode, String data);
-        /**
-         * <pre>
-         * Invoked on request failure.
-         * </pre>
-         * @param error HTTP status code (in case status code != 2xx) or -1 (in case of unknown error)
-         * @param errorMessage error message returned from server
-         */
-        public void onFailure(int error, String errorMessage);
-
-    }
-
     /**
      * <pre>
      * Send DELETE request asynchronously.
@@ -497,7 +468,7 @@ public class MblApi {
             Map<String, String> params,
             Map<String, String> headerParams,
             boolean isIgnoreSSLCertificate,
-            MblApiDeleteCallback callback,
+            MblApiCallback callback,
             Handler callbackHandler) {
 
         sendRequestWithBody(
@@ -509,14 +480,6 @@ public class MblApi {
                 callback,
                 callbackHandler);
     }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#delete(String, Map, Map, boolean, MblApiDeleteCallback)
-     * </pre>
-     */
-    public static interface MblApiDeleteCallback extends MblSendRequestWithBodyCallback {}
-
 
     /**
      * <pre>
@@ -536,7 +499,7 @@ public class MblApi {
             Map<String, ? extends Object> params,
             Map<String, String> headerParams,
             boolean isIgnoreSSLCertificate,
-            MblApiPutCallback callback,
+            MblApiCallback callback,
             Handler callbackHandler) {
 
         sendRequestWithBody(
@@ -548,13 +511,6 @@ public class MblApi {
                 callback,
                 callbackHandler);
     }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#put(String, Map, Map, boolean, MblApiPostCallback)
-     * </pre>
-     */
-    public static interface MblApiPutCallback extends MblSendRequestWithBodyCallback {}
 
     @SuppressWarnings("unused")
     private static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
