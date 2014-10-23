@@ -271,8 +271,22 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         MblUtils.executeOnAsyncThread(new Runnable() {
             @Override
             public void run() {
-                final Bitmap bm = MblUtils.loadBitmapMatchSpecifiedSize(-1, -1, imagePath);
+                Bitmap temp = null;
+                try {
+                    temp = MblUtils.loadBitmapMatchSpecifiedSize(-1, -1, imagePath);
+                } catch (OutOfMemoryError e) {
+                    try {
+                        Log.e(TAG, "Image too big -> scale to match ImageView size", e);
+                        temp = MblUtils.loadBitmapMatchSpecifiedSize(
+                                Math.round(mPreviewImageView.getWidth() * 1.5f),
+                                Math.round(mPreviewImageView.getHeight() * 1.5f),
+                                imagePath);
+                    } catch (OutOfMemoryError e2) {
+                        Log.e(TAG, "Still too big --> cancel", e);
+                    }
+                }
 
+                final Bitmap bm = temp;
                 if (bm == null) {
                     cancelInput();
                     return;
