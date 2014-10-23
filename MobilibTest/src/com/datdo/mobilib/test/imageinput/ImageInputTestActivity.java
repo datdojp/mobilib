@@ -24,7 +24,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_input_test);
 
-        MblImageInput.configure(null, null, null, 0.5f, 3f);
+        MblImageInput.configure(null, null, null, 0.1f, 3f);
 
         findViewById(R.id.take_image_button).setOnClickListener(new OnClickListener() {
             @Override
