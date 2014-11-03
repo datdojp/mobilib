@@ -2,6 +2,7 @@ package com.datdo.mobilib.base;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
@@ -51,6 +52,8 @@ public class MblActivityPlugin {
         activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         mOrientation = activity.getResources().getConfiguration().orientation;
+
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_CREATED, activity, savedInstanceState);
     }
 
     /**
@@ -72,11 +75,13 @@ public class MblActivityPlugin {
     /**
      * Extends Activity#onPause()
      */
-    public void onPause() {
+    public void onPause(Activity activity) {
         MblUtils.hideKeyboard();
 
         sLastOnPause = getNow();
         MblUtils.getMainThreadHandler().postDelayed(sBackgroundStatusCheckTask, mMaxAllowedTrasitionBetweenActivity);
+
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_PAUSED, activity);
     }
 
     /**
@@ -186,6 +191,12 @@ public class MblActivityPlugin {
             MblEventCenter.removeListenerFromAllEvents((MblEventListener) activity);
         }
         MblUtils.cleanupView(mDecorView);
+
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_DESTROYED, activity);
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_RESULT, requestCode, resultCode, data);
     }
 
     /**

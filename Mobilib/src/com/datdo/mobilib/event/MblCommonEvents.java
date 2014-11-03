@@ -64,9 +64,13 @@ public final class MblCommonEvents {
 
     /**
      * <pre>
-     * An activity is resumed.
-     * The activity is attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * Activity 's onXxx methods (onCreate, onResume, onPause, onDestroy, onActivityResult)
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
      * </pre> 
      */
+    public static final String ACTIVITY_CREATED                 = MblCommonEvents.class + "#activity_created";
     public static final String ACTIVITY_RESUMED                 = MblCommonEvents.class + "#activity_resumed";
+    public static final String ACTIVITY_PAUSED                  = MblCommonEvents.class + "#activity_paused";
+    public static final String ACTIVITY_DESTROYED               = MblCommonEvents.class + "#activity_destroyed";
+    public static final String ACTIVITY_RESULT                  = MblCommonEvents.class + "#activity_result";
 }

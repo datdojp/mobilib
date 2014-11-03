@@ -1,6 +1,7 @@
 package com.datdo.mobilib.base;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
@@ -30,7 +31,7 @@ public class MblBaseActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        mPlugin.onPause();
+        mPlugin.onPause(this);
     }
 
     @Override
@@ -65,6 +66,12 @@ public class MblBaseActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
         mPlugin.onDestroy(this);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        mPlugin.onActivityResult(requestCode, resultCode, data);
     }
 
     /**
