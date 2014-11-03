@@ -70,7 +70,11 @@ KEYBOARD_SHOWN
 KEYBOARD_HIDDEN
 GO_TO_BACKGROUND
 GO_TO_FOREGROUND
+ACTIVITY_CREATED
 ACTIVITY_RESUMED
+ACTIVITY_PAUSED
+ACTIVITY_DESTROYED
+ACTIVITY_RESULT
 ```
 Note that **onEvent()** method is always executed in Main Thread regardless of which thread the event was posted from.
 
