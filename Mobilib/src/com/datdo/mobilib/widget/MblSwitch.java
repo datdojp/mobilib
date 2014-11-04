@@ -73,7 +73,7 @@ public class MblSwitch extends FrameLayout {
     private TextView mOnTextView;
     private TextView mOffTextView;
     private LinearLayout mLayoutOfTexts;
-    private CmSwitchCallback mCallback;
+    private MblSwitchCallback mCallback;
     private boolean mInitialized;
 
     public MblSwitch(Context context) {
@@ -506,11 +506,11 @@ public class MblSwitch extends FrameLayout {
         return getWidth() - mKnobView.getWidth();
     }
 
-    public static interface CmSwitchCallback {
+    public static interface MblSwitchCallback {
         public void onStatusChanged(boolean newOnStatus);
     }
 
-    public void setCallback(CmSwitchCallback callback) {
+    public void setCallback(MblSwitchCallback callback) {
         mCallback = callback;
     }
 }
