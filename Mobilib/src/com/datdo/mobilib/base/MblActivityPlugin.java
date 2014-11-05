@@ -144,6 +144,7 @@ public class MblActivityPlugin {
         layout.setLayoutParams(params);
         MblDecorView decorView = new MblDecorView(activity);
         decorView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        decorView.setBackgroundColor(0x0);
         decorView.addView(layout);
 
         mDecorView = decorView;
