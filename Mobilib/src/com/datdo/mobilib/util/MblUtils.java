@@ -23,11 +23,6 @@ import junit.framework.Assert;
 
 import org.json.JSONArray;
 
-import com.datdo.mobilib.base.MblDecorView;
-import com.datdo.mobilib.event.MblCommonEvents;
-import com.datdo.mobilib.event.MblEventCenter;
-import com.datdo.mobilib.event.MblStrongEventListener;
-
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -83,6 +78,11 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.datdo.mobilib.base.MblDecorView;
+import com.datdo.mobilib.event.MblCommonEvents;
+import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblStrongEventListener;
 
 public class MblUtils {
     private static final String TAG = getTag(MblUtils.class);
@@ -1045,6 +1045,56 @@ public class MblUtils {
      */
     public static void showToast(int messageResId, int duration) {
         showToast(getCurrentContext().getString(messageResId), duration);
+    }
+
+    /**
+     * <pre>
+     * Convenient method to show confirmation dialog with message, positive button, negative button.
+     * </pre>
+     * @param message
+     * @param positiveButtonText
+     * @param negativeButtonText
+     * @param action action to be executed when user press positive button
+     */
+    public static void showConfirm(
+            final String message,
+            final String positiveButtonText,
+            final String negativeButtonText,
+            final Runnable action) {
+        
+        executeOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                new AlertDialog.Builder(getCurrentContext())
+                .setMessage(message)
+                .setPositiveButton(positiveButtonText, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        action.run();
+                    }
+                })
+                .setNegativeButton(negativeButtonText, null)
+                .show();
+            }
+        });
+    }
+    
+    /**
+     * <pre>
+     * Like {@link #showConfirm(String, String, String, Runnable)
+     * </pre>
+     */
+    public static void showConfirm(
+            final int messageResId,
+            final int positiveButtonResId,
+            final int negativeButtonResId,
+            final Runnable action) {
+
+        showConfirm(
+                getCurrentContext().getString(messageResId),
+                getCurrentContext().getString(positiveButtonResId),
+                getCurrentContext().getString(negativeButtonResId),
+                action);
     }
 
     /**
