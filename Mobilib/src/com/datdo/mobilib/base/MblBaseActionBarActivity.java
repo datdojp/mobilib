@@ -72,7 +72,7 @@ public class MblBaseActionBarActivity extends ActionBarActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        mPlugin.onActivityResult(requestCode, resultCode, data);
+        mPlugin.onActivityResult(this, requestCode, resultCode, data);
     }
 
     /**

@@ -196,8 +196,8 @@ public class MblActivityPlugin {
         MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_DESTROYED, activity);
     }
 
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_RESULT, requestCode, resultCode, data);
+    public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_RESULT, activity, requestCode, resultCode, data);
     }
 
     /**
