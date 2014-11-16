@@ -1884,6 +1884,40 @@ public class MblUtils {
             }
         });
     }
+    
+    /**
+     * <pre>
+     * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
+     * If OutOfMemoryError occurs, it will retry 2 times more (after 2 seconds)
+     * Automatically scale bitmap to ImageView sizes.
+     * </pre>
+     * @param path path to image file
+     * @param imageView {@link ImageView} object to display image
+     * @param callback callback to receive result
+     */
+    public static void loadBitmapForImageView(
+            final String path,
+            final ImageView imageView,
+            final MblLoadBitmapForImageViewCallback callback) {
+
+        if (imageView.getWidth() == 0 || imageView.getHeight() == 0) {
+            imageView.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    removeOnGlobalLayoutListener(imageView, this);
+                    loadBitmapForImageView(path, imageView, callback);
+                }
+            });
+            return;
+        }
+
+        loadBitmapForImageView(
+                path,
+                imageView,
+                imageView.getWidth(),
+                imageView.getHeight(),
+                callback);
+    }
 
     /**
      * <pre>
