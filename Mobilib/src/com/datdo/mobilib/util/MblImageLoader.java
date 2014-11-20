@@ -540,8 +540,10 @@ public abstract class MblImageLoader<T> {
         LayoutParams lp = imageView.getLayoutParams();
         if (lp.width == LayoutParams.WRAP_CONTENT) {
             return -1; // do not care
+        } else if (lp.width == LayoutParams.MATCH_PARENT){
+            return imageView.getWidth(); // 0 or parent 's width
         } else {
-            return imageView.getWidth();
+            return lp.width; // specified width
         }
     }
 
@@ -549,8 +551,10 @@ public abstract class MblImageLoader<T> {
         LayoutParams lp = imageView.getLayoutParams();
         if (lp.height == LayoutParams.WRAP_CONTENT) {
             return -1; // do not care
+        } else if (lp.height == LayoutParams.MATCH_PARENT){
+            return imageView.getHeight(); // 0 or parent 's height
         } else {
-            return imageView.getHeight();
+            return lp.height; // specified height
         }
     }
 }
