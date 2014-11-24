@@ -392,7 +392,9 @@ public class MblApi {
                                     FileInputStream fis = new FileInputStream(file);
                                     multipartContent.addPart(key, new InputStreamBody(fis, file.getName()));
                                 } else if (val instanceof String){
-                                    multipartContent.addPart(key, new StringBody(val.toString(), CHARSET_UTF8));
+                                    multipartContent.addPart(key, new StringBody((String)val, CHARSET_UTF8));
+                                } else {
+                                    multipartContent.addPart(key, new StringBody(String.valueOf(val), CHARSET_UTF8));
                                 }
                             }
                             httpRequest.setEntity(multipartContent);
