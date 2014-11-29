@@ -417,6 +417,10 @@ public class MblSwitch extends FrameLayout {
         mIsOn = isOn;
     }
 
+    public boolean isOn() {
+        return mIsOn;
+    }
+
     private int getCurrentXOfLayoutOfTexts(float currentX) {
         return (int) (currentX - mOnTextView.getWidth() + mKnobView.getWidth()/2);
     }
