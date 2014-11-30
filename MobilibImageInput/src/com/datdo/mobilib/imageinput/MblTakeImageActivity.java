@@ -218,7 +218,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
             Bitmap croppedPhoto = Bitmap.createBitmap(photo, cropAreaX, cropAreaY, cropAreaWidth, cropAreaHeight, matrix, true);
 
             // save bitmap to cache folder
-            String cacheImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString());
+            String cacheImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
             OutputStream os = new FileOutputStream(cacheImagePath);
             croppedPhoto.compress(CompressFormat.JPEG, 100, os);
             os.flush();
