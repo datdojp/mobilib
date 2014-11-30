@@ -562,6 +562,21 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Get width and height of bitmap from InputStream.
+     * </pre>
+     * @param is the stream
+     * @return integer array with 2 elements: width and height
+     */
+    public static int[] getBitmapSizes(InputStream is) throws IOException {
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(is, null, bmOptions);
+        is.close();
+        return new int[] { bmOptions.outWidth, bmOptions.outHeight };
+    }
+
+    /**
+     * <pre>
      * Recycle a {@link Bitmap} object
      * </pre>
      * @return true if bitmap was recycled successfully
@@ -1061,7 +1076,7 @@ public class MblUtils {
             final String positiveButtonText,
             final String negativeButtonText,
             final Runnable action) {
-        
+
         executeOnMainThread(new Runnable() {
             @Override
             public void run() {
@@ -1078,7 +1093,7 @@ public class MblUtils {
             }
         });
     }
-    
+
     /**
      * <pre>
      * Like {@link #showConfirm(String, String, String, Runnable)
@@ -1884,7 +1899,7 @@ public class MblUtils {
             }
         });
     }
-    
+
     /**
      * <pre>
      * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
