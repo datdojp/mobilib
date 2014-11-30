@@ -1731,8 +1731,7 @@ public class MblUtils {
                         scaledImagePath = path;
                     } else {
 
-                        String filename = new File(path).getName();
-                        scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString()) + "-" + filename;
+                        scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
 
                         // load bitmap with scale factor so that it is closest to maxSizeLimit
                         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
