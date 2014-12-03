@@ -88,8 +88,7 @@ public class MblApi {
      * @param url starts with "http://" or "https://"
      * @param params {key,value} containing request parameters (combined with "url" to generate full URL). Value accepts String, Long, Integer, Double, Float
      * @param headerParams {key,value} containing request headers
-     * @param isCacheEnabled should use cache for this request?
-     * @param cacheDuration how long cache data will valid (ignore this param if isCacheEnabled is FALSE
+     * @param cacheDuration how long cached data will valid (pass value <= 0 if you don't want to cache)
      * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
      * @param callback callback to receive result data
      * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
@@ -99,11 +98,12 @@ public class MblApi {
             final String url,
             Map<String, ? extends Object> params,
             final Map<String, String> headerParams,
-            final boolean isCacheEnabled,
             final long cacheDuration,
             final boolean isIgnoreSSLCertificate,
             final MblApiCallback callback,
             Handler callbackHandler) {
+
+        final boolean isCacheEnabled = cacheDuration > 0;
 
         Map<String, ? extends Object> paramsNoEmptyVal = getParamsIgnoreEmptyValues(params);
 
