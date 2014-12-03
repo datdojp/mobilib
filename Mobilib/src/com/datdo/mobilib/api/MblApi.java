@@ -467,7 +467,7 @@ public class MblApi {
      */
     public static void delete(
             String url,
-            Map<String, String> params,
+            Map<String, Object> params,
             Map<String, String> headerParams,
             boolean isIgnoreSSLCertificate,
             MblApiCallback callback,
