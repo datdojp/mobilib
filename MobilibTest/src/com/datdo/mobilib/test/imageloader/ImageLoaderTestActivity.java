@@ -101,7 +101,7 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
 
             @Override
             protected void retrieveImage(String item, final MblRetrieveImageCallback cb) {
-                MblApi.get(item, null, null, true, Long.MAX_VALUE, true, new MblApiCallback() {
+                MblApi.get(item, null, null, Long.MAX_VALUE, true, new MblApiCallback() {
 
                     @Override
                     public void onSuccess(int statusCode, byte[] data) {

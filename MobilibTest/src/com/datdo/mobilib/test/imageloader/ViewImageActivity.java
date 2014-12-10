@@ -34,7 +34,7 @@ public class ViewImageActivity extends MblBaseActivity {
         super.onResume();
         String link = getIntent().getStringExtra("link");
         if (link != null) {
-            MblApi.get(link, null, null, true, Long.MAX_VALUE, true, new MblApiCallback() {
+            MblApi.get(link, null, null, Long.MAX_VALUE, true, new MblApiCallback() {
 
                 @Override
                 public void onSuccess(int statusCode, byte[] data) {
