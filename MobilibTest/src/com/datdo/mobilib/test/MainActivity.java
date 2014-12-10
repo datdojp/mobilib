@@ -76,4 +76,10 @@ public class MainActivity extends MblBaseActivity {
     private void openTestActivity(Class clazz) {
         startActivity(new Intent(this, clazz));
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        UnitTest.run();
+    }
 }

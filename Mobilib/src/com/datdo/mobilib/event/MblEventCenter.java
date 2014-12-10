@@ -1,6 +1,8 @@
 package com.datdo.mobilib.event;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -100,10 +102,11 @@ public class MblEventCenter {
 
         MblWeakArrayList<MblEventListener> listeners;
         listeners = sEventListenerMap.get(name);
+        final List<Runnable> actions = new ArrayList<Runnable>();
         listeners.iterateWithCallback(new MblWeakArrayListCallback<MblEventListener>() {
             @Override
             public void onInterate(final MblEventListener listener) {
-                MblUtils.executeOnMainThread(new Runnable() {
+                actions.add(new Runnable() {
                     @Override
                     public void run() {
                         listener.onEvent(sender, name, args);
@@ -111,6 +114,9 @@ public class MblEventCenter {
                 });
             }
         });
+        for (Runnable r : actions) {
+            MblUtils.executeOnMainThread(r);
+        }
     }
 
     /**
