@@ -1308,7 +1308,7 @@ public class MblUtils {
             clipboard.setText(text);
         } else {
             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getCurrentContext().getSystemService(Context.CLIPBOARD_SERVICE);
-            clipboard.setPrimaryClip(ClipData.newPlainText("PoketChat Copy To Clipboard", text));
+            clipboard.setPrimaryClip(ClipData.newPlainText("", text));
         }
     }
 
