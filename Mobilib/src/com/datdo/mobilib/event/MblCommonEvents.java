@@ -64,13 +64,41 @@ public final class MblCommonEvents {
 
     /**
      * <pre>
-     * Activity 's onXxx methods (onCreate, onResume, onPause, onDestroy, onActivityResult)
+     * Activity 's onCreate methods.
      * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
      * </pre> 
      */
     public static final String ACTIVITY_CREATED                 = MblCommonEvents.class + "#activity_created";
+
+    /**
+     * <pre>
+     * Activity 's onResume methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
     public static final String ACTIVITY_RESUMED                 = MblCommonEvents.class + "#activity_resumed";
+
+    /**
+     * <pre>
+     * Activity 's onPause methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
     public static final String ACTIVITY_PAUSED                  = MblCommonEvents.class + "#activity_paused";
+
+    /**
+     * <pre>
+     * Activity 's onDestroy methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
     public static final String ACTIVITY_DESTROYED               = MblCommonEvents.class + "#activity_destroyed";
+
+    /**
+     * <pre>
+     * Activity 's onActivityResult methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
     public static final String ACTIVITY_RESULT                  = MblCommonEvents.class + "#activity_result";
 }
