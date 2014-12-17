@@ -16,7 +16,7 @@ Features
 --------
   - Event API to register/unregister an event listener and to post an event to all listeners (observer pattern). It is thread-safe and immune from memory leak threat.
   - Detect events which are not supported by pure Android via Event API: app goes to background, app goes to foreground, keyboard shown, keyboard hidden, network on, network off.
-  - HTTP/HTTPS API to send GET/POST/PUT/DELETE request and receive response. It is thread-safe and provides almost all you need for a typical HTTP/HTTPS request: parameters (InputStream and File parameter is also supported for uploading), headers, caching, ignore SSL Certificate (for Dev environment).
+  - HTTP/HTTPS API to send GET/POST/PUT/DELETE request and receive response. It is thread-safe and provides almost all you need for a typical HTTP/HTTPS request: parameters (InputStream and File parameter are also supported for uploading), headers, caching, ignore SSL Certificate (for Dev environment).
   - Smart image loader to load and display images for child views of an AdapterView.
   - Extra library to get image input from user: pick images from gallery, take image, crop image (MobilibImageInput).
   - And lots of utility classes and methods.
@@ -182,7 +182,7 @@ MblApi.get(
             ...
         }
     },
-    MblUtils.getMainThreadHandler()
+    MblUtils.getMainThreadHandler()  // callback methods are executed in main thread
 );
 ```
 
