@@ -124,7 +124,7 @@ public abstract class MblImageLoader<T> {
      * If loading image failed, call any method with NULL argument.
      * </pre>
      */
-    protected static interface MblRetrieveImageCallback {
+    public static interface MblRetrieveImageCallback {
         public void onRetrievedByteArray(byte[] bmData);
         public void onRetrievedBitmap(Bitmap bm);
         public void onRetrievedFile(String path);
