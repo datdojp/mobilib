@@ -476,17 +476,14 @@ public class MblUtils {
         public abstract Bitmap decodeBitmap(T input, BitmapFactory.Options options);
 
         public Bitmap load(final int targetW, final int targetH, T input) {
+            
             int scaleFactor = 1;
-
-            // get image view sizes
             int photoW = 0;
             int photoH = 0;
+            int[] photoSizes = getBitmapSizes(input);
+            photoW = photoSizes[0];
+            photoH = photoSizes[1];
             if (targetW > 0 || targetH > 0) {
-                // get bitmap sizes
-                int[] photoSizes = getBitmapSizes(input);
-                photoW = photoSizes[0];
-                photoH = photoSizes[1];
-
                 // figure out which way needs to be reduced less
                 if (photoW > 0 && photoH > 0) {
                     if (targetW > 0 && targetH > 0) {
@@ -500,6 +497,18 @@ public class MblUtils {
                     } else if (targetH > 0) {
                         scaleFactor = photoH / targetH;
                     }
+                }
+            }
+
+            // ensure sizes not exceed 4096
+            final int MAX_SIZE = 4096;
+            while (true) {
+                int resultWidth     = scaleFactor <= 1 ? photoW : (photoW / scaleFactor);
+                int resultHeight    = scaleFactor <= 1 ? photoH : (photoH / scaleFactor);
+                if (resultWidth > MAX_SIZE || resultHeight > MAX_SIZE) {
+                    scaleFactor++;
+                } else {
+                    break;
                 }
             }
 
