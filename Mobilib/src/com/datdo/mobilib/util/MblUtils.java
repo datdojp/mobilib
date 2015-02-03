@@ -476,7 +476,7 @@ public class MblUtils {
         public abstract Bitmap decodeBitmap(T input, BitmapFactory.Options options);
 
         public Bitmap load(final int targetW, final int targetH, T input) {
-            
+
             int scaleFactor = 1;
             int photoW = 0;
             int photoH = 0;
@@ -1584,46 +1584,36 @@ public class MblUtils {
     }
      */
 
-    // ref: http://stackoverflow.com/questions/3105673/android-how-to-kill-an-application-with-all-its-activities
     /**
      * <pre>
      * Kill app.
+     * Reference: http://stackoverflow.com/questions/6330200/how-to-quit-android-application-programmatically
      * </pre>
      * @param mainActivityClass {@link Class} object of app 's main activity
      */
     public static void closeApp(final Class<? extends Activity> mainActivityClass) {
 
-        final Runnable closeAppAction = new Runnable() {
-            @Override
-            public void run() {
-                android.os.Process.killProcess(android.os.Process.myPid());
-            }
-        };
-
+        // start main activity
         Context context = getCurrentContext();
-        if (mainActivityClass.isInstance(context)) {
-            closeAppAction.run();
-        } else {
-            // start main activity
-            Intent intent = new Intent(context, mainActivityClass);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            context.startActivity(intent);
+        Intent intent = new Intent(context, mainActivityClass);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
 
-            // wait until main activity is resumed
-            MblEventCenter.addListener(new MblStrongEventListener() {
-                @Override
-                public void onEvent(Object sender, String name, Object... args) {
-                    Activity activity = (Activity) MblEventCenter.getArgAt(0, args);
-                    if (activity == null) {
-                        return;
-                    }
-                    if (mainActivityClass.isInstance(activity)) {
-                        terminate();
-                        closeAppAction.run();
-                    }
+        // wait until main activity is resumed
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                Activity activity = (Activity) MblEventCenter.getArgAt(0, args);
+                if (activity == null) {
+                    return;
                 }
-            }, MblCommonEvents.ACTIVITY_RESUMED);
-        }
+                if (mainActivityClass.isInstance(activity)) {
+                    terminate();
+                    activity.finish();
+                    System.exit(0);
+                }
+            }
+        }, MblCommonEvents.ACTIVITY_CREATED);
     }
 
     /**
