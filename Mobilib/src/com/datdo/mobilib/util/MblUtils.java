@@ -1725,27 +1725,23 @@ public class MblUtils {
                     int h = sizes[1];
                     int maxSize = Math.max(w, h);
 
-                    // check if we need to process the bitmap
-                    if (maxSize <= maxSizeLimit) {
-                        scaledImagePath = path;
-                    } else {
+                    // load bitmap with scale factor so that it is closest to maxSizeLimit
+                    BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+                    bmOptions.inSampleSize = (int) Math.ceil(1.0f * maxSize / maxSizeLimit);
+                    bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+                    bmOptions.inDither = true;
+                    Bitmap bm = BitmapFactory.decodeFile(path, bmOptions);
 
-                        scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
+                    // correct orientation
+                    bm = correctBitmapOrientation(path, bm);
 
-                        // load bitmap with scale factor so that it is closest to maxSizeLimit
-                        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-                        bmOptions.inSampleSize = (int) Math.ceil(1.0f * maxSize / maxSizeLimit);
-                        bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-                        bmOptions.inDither = true;
-                        Bitmap bm = BitmapFactory.decodeFile(path, bmOptions);
-
-                        // write bitmap to file
-                        FileOutputStream os = new FileOutputStream(scaledImagePath);
-                        bm.compress(CompressFormat.JPEG, 100, os);
-                        os.flush();
-                        os.close();
-                        bm.recycle();
-                    }
+                    // write bitmap to file
+                    scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
+                    FileOutputStream os = new FileOutputStream(scaledImagePath);
+                    bm.compress(CompressFormat.JPEG, 100, os);
+                    os.flush();
+                    os.close();
+                    bm.recycle();
 
                     // return path to generated file
                     if (callback != null) {
