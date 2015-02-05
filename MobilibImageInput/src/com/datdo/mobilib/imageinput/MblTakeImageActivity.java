@@ -129,6 +129,18 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     }
 
     @Override
+    protected void finishInput(Object... outputData) {
+        deallocatePreviewImageView();
+        super.finishInput(outputData);
+    }
+
+    @Override
+    protected void cancelInput() {
+        deallocatePreviewImageView();
+        super.cancelInput();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         if (mStartTakePhotoOnResume) {
@@ -159,6 +171,9 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     }
 
     private void takePhoto() {
+
+        deallocatePreviewImageView();
+
         File tempFile = getTempFile(UUID.randomUUID().toString() + ".jpg");
         if (tempFile != null) {
             mTakenPhotoUri = Uri.fromFile(tempFile);
@@ -296,7 +311,6 @@ public class MblTakeImageActivity extends MblDataInputActivity {
                     @Override
                     public void run() {
                         // display bitmap
-                        MblUtils.recycleImageView(mPreviewImageView);
                         mPreviewImageView.setImageBitmap(bm);
 
                         // set min and max for zoom
@@ -336,7 +350,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
     @Override
     protected void onDestroy() {
-        MblUtils.recycleImageView(mPreviewImageView);
+        deallocatePreviewImageView();
         super.onDestroy();
     }
 
@@ -381,5 +395,14 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     public static interface MblTakeImageCallback {
         public void onFinish(String path);
         public void onCancel();
+    }
+
+    private void deallocatePreviewImageView() {
+        MblUtils.executeOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                MblUtils.recycleImageView(mPreviewImageView);
+            }
+        });
     }
 }
