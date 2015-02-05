@@ -487,11 +487,7 @@ public class MblUtils {
                 // figure out which way needs to be reduced less
                 if (photoW > 0 && photoH > 0) {
                     if (targetW > 0 && targetH > 0) {
-                        if ((targetW > targetH && photoW < photoH) || (targetW < targetH && photoW > photoH)) {
-                            scaleFactor = Math.max(photoW / targetW, photoH / targetH);
-                        } else {
-                            scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-                        }
+                        scaleFactor = Math.min(photoW / targetW, photoH / targetH);
                     } else if (targetW > 0) {
                         scaleFactor = photoW / targetW;
                     } else if (targetH > 0) {
@@ -521,6 +517,33 @@ public class MblUtils {
 
             // decode the bitmap
             Bitmap bm = decodeBitmap(input, bmOptions);
+
+            // ensure bitmap match exact size
+            if (bm != null && bm.getWidth() > 0 && bm.getHeight() > 0) {
+                float s = -1;
+                if (targetW > 0 && targetH > 0) {
+                    if (bm.getWidth() > targetW || bm.getHeight() > targetH) {
+                        s = Math.min(1.0f * targetW / bm.getWidth(), 1.0f * targetH / bm.getHeight());
+                    }
+                } else if (targetW > 0) {
+                    if (bm.getWidth() > targetW) {
+                        s = 1.0f * targetW / bm.getWidth();
+                    }
+                } else if (targetH > 0) {
+                    if (bm.getHeight() > targetH) {
+                        s = 1.0f * targetH / bm.getHeight();
+                    }
+                }
+
+                if (s > 0) {
+                    Matrix matrix = new Matrix();
+                    matrix.postScale(s, s);
+                    Bitmap scaledBm = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), matrix, false);
+                    bm.recycle();
+                    bm = scaledBm;
+                }
+            }
+
             return bm;
         }
     }
@@ -1719,21 +1742,8 @@ public class MblUtils {
                 String scaledImagePath = null;
 
                 try {
-                    // check size
-                    int[] sizes = MblUtils.getBitmapSizes(path);
-                    int w = sizes[0];
-                    int h = sizes[1];
-                    int maxSize = Math.max(w, h);
-
-                    // load bitmap with scale factor so that it is closest to maxSizeLimit
-                    BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-                    bmOptions.inSampleSize = (int) Math.ceil(1.0f * maxSize / maxSizeLimit);
-                    bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-                    bmOptions.inDither = true;
-                    Bitmap bm = BitmapFactory.decodeFile(path, bmOptions);
-
-                    // correct orientation
-                    bm = correctBitmapOrientation(path, bm);
+                    // load
+                    Bitmap bm = loadBitmapMatchSpecifiedSize(maxSizeLimit, maxSizeLimit, path);
 
                     // write bitmap to file
                     scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
@@ -1814,7 +1824,6 @@ public class MblUtils {
     /**
      * <pre>
      * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
-     * If OutOfMemoryError occurs, it will retry 2 times more (after 2 seconds)
      * Also support scaling to specific sizes.
      * </pre>
      * @param path path to image file
@@ -1830,15 +1839,9 @@ public class MblUtils {
             final int height,
             final MblLoadBitmapForImageViewCallback callback) {
 
-        final int   N_RETRIES   = 3;
-        final int[] nRetries    = new int[] { 0 };
-        final long  RETRY_AFTER = 2000l;
-
         MblUtils.executeOnAsyncThread(new Runnable() {
             @Override
             public void run() {
-
-                nRetries[0]++;
 
                 try {
 
@@ -1857,7 +1860,7 @@ public class MblUtils {
                             }
                         }
                     });
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     Log.e(TAG, "Error occurred when loading bitmap for image view: path=" + path, e);
                     if (callback != null) {
                         MblUtils.executeOnMainThread(new Runnable() {
@@ -1867,28 +1870,6 @@ public class MblUtils {
                             }
                         });
                     }
-                } catch (OutOfMemoryError e) {
-                    Log.e(TAG, "Out of memory when loading bitmap for image view: path=" + path, e);
-                    if (nRetries[0] < N_RETRIES) {
-                        Log.d(TAG, "Retry after " + RETRY_AFTER + " ms");
-                        System.gc();
-                        final Runnable fThis = this;
-                        MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                MblUtils.executeOnAsyncThread(fThis);
-                            }
-                        }, RETRY_AFTER);
-                    } else {
-                        if (callback != null) {
-                            MblUtils.executeOnMainThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    callback.onError();
-                                }
-                            });
-                        }
-                    }
                 }
             }
         });
@@ -1897,7 +1878,6 @@ public class MblUtils {
     /**
      * <pre>
      * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
-     * If OutOfMemoryError occurs, it will retry 2 times more (after 2 seconds)
      * Automatically scale bitmap to ImageView sizes.
      * </pre>
      * @param path path to image file
