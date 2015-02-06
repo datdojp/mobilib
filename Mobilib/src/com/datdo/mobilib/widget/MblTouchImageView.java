@@ -264,6 +264,9 @@ public class MblTouchImageView extends ImageView {
 
         // create new matrix
         mMatrix = new Matrix();
+        if (mCurrentScale <= 0) {
+            mCurrentScale = getJustifiedScale(Math.min(1.0f * getWidth() / mOriginWidth, 1.0f * getHeight() / mOriginHeight));
+        }
         mMatrix.postScale(mCurrentScale, mCurrentScale, 0, 0);
 
         // save original sizes
