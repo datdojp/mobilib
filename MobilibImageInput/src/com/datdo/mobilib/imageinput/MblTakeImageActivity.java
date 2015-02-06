@@ -337,7 +337,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
                             }
                         }
                         mPreviewImageView.setOptions(
-                                minZoom, maxZoom, Math.min(Math.max(minZoom, 1), maxZoom),
+                                minZoom, maxZoom, -1,
                                 mCropFrame.findViewById(R.id.left).getWidth(),
                                 mCropFrame.findViewById(R.id.top).getHeight(),
                                 mCropFrame.findViewById(R.id.right).getWidth(),
