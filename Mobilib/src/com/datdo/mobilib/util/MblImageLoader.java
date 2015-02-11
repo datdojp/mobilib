@@ -6,8 +6,6 @@ import junit.framework.Assert;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
@@ -154,14 +152,6 @@ public abstract class MblImageLoader<T> {
 
     private static LruCache<String, MblCachedImageData> sStringPictureLruCache;
     private static boolean sDoubleCacheSize = false;
-    private static HandlerThread sHandlerThread;
-    private static Handler sHandler;
-
-    static {
-        sHandlerThread = new HandlerThread(TAG);
-        sHandlerThread.start();
-        sHandler = new Handler(sHandlerThread.getLooper());
-    }
 
     private static void initCacheIfNeeded() {
         if (sStringPictureLruCache == null) {
@@ -392,7 +382,7 @@ public abstract class MblImageLoader<T> {
                 if (MblUtils.isEmpty(bmData)) {
                     handleBadReturnedBitmap(item, view, fullCacheKey, !isNetworkConnected);
                 } else {
-                    sHandler.post(new Runnable() {
+                    MblUtils.executeOnAsyncThread(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -420,7 +410,7 @@ public abstract class MblImageLoader<T> {
                 if (MblUtils.isEmpty(path)) {
                     handleBadReturnedBitmap(item, view, fullCacheKey, !isNetworkConnected);
                 } else {
-                    sHandler.post(new Runnable() {
+                    MblUtils.executeOnAsyncThread(new Runnable() {
                         @Override
                         public void run() {
                             try {
