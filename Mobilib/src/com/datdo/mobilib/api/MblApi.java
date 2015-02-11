@@ -136,7 +136,7 @@ public class MblApi {
                 final String message = "params " + key + " must be String, Long, Integer, Double, Float, current value is " + val.getClass().getSimpleName();
                 Log.e(TAG, "GET '" + url + "': " + message);
                 if (callback != null) {
-                    fCallbackHandler.post(new Runnable() {
+                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                         @Override
                         public void run() {
                             callback.onFailure(-1, message);
@@ -165,7 +165,7 @@ public class MblApi {
                             final byte[] data = MblUtils.readCacheFile(existingCache.getFileName());
                             if (data != null) {
                                 if (callback != null) {
-                                    fCallbackHandler.post(new Runnable() {
+                                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                         @Override
                                         public void run() {
                                             callback.onSuccess(-1, data);
@@ -194,7 +194,7 @@ public class MblApi {
                     final int statusCode = response.getStatusLine().getStatusCode();
                     if (statusCode < 200 || statusCode > 299) {
                         if (callback != null) {
-                            fCallbackHandler.post(new Runnable() {
+                            MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                 @Override
                                 public void run() {
                                     callback.onFailure(statusCode, response.getStatusLine().getReasonPhrase());
@@ -212,7 +212,7 @@ public class MblApi {
                     }
 
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
                                 callback.onSuccess(statusCode, data);
@@ -222,7 +222,7 @@ public class MblApi {
                 } catch (final Exception e) {
                     Log.e(TAG, "GET request failed due to unexpected exception", e);
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
                                 callback.onFailure(-1, "Unexpected exception: " + e.getMessage());
@@ -359,7 +359,7 @@ public class MblApi {
                 final String message = "params " + key + " must be String, Long, Integer, Double, Float, InputStream or File, current value is " + val.getClass().getSimpleName();
                 Log.e(TAG, method.name() + " '" + url + "': " + message);
                 if (callback != null) {
-                    fCallbackHandler.post(new Runnable() {
+                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                         @Override
                         public void run() {
                             callback.onFailure(-1, message);
@@ -414,7 +414,7 @@ public class MblApi {
                     final int statusCode = response.getStatusLine().getStatusCode();
                     if (statusCode < 200 || statusCode > 299) {
                         if (callback != null) {
-                            fCallbackHandler.post(new Runnable() {
+                            MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                 @Override
                                 public void run() {
                                     callback.onFailure(
@@ -429,7 +429,7 @@ public class MblApi {
                     final byte[] data = EntityUtils.toByteArray(response.getEntity());
 
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
                                 callback.onSuccess(statusCode, data);
@@ -440,7 +440,7 @@ public class MblApi {
                 } catch (final Exception e) {
                     Log.e(TAG, method.name() + " request failed due to unexpected exception", e);
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
                                 callback.onFailure(-1, "Unexpected exception: " + e.getMessage());

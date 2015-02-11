@@ -56,6 +56,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.Settings.Secure;
@@ -202,6 +203,20 @@ public class MblUtils {
     }
 
     /**
+     * Execute the action on a {@link HandlerThread}
+     * @param handler {@link Handler} object bound with {@link HandlerThread} on which action will be executed
+     */
+    public static void executeOnHandlerThread(Handler handler, Runnable action) {
+        Assert.assertNotNull(action);
+        Assert.assertNotNull(handler);
+        if (Looper.myLooper() == handler.getLooper()) {
+            action.run();
+        } else {
+            handler.post(action);
+        }
+    }
+
+    /**
      * <pre>
      * Execute the action in main thread.
      * If current thread is main thread, action is executed immediately.
@@ -209,17 +224,7 @@ public class MblUtils {
      * </pre>
      */
     public static void executeOnMainThread(Runnable action) {
-        Assert.assertNotNull(action);
-        if (MblUtils.isMainThread()) {
-            action.run();
-            return;
-        }
-        Context context = getCurrentContext();
-        if (context != null && context instanceof Activity) {
-            ((Activity)context).runOnUiThread(action);
-        } else {
-            sMainThread.post(action);
-        }
+        executeOnHandlerThread(getMainThreadHandler(), action);
     }
 
     /**
