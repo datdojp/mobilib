@@ -308,7 +308,17 @@ public abstract class MblImageLoader<T> {
     }
 
     private boolean isItemBoundWithView(T item, View view) {
-        return item != null && item == getItemBoundWithView(view);
+
+        // if item and view 's item are same object, just return TRUE
+        T viewItem = getItemBoundWithView(view);
+        if (item != null && item == viewItem) {
+            return true;
+        }
+
+        // otherwise, compare id
+        String id1 = item != null ? getItemId(item) : null;
+        String id2 = viewItem != null ? getItemId(viewItem) : null;
+        return id1 != null && id2 != null && TextUtils.equals(id1, id2);
     }
 
     private void loadNextImage() {
