@@ -26,7 +26,9 @@ import org.json.JSONArray;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
@@ -1620,6 +1622,12 @@ public class MblUtils {
      * @param mainActivityClass {@link Class} object of app 's main activity
      */
     public static void closeApp(final Class<? extends Activity> mainActivityClass) {
+        closeApp(mainActivityClass, null);
+    }
+
+    public static void closeApp(
+            final Class<? extends Activity> mainActivityClass,
+            final Runnable beforeCloseAction) {
 
         // start main activity
         Context context = getCurrentContext();
@@ -1638,10 +1646,35 @@ public class MblUtils {
                 if (mainActivityClass.isInstance(activity)) {
                     terminate();
                     activity.finish();
+                    if (beforeCloseAction != null) {
+                        beforeCloseAction.run();
+                    }
                     System.exit(0);
                 }
             }
         }, MblCommonEvents.ACTIVITY_CREATED);
+    }
+
+    /**
+     * <pre>
+     * Kill app and restart app after 500ms
+     * </pre>
+     * @param mainActivityClass {@link Class} object of app 's main activity
+     */
+    public static void restartApp(final Class<? extends Activity> mainActivityClass) {
+        closeApp(mainActivityClass, new Runnable() {
+            @Override
+            public void run() {
+                Context context = MblUtils.getCurrentContext();
+                PendingIntent pendingIntent = PendingIntent.getActivity(
+                        context,
+                        1424287352,
+                        new Intent(context, mainActivityClass),
+                        PendingIntent.FLAG_CANCEL_CURRENT);
+                AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+                alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 500, pendingIntent);
+            }
+        });
     }
 
     /**
