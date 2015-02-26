@@ -1,10 +1,13 @@
 package com.datdo.mobilib.api;
 
-import com.datdo.mobilib.util.MblUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+
+import com.datdo.mobilib.util.MblUtils;
 
 class MblCache extends DBBase {
     private static final String TABLE = "cache";
@@ -59,6 +62,18 @@ class MblCache extends DBBase {
         return ret;
     }
 
+    public static List<MblCache> getAll() {
+        Cursor cur = getDatabase().query(TABLE, null, null, null, null, null, null);
+        List<MblCache> ret = new ArrayList<MblCache>();
+        while (cur.moveToNext()) {
+            MblCache c = new MblCache();
+            c.setKey(cur.getString(0));
+            c.setDate(cur.getLong(1));
+            ret.add(c);
+        }
+        cur.close();
+        return ret;
+    }
 
     // GENERATED
 

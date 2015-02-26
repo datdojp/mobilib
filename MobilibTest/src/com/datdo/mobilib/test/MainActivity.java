@@ -4,7 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Toast;
 
+import com.datdo.mobilib.api.MblApi;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.test.asynctask.AsyncTaskTestActivity;
 import com.datdo.mobilib.test.commonevents.CommonEventsTestActivity;
@@ -68,6 +70,14 @@ public class MainActivity extends MblBaseActivity {
             @Override
             public void onClick(View arg0) {
                 openTestActivity(ImageInputTestActivity.class);
+            }
+        });
+
+        findViewById(R.id.bt_api_clear_cache).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                MblApi.clearCache();
+                MblUtils.showToast("Done", Toast.LENGTH_SHORT);
             }
         });
     }

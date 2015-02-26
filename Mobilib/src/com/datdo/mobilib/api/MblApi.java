@@ -78,7 +78,7 @@ public class MblApi {
          */
         public abstract void onFailure(int error, String errorMessage);
     }
-    
+
     /**
      * <pre>
      * Send GET request asynchronously.
@@ -243,7 +243,7 @@ public class MblApi {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static String getCacheFilePath(String url, Map<String, String> params) {
+    public static String getCacheFilePath(String url, Map<String, ? extends Object> params) {
         String fullUrl = generateGetMethodFullUrl(url, getParamsIgnoreEmptyValues(params));
         MblCache existingCache = MblCache.get(fullUrl);
         if (existingCache == null || existingCache.getFileName() == null) {
@@ -467,7 +467,7 @@ public class MblApi {
      */
     public static void delete(
             String url,
-            Map<String, Object> params,
+            Map<String, ? extends Object> params,
             Map<String, String> headerParams,
             boolean isIgnoreSSLCertificate,
             MblApiCallback callback,
@@ -628,5 +628,25 @@ public class MblApi {
             return true;
         }
         return false;
+    }
+
+    /**
+     * <pre>
+     * Clear cache of all GET requests.
+     * </pre>
+     */
+    public static void clearCache() {
+
+        // delete cache file
+        List<MblCache> caches = MblCache.getAll();
+        for (MblCache c : caches) {
+            String path = MblUtils.getCacheAsbPath(c.getFileName());
+            if (!MblUtils.isEmpty(path)) {
+                new File(path).delete();
+            }
+        }
+
+        // delete cache records
+        MblCache.deleteAll();
     }
 }
