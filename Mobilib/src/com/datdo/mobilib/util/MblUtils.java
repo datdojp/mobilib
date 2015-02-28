@@ -231,6 +231,41 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Repeat an action every specified milliseconds.
+     * </pre>
+     * @param action action to run
+     * @param delayMillis delay interval in milliseconds
+     * @return {@link Runnable} object to stop the repeating. Just call its run() method
+     */
+    public static Runnable repeatDelayed(final Runnable action, final long delayMillis) {
+
+        if (action == null || delayMillis <= 0) {
+            return new Runnable() {
+                @Override
+                public void run() {}
+            };
+        }
+
+        final Runnable hookedAction = new Runnable() {
+            @Override
+            public void run() {
+                action.run();
+                getMainThreadHandler().postDelayed(this, delayMillis);
+            }
+        };
+
+        getMainThreadHandler().postDelayed(hookedAction, delayMillis);
+
+        return new Runnable() {
+            @Override
+            public void run() {
+                getMainThreadHandler().removeCallbacks(hookedAction);
+            }
+        };
+    }
+
+    /**
+     * <pre>
      * Put an object to temporary bundle to transfer data between objects (typically between activities)
      * This method resolves inconvenience of {@link Intent} which does not allow to put any data into its extra.
      * </pre>

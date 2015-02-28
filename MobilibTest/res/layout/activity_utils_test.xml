@@ -37,7 +37,7 @@
             android:paddingTop="10dp"
             android:text="CloseApp"
             tools:ignore="HardcodedText" />
-        
+
         <Button
             android:id="@+id/bt_hash_key"
             android:layout_width="match_parent"
@@ -46,6 +46,26 @@
             android:paddingBottom="15dp"
             android:paddingTop="10dp"
             android:text="HashKey"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_start_repeat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="StartRepeatingAction"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_stop_repeat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="StopRepeatingAction"
             tools:ignore="HardcodedText" />
     </LinearLayout>
 
