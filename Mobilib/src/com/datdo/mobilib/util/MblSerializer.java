@@ -19,21 +19,27 @@ public class MblSerializer {
         public void run(Runnable finishCallback);
     }
 
-    private static final List<Task> sTasks              = new ArrayList<Task>();
-    private static boolean          sIsRunning          = false;
-    private static final Runnable   sFinishCallback     = new Runnable() {
+    private final List<Task>    mTasks              = new ArrayList<Task>();
+    private boolean             mIsRunning          = false;
+    private final Runnable      mFinishCallback     = new Runnable() {
         @Override
         public void run() {
-            sIsRunning = false;
+            mIsRunning = false;
             runNextTask();
         }
     };
 
-    private static void runNextTask() {
-        synchronized (MblSerializer.class) {
-            if (!sIsRunning && !sTasks.isEmpty()) {
-                sIsRunning = true;
-                sTasks.remove(0).run(sFinishCallback);
+    private void runNextTask() {
+        synchronized (this) {
+            if (!mIsRunning && !mTasks.isEmpty()) {
+                mIsRunning = true;
+                // post to main thread to prevent StackOverFlow
+                MblUtils.getMainThreadHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTasks.remove(0).run(mFinishCallback);
+                    }
+                });
             }
         }
     }
@@ -44,10 +50,32 @@ public class MblSerializer {
      * </pre>
      * @param task
      */
-    public static void run(Task task) {
-        synchronized (MblSerializer.class) {
-            sTasks.add(task);
+    public void run(Task task) {
+        synchronized (this) {
+            mTasks.add(task);
             runNextTask();
+        }
+    }
+
+    /**
+     * <pre>
+     * TBD
+     * </pre>
+     * @param task
+     * @return
+     */
+    public boolean cancel(Task task) {
+        synchronized (this) {
+            return mTasks.remove(task);
+        }
+    }
+
+    /**
+     * <pre>TBD</pre>
+     */
+    public void cancelAll() {
+        synchronized (this) {
+            mTasks.clear();
         }
     }
 }
