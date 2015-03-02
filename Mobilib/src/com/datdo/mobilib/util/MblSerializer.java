@@ -30,18 +30,18 @@ public class MblSerializer {
     };
 
     private void runNextTask() {
-        synchronized (this) {
-            if (!mIsRunning && !mTasks.isEmpty()) {
-                mIsRunning = true;
-                // post to main thread to prevent StackOverFlow
-                MblUtils.getMainThreadHandler().post(new Runnable() {
-                    @Override
-                    public void run() {
+        // post to main thread to prevent StackOverFlow
+        MblUtils.getMainThreadHandler().post(new Runnable() {
+            @Override
+            public void run() {
+                synchronized (MblSerializer.this) {
+                    if (!mIsRunning && !mTasks.isEmpty()) {
+                        mIsRunning = true;
                         mTasks.remove(0).run(mFinishCallback);
                     }
-                });
+                }
             }
-        }
+        });
     }
 
     /**
