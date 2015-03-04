@@ -114,17 +114,9 @@ public class MblEventCenter {
                 });
             }
         });
-
-
-        // post to main thread to prevent StackOverFlow
-        MblUtils.getMainThreadHandler().post(new Runnable() {
-            @Override
-            public void run() {
-                for (Runnable r : actions) {
-                    r.run();
-                }
-            }
-        });
+        for (Runnable r : actions) {
+            MblUtils.executeOnMainThread(r);
+        }
     }
 
     /**
