@@ -85,7 +85,7 @@ public class MblMemCache<T> {
             if (cacheItem == null) {
                 return null;
             } else {
-                if (mDuration <= 0 || cacheItem.mPutAt + mDuration > System.currentTimeMillis()) {
+                if (mDuration <= 0 || System.currentTimeMillis() - cacheItem.mPutAt < mDuration) {
                     return cacheItem.mObject;
                 } else {
                     sMap.remove(cachId);
