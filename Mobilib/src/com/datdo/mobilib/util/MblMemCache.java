@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import junit.framework.Assert;
-
-import com.datdo.mobilib.util.MblUtils;
 
 /**
  * <pre>
@@ -28,6 +27,10 @@ public class MblMemCache<T> {
             mObject = object;
             mPutAt = putAt;
         }
+    }
+
+    public static interface IterateCallback<T> {
+        public void onInterate(T object);
     }
 
     private static final Map<String, CacheItem> sMap = new HashMap<String, CacheItem>();
@@ -114,6 +117,49 @@ public class MblMemCache<T> {
                 }
             }
             return ret;
+        }
+    }
+
+    /**
+     * <pre>TBD</pre>
+     * @param id
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public T remove(String id) {
+        synchronized (MblMemCache.class) {
+            String cachId = getCacheId(id);
+            CacheItem<T> cacheItem = sMap.get(cachId);
+            if (cacheItem == null) {
+                return null;
+            } else {
+                sMap.remove(cachId);
+                return cacheItem.mObject;
+            }
+        }
+    }
+
+    /**
+     * <pre>TBD</pre>
+     * @param cb
+     */
+    public void iterateWithCallback(IterateCallback<T> cb) {
+
+        if (cb == null) {
+            return;
+        }
+
+        synchronized (MblMemCache.class) {
+            Set<String> cacheIds = sMap.keySet();
+            String prefix = mTypeName + "#";
+            for (String cid : cacheIds) {
+                if (cid.startsWith(prefix)) {
+                    T o = get(cid);
+                    if (o != null) {
+                        cb.onInterate(o);
+                    }
+                }
+            }
         }
     }
 
