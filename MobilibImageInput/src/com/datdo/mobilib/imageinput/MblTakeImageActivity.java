@@ -46,6 +46,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     private View    mCropFrame;
     private View    mCropFrameMid;
     private boolean mStartTakePhotoOnResume;
+    private boolean mIsPortrait;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,6 +127,9 @@ public class MblTakeImageActivity extends MblDataInputActivity {
                 }
             }
         });
+
+        // store orientation
+        mIsPortrait = MblUtils.isPortraitDisplay();
     }
 
     @Override
@@ -272,7 +276,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
     private void loadPhotoFromExternal(final String imagePath) {
 
-        if (mPreviewImageView.getWidth() == 0 || mPreviewImageView.getHeight() == 0) {
+        if (mPreviewImageView.getWidth() == 0 || mPreviewImageView.getHeight() == 0 || mIsPortrait != MblUtils.isPortraitDisplay()) {
             mPreviewImageView.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
@@ -336,12 +340,18 @@ public class MblTakeImageActivity extends MblDataInputActivity {
                                 maxZoom = maxPerMin * minZoom;
                             }
                         }
-                        mPreviewImageView.setOptions(
-                                minZoom, maxZoom, -1,
-                                mCropFrame.findViewById(R.id.left).getWidth(),
-                                mCropFrame.findViewById(R.id.top).getHeight(),
-                                mCropFrame.findViewById(R.id.right).getWidth(),
-                                mCropFrame.findViewById(R.id.bottom).getHeight());
+                        if (needCrop()) {
+                            mPreviewImageView.setOptions(
+                                    minZoom, maxZoom, -1,
+                                    mCropFrame.findViewById(R.id.left).getWidth(),
+                                    mCropFrame.findViewById(R.id.top).getHeight(),
+                                    mCropFrame.findViewById(R.id.right).getWidth(),
+                                    mCropFrame.findViewById(R.id.bottom).getHeight());
+                        } else {
+                            mPreviewImageView.setOptions(
+                                    minZoom, maxZoom, -1,
+                                    0, 0, 0, 0);
+                        }
                     }
                 });
             }
