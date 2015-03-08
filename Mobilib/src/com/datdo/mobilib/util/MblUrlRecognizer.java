@@ -55,8 +55,7 @@ public class MblUrlRecognizer {
     private static final String HTTP_PATTERN = HTTP_PREFIX_PATTERN + LINK_BODY_PATTERN;
     private static final String HTTPS_PATTERN = HTTPS_PREFIX_PATTERN + LINK_BODY_PATTERN;
 
-    private static final String LINK_PATTERN = "[Hh][Tt][Tt][Pp][Ss]?://" + LINK_BODY_PATTERN;
-    static final Pattern p2 = Pattern.compile(LINK_PATTERN);
+    static final Pattern p2 =  android.util.Patterns.WEB_URL;
     StringBuilder result = new StringBuilder();
     StringBuilder source;
 
@@ -116,7 +115,7 @@ public class MblUrlRecognizer {
     }
 
     static boolean isLink(String s) {
-        return !TextUtils.isEmpty(s) && s.matches(LINK_PATTERN);
+        return !TextUtils.isEmpty(s) && p2.matcher(s).matches();
     }
 
     // android do not understand prefixes like "HTtP" or "hTtP"
