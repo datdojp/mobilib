@@ -2,6 +2,7 @@ package com.datdo.mobilib.util;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,15 +37,25 @@ public class MblMemCache<T> {
     private static final Map<String, CacheItem> sMap = new HashMap<String, CacheItem>();
 
     private String getCacheId(String id) {
-        return mTypeName + "#" + id;
+        if (isCacheIdOfThisClass(id)) {
+            return id;
+        } else {
+            return mCacheIdPrefix + id;
+        }
+    }
+
+    private boolean isCacheIdOfThisClass(String id) {
+        return id.startsWith(mCacheIdPrefix);
     }
 
     private String mTypeName;
+    private String mCacheIdPrefix;
     private long mDuration;
 
     public MblMemCache(Class<T> type, long duration) {
         Assert.assertNotNull(type);
         mTypeName = type.getName();
+        mCacheIdPrefix = mTypeName + "#";
         mDuration = duration;
     }
 
@@ -150,10 +161,9 @@ public class MblMemCache<T> {
         }
 
         synchronized (MblMemCache.class) {
-            Set<String> cacheIds = sMap.keySet();
-            String prefix = mTypeName + "#";
+            Set<String> cacheIds = new HashSet<String>(sMap.keySet());
             for (String cid : cacheIds) {
-                if (cid.startsWith(prefix)) {
+                if (isCacheIdOfThisClass(cid)) {
                     T o = get(cid);
                     if (o != null) {
                         cb.onInterate(o);
@@ -184,9 +194,10 @@ public class MblMemCache<T> {
     public void clear() {
         synchronized (MblMemCache.class) {
             List<String> removedIds = new ArrayList<String>();
-            for (String mapId : sMap.keySet()) {
-                if (mapId.startsWith(mTypeName)) {
-                    removedIds.add(mapId);
+            Set<String> cacheIds = new HashSet<String>(sMap.keySet());
+            for (String cid : cacheIds) {
+                if (isCacheIdOfThisClass(cid)) {
+                    removedIds.add(cid);
                 }
             }
             for (String id : removedIds) {
