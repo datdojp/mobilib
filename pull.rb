@@ -37,7 +37,7 @@ def pull(path, level)
 			`adb shell "run-as #{PACKAGE} chmod 777 #{ROOT}/#{sub_path}"`
 			pull sub_path, level + 1
 		else
-			save_to_path = "#{SAVE_TO}/#{sub_path}"
+			save_to_path = "#{SAVE_TO}/#{path}"
 			print "#{indent}#{t}\t\t\t"
 			`mkdir -p #{save_to_path}`
 			`adb shell "run-as #{PACKAGE} chmod 777 #{ROOT}/#{sub_path}"`
