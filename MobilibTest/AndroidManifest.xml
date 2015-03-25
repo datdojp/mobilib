@@ -58,6 +58,9 @@
         <activity
             android:name="com.datdo.mobilib.imageinput.MblPickImageActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".carrier.CarrierTestActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
     </application>
 
 </manifest>

@@ -9,6 +9,7 @@ import android.widget.Toast;
 import com.datdo.mobilib.api.MblApi;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.test.asynctask.AsyncTaskTestActivity;
+import com.datdo.mobilib.test.carrier.CarrierTestActivity;
 import com.datdo.mobilib.test.commonevents.CommonEventsTestActivity;
 import com.datdo.mobilib.test.imageinput.ImageInputTestActivity;
 import com.datdo.mobilib.test.imageloader.ImageLoaderTestActivity;
@@ -78,6 +79,13 @@ public class MainActivity extends MblBaseActivity {
             public void onClick(View arg0) {
                 MblApi.clearCache();
                 MblUtils.showToast("Done", Toast.LENGTH_SHORT);
+            }
+        });
+
+        findViewById(R.id.bt_carrier).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                openTestActivity(CarrierTestActivity.class);
             }
         });
     }
