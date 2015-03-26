@@ -43,6 +43,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.Signature;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
@@ -61,6 +62,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore.Images;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.text.Spanned;
@@ -1759,6 +1761,32 @@ public class MblUtils {
         link = lowerCaseHttpxPrefix(link);
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
         getCurrentContext().startActivity(browserIntent);
+    }
+    
+    private static final String URI_FILE_PREFIX             = "file://";
+    private static final String URI_CONTENT_PREFIX          = "content://";
+
+    /**
+     * <pre>
+     * Extract file path from URI, which can be used when handling {@link Intent#ACTION_SEND} or {@link Intent#ACTION_SEND_MULTIPLE}
+     * </pre>
+     * @param uri {@link Uri} object to extract
+     * @return path to the file
+     */
+    public static String extractFilePathFromUri(Uri uri) {
+        String uriString = uri.toString();
+        if (uriString != null && uriString.startsWith(URI_FILE_PREFIX)) {
+            return uriString.substring(URI_FILE_PREFIX.length());
+        }
+        if (uriString != null && uriString.startsWith(URI_CONTENT_PREFIX)) {
+            Cursor cursor = getCurrentContext().getContentResolver().query(uri, null, null, null, null);
+            String filePath = null;
+            if (cursor != null && cursor.moveToFirst()) {
+                filePath = cursor.getString(cursor.getColumnIndexOrThrow(Images.Media.DATA));
+            }
+            return filePath;
+        }
+        return null; // invalid URI
     }
 
     /**
