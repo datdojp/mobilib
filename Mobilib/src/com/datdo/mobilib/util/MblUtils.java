@@ -100,7 +100,6 @@ public class MblUtils {
 
     private static SharedPreferences sPrefs;
     private static Context sCurrentContext;
-    private static LayoutInflater sLayoutInflater;
 
     public static void init(Context context) {
         sCurrentContext = context;
@@ -161,10 +160,7 @@ public class MblUtils {
      * </pre>
      */
     public static LayoutInflater getLayoutInflater() {
-        if (sLayoutInflater == null) {
-            sLayoutInflater = LayoutInflater.from(getCurrentContext());
-        }
-        return sLayoutInflater;
+        return LayoutInflater.from(getCurrentContext());
     }
 
     /**
