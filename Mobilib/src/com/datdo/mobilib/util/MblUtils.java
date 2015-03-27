@@ -6,6 +6,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -91,6 +94,7 @@ import com.datdo.mobilib.event.MblStrongEventListener;
 
 public class MblUtils {
     private static final String TAG = getTag(MblUtils.class);
+    private static final String UTF8 = "UTF-8";
     private static float density = 0;
     private static float scaledDensity = 0;
     private static final String EMAIL_TYPE = "message/rfc822";
@@ -1758,7 +1762,7 @@ public class MblUtils {
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
         getCurrentContext().startActivity(browserIntent);
     }
-    
+
     private static final String URI_FILE_PREFIX             = "file://";
     private static final String URI_CONTENT_PREFIX          = "content://";
 
@@ -1772,7 +1776,12 @@ public class MblUtils {
     public static String extractFilePathFromUri(Uri uri) {
         String uriString = uri.toString();
         if (uriString != null && uriString.startsWith(URI_FILE_PREFIX)) {
-            return uriString.substring(URI_FILE_PREFIX.length());
+            try {
+                return URLDecoder.decode(uriString.substring(URI_FILE_PREFIX.length()), UTF8);
+            } catch (UnsupportedEncodingException e) {
+                Log.e(TAG, "Failed to extract file path from Uri", e);
+                return null;
+            }
         }
         if (uriString != null && uriString.startsWith(URI_CONTENT_PREFIX)) {
             Cursor cursor = getCurrentContext().getContentResolver().query(uri, null, null, null, null);
