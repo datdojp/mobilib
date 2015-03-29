@@ -9,6 +9,8 @@ import java.util.Set;
 
 import junit.framework.Assert;
 
+import com.datdo.mobilib.cache.MblIDConverter;
+
 /**
  * <pre>
  * TBD
@@ -19,12 +21,12 @@ import junit.framework.Assert;
 @SuppressWarnings("rawtypes")
 public class MblMemCache<T> {
 
-    private static class CacheItem<V> {
+    private static class CacheItem<T> {
 
-        V mObject;
-        long mPutAt;
+        T       mObject;
+        long    mPutAt;
 
-        CacheItem(V object, long putAt) {
+        CacheItem(T object, long putAt) {
             mObject = object;
             mPutAt = putAt;
         }
@@ -34,29 +36,15 @@ public class MblMemCache<T> {
         public void onInterate(T object);
     }
 
-    private static final Map<String, CacheItem> sMap = new HashMap<String, CacheItem>();
-
-    private String getCacheId(String id) {
-        if (isCacheIdOfThisClass(id)) {
-            return id;
-        } else {
-            return mCacheIdPrefix + id;
-        }
-    }
-
-    private boolean isCacheIdOfThisClass(String id) {
-        return id.startsWith(mCacheIdPrefix);
-    }
-
-    private String mTypeName;
-    private String mCacheIdPrefix;
-    private long mDuration;
+    private Map<String, CacheItem>  mMap;
+    private long                    mDuration;
+    private MblIDConverter          mIdConverter;
 
     public MblMemCache(Class<T> type, long duration) {
         Assert.assertNotNull(type);
-        mTypeName = type.getName();
-        mCacheIdPrefix = mTypeName + "#";
-        mDuration = duration;
+        mMap            = new HashMap<String, CacheItem>();
+        mDuration       = duration;
+        mIdConverter    = new MblIDConverter(type);
     }
 
     /**
@@ -66,18 +54,28 @@ public class MblMemCache<T> {
      * @param id
      * @param object
      */
-    @SuppressWarnings("unchecked")
     public void put(String id, T object) {
-        synchronized (MblMemCache.class) {
-            String cachId = getCacheId(id);
-            CacheItem<T> cacheItem = sMap.get(cachId);
+        put(id, object, System.currentTimeMillis());
+    }
+
+    /**
+     * TBD
+     * @param id
+     * @param object
+     * @param putAt
+     */
+    @SuppressWarnings("unchecked")
+    public void put(String id, T object, long putAt) {
+        synchronized (this) {
+            String cacheId = mIdConverter.toComboId(id);
+            CacheItem<T> cacheItem = mMap.get(cacheId);
             if (cacheItem == null) {
-                cacheItem = new CacheItem<T>(object, System.currentTimeMillis());
+                cacheItem = new CacheItem<T>(object, putAt);
             } else {
-                cacheItem.mObject = object;
-                cacheItem.mPutAt = System.currentTimeMillis();
+                cacheItem.mObject   = object;
+                cacheItem.mPutAt    = putAt;
             }
-            sMap.put(cachId, cacheItem);
+            mMap.put(cacheId, cacheItem);
         }
     }
 
@@ -90,16 +88,16 @@ public class MblMemCache<T> {
      */
     @SuppressWarnings("unchecked")
     public T get(String id) {
-        synchronized (MblMemCache.class) {
-            String cachId = getCacheId(id);
-            CacheItem<T> cacheItem = sMap.get(cachId);
+        synchronized (this) {
+            String cacheId = mIdConverter.toComboId(id);
+            CacheItem<T> cacheItem = mMap.get(cacheId);
             if (cacheItem == null) {
                 return null;
             } else {
                 if (mDuration <= 0 || System.currentTimeMillis() - cacheItem.mPutAt < mDuration) {
                     return cacheItem.mObject;
                 } else {
-                    sMap.remove(cachId);
+                    mMap.remove(cacheId);
                     return null;
                 }
             }
@@ -119,7 +117,7 @@ public class MblMemCache<T> {
             return new ArrayList<T>();
         }
 
-        synchronized (MblMemCache.class) {
+        synchronized (this) {
             List<T> ret = new ArrayList<T>();
             for (String id : ids) {
                 T object = get(id);
@@ -138,13 +136,13 @@ public class MblMemCache<T> {
      */
     @SuppressWarnings("unchecked")
     public T remove(String id) {
-        synchronized (MblMemCache.class) {
-            String cachId = getCacheId(id);
-            CacheItem<T> cacheItem = sMap.get(cachId);
+        synchronized (this) {
+            String cacheId = mIdConverter.toComboId(id);
+            CacheItem<T> cacheItem = mMap.get(cacheId);
             if (cacheItem == null) {
                 return null;
             } else {
-                sMap.remove(cachId);
+                mMap.remove(cacheId);
                 return cacheItem.mObject;
             }
         }
@@ -152,22 +150,18 @@ public class MblMemCache<T> {
 
     /**
      * <pre>TBD</pre>
-     * @param cb
+     * @param callback
      */
-    public void iterateWithCallback(IterateCallback<T> cb) {
+    public void iterateWithCallback(IterateCallback<T> callback) {
 
-        if (cb == null) {
-            return;
-        }
+        Assert.assertNotNull(callback);
 
-        synchronized (MblMemCache.class) {
-            Set<String> cacheIds = new HashSet<String>(sMap.keySet());
+        synchronized (this) {
+            Set<String> cacheIds = new HashSet<String>(mMap.keySet());
             for (String cid : cacheIds) {
-                if (isCacheIdOfThisClass(cid)) {
-                    T o = get(cid);
-                    if (o != null) {
-                        cb.onInterate(o);
-                    }
+                T o = get(cid);
+                if (o != null) {
+                    callback.onInterate(o);
                 }
             }
         }
@@ -181,7 +175,7 @@ public class MblMemCache<T> {
      * @return
      */
     public boolean containsKey(String id) {
-        synchronized (MblMemCache.class) {
+        synchronized (this) {
             return get(id) != null;
         }
     }
@@ -192,17 +186,8 @@ public class MblMemCache<T> {
      * </pre>
      */
     public void clear() {
-        synchronized (MblMemCache.class) {
-            List<String> removedIds = new ArrayList<String>();
-            Set<String> cacheIds = new HashSet<String>(sMap.keySet());
-            for (String cid : cacheIds) {
-                if (isCacheIdOfThisClass(cid)) {
-                    removedIds.add(cid);
-                }
-            }
-            for (String id : removedIds) {
-                sMap.remove(id);
-            }
+        synchronized (this) {
+            mMap.clear();
         }
     }
 }

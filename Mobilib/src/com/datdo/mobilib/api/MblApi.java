@@ -162,7 +162,7 @@ public class MblApi {
                                     System.currentTimeMillis() - existingCache.getDate() <= cacheDuration    );
                     if (shouldReadFromCache) {
                         try {
-                            final byte[] data = MblUtils.readCacheFile(existingCache.getFileName());
+                            final byte[] data = MblUtils.readCacheFile(getCacheFileName(existingCache));
                             if (data != null) {
                                 if (callback != null) {
                                     MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
@@ -208,7 +208,7 @@ public class MblApi {
                     final byte[] data = EntityUtils.toByteArray(response.getEntity());
 
                     if (isCacheEnabled) {
-                        saveCache(existingCache, fullUrl, data);
+                        saveCache(fullUrl, data);
                     }
 
                     if (callback != null) {
@@ -246,15 +246,17 @@ public class MblApi {
     public static String getCacheFilePath(String url, Map<String, ? extends Object> params) {
         String fullUrl = generateGetMethodFullUrl(url, getParamsIgnoreEmptyValues(params));
         MblCache existingCache = MblCache.get(fullUrl);
-        if (existingCache == null || existingCache.getFileName() == null) {
-            return null;
+        if (existingCache != null) {
+            String cacheFileName = getCacheFileName(existingCache);
+            if (!MblUtils.isEmpty(cacheFileName)) {
+                String path = MblUtils.getCacheAsbPath(cacheFileName);
+                File file = new File(path);
+                if (file.exists() && file.length() > 0) {
+                    return path;
+                }
+            }
         }
-        String path = MblUtils.getCacheAsbPath(existingCache.getFileName());
-        File file = new File(path);
-        if (!file.exists() || file.length() == 0) {
-            return null;
-        }
-        return path;
+        return null;
     }
 
     /**
@@ -544,20 +546,11 @@ public class MblApi {
         }
     }
 
-    private static void saveCache(MblCache existingCache, String fullUrl, byte[] data) {
+    private static void saveCache(String fullUrl, byte[] data) {
         try {
-            MblCache cacheToSave;
-            if (existingCache == null) {
-                cacheToSave = new MblCache();
-                cacheToSave.setKey(fullUrl);
-                cacheToSave.setDate(System.currentTimeMillis());
-                MblCache.insert(cacheToSave);
-            } else {
-                cacheToSave = existingCache;
-                cacheToSave.setDate(System.currentTimeMillis());
-                MblCache.update(cacheToSave);
-            }
-            MblUtils.saveCacheFile(data, cacheToSave.getFileName());
+            MblCache c = new MblCache(fullUrl, System.currentTimeMillis());
+            MblCache.upsert(c);
+            MblUtils.saveCacheFile(data, getCacheFileName(c));
         } catch (Exception e) {
             Log.e(TAG, "Failed to cache url: " + fullUrl, e);
         }
@@ -640,7 +633,7 @@ public class MblApi {
         // delete cache file
         List<MblCache> caches = MblCache.getAll();
         for (MblCache c : caches) {
-            String path = MblUtils.getCacheAsbPath(c.getFileName());
+            String path = MblUtils.getCacheAsbPath(getCacheFileName(c));
             if (!MblUtils.isEmpty(path)) {
                 new File(path).delete();
             }
@@ -648,5 +641,13 @@ public class MblApi {
 
         // delete cache records
         MblCache.deleteAll();
+    }
+
+    private static String getCacheFileName(MblCache c) {
+        if (c != null && !MblUtils.isEmpty(c.getKey())) {
+            return MblUtils.md5(c.getKey());
+        } else {
+            return null;
+        }
     }
 }
