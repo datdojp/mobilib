@@ -11,6 +11,8 @@ import com.datdo.mobilib.util.MblUtils;
 
 public abstract class MblCacheMaster<T> {
 
+    private static final String TAG = MblUtils.getTag(MblCacheMaster.class);
+
     protected abstract String   getObjectId(T object);
     protected abstract List<T>  fetchFromDatabase(List<String> ids);
     protected abstract void     fetchFromServer(List<String> ids, MblGetManyCallback<T> callback);
@@ -18,22 +20,22 @@ public abstract class MblCacheMaster<T> {
 
     private long            mDuration;
     private MblIDConverter  mIdConverter;
-    private MemCache        mMemCache;
+    private MblMemCache<T>  mMemCache;
     private MblSerializer   mSerializer;
-
-    private class MemCache extends MblMemCache<T> {
-        public MemCache(Class<T> type, long duration) {
-            super(type, duration);
-        }
-    }
 
     public MblCacheMaster(Class<T> type, long duration) {
         mDuration       = duration;
         mIdConverter    = new MblIDConverter(type);
-        mMemCache       = new MemCache(type, duration);
+        mMemCache       = new MblMemCache<T>(type, duration);
         mSerializer     = new MblSerializer();
     }
 
+    public void put(T object) {
+        List<T> objects = new ArrayList<T>();
+        objects.add(object);
+        put(objects);
+    }
+    
     public void put(List<T> objects) {
 
         if (MblUtils.isEmpty(objects)) {
