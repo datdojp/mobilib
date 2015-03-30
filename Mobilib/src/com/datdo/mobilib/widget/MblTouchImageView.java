@@ -1,9 +1,5 @@
 package com.datdo.mobilib.widget;
 
-import android.animation.Animator;
-import android.animation.Animator.AnimatorListener;
-import android.animation.ValueAnimator;
-import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -20,6 +16,11 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.ImageView;
+
+import com.nineoldandroids.animation.Animator;
+import com.nineoldandroids.animation.Animator.AnimatorListener;
+import com.nineoldandroids.animation.ValueAnimator;
+import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
 
 public class MblTouchImageView extends ImageView {
 
@@ -337,89 +338,87 @@ public class MblTouchImageView extends ImageView {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void onDoubleTap() {
-        if (Build.VERSION.SDK_INT >= 11) {
-            final float currentScale = mCurrentScale;
-            final float targetScale = getJustifiedScale(Math.min(1.0f * getWidth() / mOriginWidth, 1.0f * getHeight() / mOriginHeight));
+        final float currentScale = mCurrentScale;
+        final float targetScale = getJustifiedScale(Math.min(1.0f * getWidth() / mOriginWidth, 1.0f * getHeight() / mOriginHeight));
 
-            mMatrix.getValues(mMatrixValues);
-            final float currentTransX = mMatrixValues[Matrix.MTRANS_X];
-            final float currentTransY = mMatrixValues[Matrix.MTRANS_Y];
-            final float targetTransX = (getWidth() - targetScale * mOriginWidth) / 2;
-            final float targetTransY = (getHeight() - targetScale * mOriginHeight) / 2;
+        mMatrix.getValues(mMatrixValues);
+        final float currentTransX = mMatrixValues[Matrix.MTRANS_X];
+        final float currentTransY = mMatrixValues[Matrix.MTRANS_Y];
+        final float targetTransX = (getWidth() - targetScale * mOriginWidth) / 2;
+        final float targetTransY = (getHeight() - targetScale * mOriginHeight) / 2;
 
-            ValueAnimator anim = null;
+        ValueAnimator anim = null;
 
-            if (currentScale != targetScale) {
+        if (currentScale != targetScale) {
 
-                anim = ValueAnimator.ofFloat(currentScale, targetScale);
-                anim.addUpdateListener(new AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator anim) {
-                        float scale = (Float) anim.getAnimatedValue();
+            anim = ValueAnimator.ofFloat(currentScale, targetScale);
+            anim.addUpdateListener(new AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator anim) {
+                    float scale = (Float) anim.getAnimatedValue();
 
-                        mMatrix.setScale(scale, scale);
+                    mMatrix.setScale(scale, scale);
 
-                        float transX = targetTransX + (currentTransX - targetTransX) * (scale - targetScale) / (currentScale - targetScale);
-                        float transY = targetTransY + (currentTransY - targetTransY) * (scale - targetScale) / (currentScale - targetScale);
-                        mMatrix.postTranslate(transX, transY);
+                    float transX = targetTransX + (currentTransX - targetTransX) * (scale - targetScale) / (currentScale - targetScale);
+                    float transY = targetTransY + (currentTransY - targetTransY) * (scale - targetScale) / (currentScale - targetScale);
+                    mMatrix.postTranslate(transX, transY);
 
-                        MblTouchImageView.super.setImageMatrix(mMatrix);
-                    }
-                });
-                anim.addListener(new AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator anim) {}
+                    MblTouchImageView.super.setImageMatrix(mMatrix);
+                }
+            });
+            anim.addListener(new AnimatorListener() {
+                @Override
+                public void onAnimationStart(Animator anim) {}
 
-                    @Override
-                    public void onAnimationRepeat(Animator anim) {}
+                @Override
+                public void onAnimationRepeat(Animator anim) {}
 
-                    @Override
-                    public void onAnimationEnd(Animator anim) {
-                        mCurrentScale = targetScale;
-                    }
+                @Override
+                public void onAnimationEnd(Animator anim) {
+                    mCurrentScale = targetScale;
+                }
 
-                    @Override
-                    public void onAnimationCancel(Animator anim) {}
-                });
+                @Override
+                public void onAnimationCancel(Animator anim) {}
+            });
 
-            } else if (currentTransX != targetTransX) {
+        } else if (currentTransX != targetTransX) {
 
-                anim = ValueAnimator.ofFloat(currentTransX, targetTransX);
-                anim.addUpdateListener(new AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator anim) {
+            anim = ValueAnimator.ofFloat(currentTransX, targetTransX);
+            anim.addUpdateListener(new AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator anim) {
 
-                        mMatrix.setScale(targetScale, targetScale);
+                    mMatrix.setScale(targetScale, targetScale);
 
-                        float transX = (Float) anim.getAnimatedValue();
-                        float transY = targetTransY + (currentTransY - targetTransY) * (transX - targetTransX) / (currentTransX - targetTransX);
-                        mMatrix.postTranslate(transX, transY);
-                        MblTouchImageView.super.setImageMatrix(mMatrix);
-                    }
-                });
+                    float transX = (Float) anim.getAnimatedValue();
+                    float transY = targetTransY + (currentTransY - targetTransY) * (transX - targetTransX) / (currentTransX - targetTransX);
+                    mMatrix.postTranslate(transX, transY);
+                    MblTouchImageView.super.setImageMatrix(mMatrix);
+                }
+            });
 
-            } else if (currentTransY != targetTransY) {
+        } else if (currentTransY != targetTransY) {
 
-                anim = ValueAnimator.ofFloat(currentTransY, targetTransY);
-                anim.addUpdateListener(new AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator anim) {
+            anim = ValueAnimator.ofFloat(currentTransY, targetTransY);
+            anim.addUpdateListener(new AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator anim) {
 
-                        mMatrix.setScale(targetScale, targetScale);
+                    mMatrix.setScale(targetScale, targetScale);
 
-                        float transY = (Float) anim.getAnimatedValue();
-                        float transX = targetTransX + (currentTransX - targetTransX) * (transY - targetTransY) / (currentTransY - targetTransY);
-                        mMatrix.postTranslate(transX, transY);
-                        MblTouchImageView.super.setImageMatrix(mMatrix);
-                    }
-                });
+                    float transY = (Float) anim.getAnimatedValue();
+                    float transX = targetTransX + (currentTransX - targetTransX) * (transY - targetTransY) / (currentTransY - targetTransY);
+                    mMatrix.postTranslate(transX, transY);
+                    MblTouchImageView.super.setImageMatrix(mMatrix);
+                }
+            });
 
-            }
+        }
 
-            if (anim != null) {
-                anim.setDuration(500);
-                anim.start();
-            }
+        if (anim != null) {
+            anim.setDuration(500);
+            anim.start();
         }
     }
 
