@@ -2,6 +2,7 @@ package com.datdo.mobilib.test.utils;
 
 import java.util.Date;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -89,5 +90,20 @@ public class UtilsTestActivity extends MblBaseActivity {
                 }
             }
         });
+
+        findViewById(R.id.bt_set_activity_bg_no_shrinking).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                startActivity(new Intent(UtilsTestActivity.this, BgNoShrinkingTestActivity.class));
+            }
+        });
+        
+        findViewById(R.id.bt_make_EditText_auto_scroll_on_focused).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                startActivity(new Intent(UtilsTestActivity.this, EditTextAutoscrollTestActivity.class));
+            }
+        });
+        
     }
 }

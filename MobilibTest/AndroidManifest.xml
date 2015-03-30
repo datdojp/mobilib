@@ -49,6 +49,12 @@
             android:name=".utils.UtilsTestActivity"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".utils.BgNoShrinkingTestActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity
+            android:name=".utils.EditTextAutoscrollTestActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity
             android:name=".imageinput.ImageInputTestActivity"
             android:screenOrientation="portrait" />
         <activity

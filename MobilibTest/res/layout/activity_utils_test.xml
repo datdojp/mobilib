@@ -67,6 +67,26 @@
             android:paddingTop="10dp"
             android:text="StopRepeatingAction"
             tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_set_activity_bg_no_shrinking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="SetActivityBackgroundNoShrinking"
+            tools:ignore="HardcodedText" />
+        
+        <Button
+            android:id="@+id/bt_make_EditText_auto_scroll_on_focused"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="MakeEditTextAutoScrollOnFocused"
+            tools:ignore="HardcodedText" />
     </LinearLayout>
 
 </ScrollView>
