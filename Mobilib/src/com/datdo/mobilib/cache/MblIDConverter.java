@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.datdo.mobilib.util.MblUtils;
 
-public class MblIDConverter {
+class MblIDConverter {
 
     private static final String SEPARATOR = "#";
 

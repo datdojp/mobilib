@@ -1,6 +1,6 @@
-package com.datdo.mobilib.api;
+package com.datdo.mobilib.db;
 
-import com.datdo.mobilib.api.MblCache;
+import com.datdo.mobilib.cache.MblDatabaseCache;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -37,10 +37,10 @@ class DBHelper extends SQLiteOpenHelper {
     }
 
     public static void createTables(SQLiteDatabase db) {
-        MblCache.createTable(db);
+        MblDatabaseCache.createTable(db);
     }
 
     public static void dropTables(SQLiteDatabase db) {
-        MblCache.dropTable(db);
+        MblDatabaseCache.dropTable(db);
     }
 }

@@ -38,6 +38,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 
+import com.datdo.mobilib.cache.MblDatabaseCache;
 import com.datdo.mobilib.util.MblUtils;
 
 /**
@@ -153,9 +154,9 @@ public class MblApi {
             @Override
             public void run() {
 
-                MblCache existingCache = null;
+                MblDatabaseCache existingCache = null;
                 if (isCacheEnabled) {
-                    existingCache = MblCache.get(fullUrl);
+                    existingCache = MblDatabaseCache.get(fullUrl);
                     boolean shouldReadFromCache =
                             existingCache != null &&
                             (   !MblUtils.isNetworkConnected() ||
@@ -245,7 +246,7 @@ public class MblApi {
     @SuppressWarnings("unchecked")
     public static String getCacheFilePath(String url, Map<String, ? extends Object> params) {
         String fullUrl = generateGetMethodFullUrl(url, getParamsIgnoreEmptyValues(params));
-        MblCache existingCache = MblCache.get(fullUrl);
+        MblDatabaseCache existingCache = MblDatabaseCache.get(fullUrl);
         if (existingCache != null) {
             String cacheFileName = getCacheFileName(existingCache);
             if (!MblUtils.isEmpty(cacheFileName)) {
@@ -548,8 +549,8 @@ public class MblApi {
 
     private static void saveCache(String fullUrl, byte[] data) {
         try {
-            MblCache c = new MblCache(fullUrl, System.currentTimeMillis());
-            MblCache.upsert(c);
+            MblDatabaseCache c = new MblDatabaseCache(fullUrl, System.currentTimeMillis());
+            MblDatabaseCache.upsert(c);
             MblUtils.saveCacheFile(data, getCacheFileName(c));
         } catch (Exception e) {
             Log.e(TAG, "Failed to cache url: " + fullUrl, e);
@@ -631,8 +632,8 @@ public class MblApi {
     public static void clearCache() {
 
         // delete cache file
-        List<MblCache> caches = MblCache.getAll();
-        for (MblCache c : caches) {
+        List<MblDatabaseCache> caches = MblDatabaseCache.getAll();
+        for (MblDatabaseCache c : caches) {
             String path = MblUtils.getCacheAsbPath(getCacheFileName(c));
             if (!MblUtils.isEmpty(path)) {
                 new File(path).delete();
@@ -640,10 +641,10 @@ public class MblApi {
         }
 
         // delete cache records
-        MblCache.deleteAll();
+        MblDatabaseCache.deleteAll();
     }
 
-    private static String getCacheFileName(MblCache c) {
+    private static String getCacheFileName(MblDatabaseCache c) {
         if (c != null && !MblUtils.isEmpty(c.getKey())) {
             return MblUtils.md5(c.getKey());
         } else {

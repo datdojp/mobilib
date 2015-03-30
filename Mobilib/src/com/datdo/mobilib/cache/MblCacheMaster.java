@@ -6,8 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.datdo.mobilib.api.MblCache;
-import com.datdo.mobilib.util.MblMemCache;
 import com.datdo.mobilib.util.MblSerializer;
 import com.datdo.mobilib.util.MblUtils;
 
@@ -114,11 +112,11 @@ public abstract class MblCacheMaster<T> {
                         idsNotInMemCache.remove(getObjectId(o));
                     }
 
-                    List<MblCache> dbCaches = MblCache.get(
+                    List<MblDatabaseCache> dbCaches = MblDatabaseCache.get(
                             mIdConverter.toComboIds(idsNotInMemCache),
                             mDuration);
-                    Map<String, MblCache> mapIdAndDbCache = new HashMap<String, MblCache>();
-                    for (MblCache c : dbCaches) {
+                    Map<String, MblDatabaseCache> mapIdAndDbCache = new HashMap<String, MblDatabaseCache>();
+                    for (MblDatabaseCache c : dbCaches) {
                         mapIdAndDbCache.put(
                                 mIdConverter.toOriginId(c.getKey()),
                                 c);
@@ -146,15 +144,15 @@ public abstract class MblCacheMaster<T> {
                             @Override
                             public void onSuccess(List<T> objects) {
                                 long now = System.currentTimeMillis();
-                                List<MblCache> dbCaches = new ArrayList<MblCache>();
+                                List<MblDatabaseCache> dbCaches = new ArrayList<MblDatabaseCache>();
                                 for (T o : objects) {
                                     mMemCache.put(getObjectId(o), o, now);
-                                    dbCaches.add(new MblCache(
+                                    dbCaches.add(new MblDatabaseCache(
                                             mIdConverter.toComboId(getObjectId(o)),
                                             now));
                                 }
                                 results.addAll(objects);
-                                MblCache.upsert(dbCaches);
+                                MblDatabaseCache.upsert(dbCaches);
                                 if (results.size() == ids.size()) {
                                     done(results, finishCallback);
                                 } else {

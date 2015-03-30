@@ -1,10 +1,10 @@
-package com.datdo.mobilib.api;
+package com.datdo.mobilib.db;
 
 import com.datdo.mobilib.util.MblUtils;
 
 import android.database.sqlite.SQLiteDatabase;
 
-abstract class DBBase {
+public abstract class DBBase {
     private static SQLiteDatabase sDb;
     protected static SQLiteDatabase getDatabase() {
         if (sDb == null) {

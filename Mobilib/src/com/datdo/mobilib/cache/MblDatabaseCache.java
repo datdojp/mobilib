@@ -1,4 +1,4 @@
-package com.datdo.mobilib.api;
+package com.datdo.mobilib.cache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +8,10 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 
+import com.datdo.mobilib.db.DBBase;
 import com.datdo.mobilib.util.MblUtils;
 
-public class MblCache extends DBBase {
+public class MblDatabaseCache extends DBBase {
 
     private static final String TABLE       = "cache";
     private static final String COL_KEY     = "key";
@@ -31,11 +32,11 @@ public class MblCache extends DBBase {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE);
     }
 
-    public MblCache() {
+    public MblDatabaseCache() {
         super();
     }
 
-    public MblCache(String key, long date) {
+    public MblDatabaseCache(String key, long date) {
         super();
         mKey    = key;
         mDate   = date;
@@ -45,21 +46,21 @@ public class MblCache extends DBBase {
         getDatabase().delete(TABLE, null, null);
     }
 
-    private static MblCache fromCursor(Cursor cur) {
-        MblCache c = new MblCache();
+    private static MblDatabaseCache fromCursor(Cursor cur) {
+        MblDatabaseCache c = new MblDatabaseCache();
         c.setKey(cur.getString(0));
         c.setDate(cur.getLong(1));
         return c;
     }
 
-    private static ContentValues toContentValues(MblCache c) {
+    private static ContentValues toContentValues(MblDatabaseCache c) {
         ContentValues values = new ContentValues();
         values.put(COL_KEY, c.getKey());
         values.put(COL_DATE, c.getDate());
         return values;
     }
 
-    public static void upsert(MblCache c) {
+    public static void upsert(MblDatabaseCache c) {
         getDatabase().insertWithOnConflict(
                 TABLE,
                 null,
@@ -67,9 +68,9 @@ public class MblCache extends DBBase {
                 SQLiteDatabase.CONFLICT_REPLACE);
     }
 
-    public static void upsert(List<MblCache> caches) {
+    public static void upsert(List<MblDatabaseCache> caches) {
         getDatabase().beginTransaction();
-        for (MblCache c : caches) {
+        for (MblDatabaseCache c : caches) {
             getDatabase().insertWithOnConflict(
                     TABLE,
                     null,
@@ -80,14 +81,14 @@ public class MblCache extends DBBase {
         getDatabase().endTransaction();
     }
 
-    public static MblCache get(String key) {
+    public static MblDatabaseCache get(String key) {
         Cursor cur = getDatabase().query(
                 TABLE,
                 null, 
                 COL_KEY + " = ?",
                 new String[] { key },
                 null, null, null);
-        MblCache c = null;
+        MblDatabaseCache c = null;
         if (cur.moveToNext()) {
             c = fromCursor(cur);
         }
@@ -95,9 +96,9 @@ public class MblCache extends DBBase {
         return c;
     }
 
-    public static List<MblCache> getAll() {
+    public static List<MblDatabaseCache> getAll() {
         Cursor cur = getDatabase().query(TABLE, null, null, null, null, null, null);
-        List<MblCache> ret = new ArrayList<MblCache>();
+        List<MblDatabaseCache> ret = new ArrayList<MblDatabaseCache>();
         while (cur.moveToNext()) {
             ret.add(fromCursor(cur));
         }
@@ -105,10 +106,10 @@ public class MblCache extends DBBase {
         return ret;
     }
 
-    public static List<MblCache> get(List<String> keys, long duration) {
+    public static List<MblDatabaseCache> get(List<String> keys, long duration) {
 
         if (MblUtils.isEmpty(keys)) {
-            return new ArrayList<MblCache>();
+            return new ArrayList<MblDatabaseCache>();
         }
 
         String[] placeholder = new String[keys.size()];
@@ -124,7 +125,7 @@ public class MblCache extends DBBase {
                 COL_KEY + " IN (" + TextUtils.join(",", placeholder) + ") AND " + COL_DATE + " + " + duration + " > " + System.currentTimeMillis(),
                 selectionArgs,
                 null, null, null);
-        List<MblCache> ret = new ArrayList<MblCache>();
+        List<MblDatabaseCache> ret = new ArrayList<MblDatabaseCache>();
         while (cur.moveToNext()) {
             ret.add(fromCursor(cur));
         }

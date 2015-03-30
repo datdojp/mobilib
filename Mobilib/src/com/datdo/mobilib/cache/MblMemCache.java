@@ -1,4 +1,4 @@
-package com.datdo.mobilib.util;
+package com.datdo.mobilib.cache;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,7 +9,7 @@ import java.util.Set;
 
 import junit.framework.Assert;
 
-import com.datdo.mobilib.cache.MblIDConverter;
+import com.datdo.mobilib.util.MblUtils;
 
 /**
  * <pre>
