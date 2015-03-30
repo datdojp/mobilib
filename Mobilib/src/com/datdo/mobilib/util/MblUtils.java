@@ -11,6 +11,7 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.concurrent.RejectedExecutionException;
 import junit.framework.Assert;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
@@ -403,6 +405,21 @@ public class MblUtils {
         ConnectivityManager conMan = (ConnectivityManager) getCurrentContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = conMan.getActiveNetworkInfo();
         return activeNetwork != null && activeNetwork.isConnected();
+    }
+
+    /**
+     * <pre>Check if current device has phone feature.</pre>
+     */
+    public static boolean hasPhone() {
+        Context context = MblUtils.getCurrentContext();
+        TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_NONE) {
+            return false;
+        }
+        if (tm.getLine1Number() == null) {
+            return false;
+        }
+        return true;
     }
 
     static {
@@ -943,6 +960,45 @@ public class MblUtils {
      */
     public static void saveCacheFile(byte[] in, String relativePath) throws IOException {
         saveFile(in, getCacheAsbPath(relativePath));
+    }
+
+    /**
+     * <pre>
+     * Clear all files and sub-folder of an directory by traversing.
+     * Note that the top directory will not be deleted.
+     * </pre>
+     */
+    public static void clearDir(final File dir) {
+        traverseFile(dir, new TraverseFileCallback() {
+            @Override
+            public void onTraverse(File file) {
+                if (file != dir) {
+                    file.delete();
+                }
+            }
+        });
+    }
+
+    private static void traverseFile(
+            final File file,
+            final TraverseFileCallback callback) {
+
+        if (file != null && file.exists()) {
+            if (file.isDirectory()) {
+                final File[] children = file.listFiles();
+                for (File c : children) {
+                    traverseFile(c, callback);
+                }
+            }
+
+            if (callback != null) {
+                callback.onTraverse(file);
+            }
+        }
+    }
+
+    private static interface TraverseFileCallback {
+        public void onTraverse(File file);
     }
 
     /**
@@ -2021,5 +2077,154 @@ public class MblUtils {
     public static interface MblLoadBitmapForImageViewCallback {
         public void onSuccess();
         public void onError();
+    }
+
+    /**
+     * <pre>
+     * Asynchronously create a scaled bitmap file from an existing bitmap file.
+     * </pre>
+     * @param path path to existing bitmap file
+     * @param toWidth scale to width
+     * @param toHeight scale to height
+     * @param compressFormat output format
+     * @param callback callback to received path to output file
+     */
+    public static void createScaledBitmapFile(
+            final String path,
+            final int toWidth,
+            final int toHeight,
+            final CompressFormat compressFormat,
+            final MblCreateScaledBitmapFileCallback callback) {
+
+        if (callback == null) {
+            return;
+        }
+
+        MblUtils.executeOnAsyncThread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    // if size is already matched, just return current path
+                    int[] sizes = MblUtils.getBitmapSizes(path);
+                    if (sizes[0] == toWidth && sizes[1] == toHeight) {
+                        callback.onSuccess(path);
+                        return;
+                    }
+
+                    // load bitmap with specific size and save to file
+                    Bitmap bm = MblUtils.loadBitmapMatchSpecifiedSize(toWidth, toHeight, path);
+                    if (bm != null) {
+                        String newPath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
+                        OutputStream os = new FileOutputStream(newPath);
+                        bm.compress(compressFormat, 100, os);
+                        os.flush();
+                        os.close();
+                        bm.recycle();
+                        new File(path).delete();
+                        callback.onSuccess(newPath);
+                    } else {
+                        callback.onError();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to create scaled bitmap", e);
+                    callback.onError();
+                }
+            }
+        });
+    }
+
+    public static interface MblCreateScaledBitmapFileCallback {
+        public void onSuccess(String path);
+        public void onError();
+    }
+
+    /**
+     * <pre>Create {@link Calendar} from milliseconds since 1970</pre>
+     */
+    public static Calendar msToCalendar(long ms) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(ms);
+        return cal;
+    }
+
+    /**
+     * <pre>Get index of an object in an array.</pre>
+     */
+    public static int indexOf(Object[] arr, Object o) {
+        if (MblUtils.isEmpty(arr) || o == null) {
+            return -1;
+        }
+        for (int i = 0; i < arr.length; i++) {
+            if (o.equals(arr[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static final Character HANKAKU_SPACE    = ' ';
+    private static final Character ZENKAKU_SPACE    = '　';
+    private static final Character NEW_LINE         = '\n';
+
+    private static boolean isTrimmable(Character c) {
+        return HANKAKU_SPACE.equals(c) || ZENKAKU_SPACE.equals(c) || NEW_LINE.equals(c);
+    }
+
+    /**
+     * <pre>Method {@link String#trim()} doesn't care Japanese full-width space. Therefore, I added this method to solve that problem.</pre>
+     */
+    public static String trim(String text) {
+        if (MblUtils.isEmpty(text)) {
+            return "";
+        }
+
+        int charCount = text.length();
+
+        // trim left
+        int start = 0;
+        for (int i = 0; i < charCount; i++) {
+            Character c = text.charAt(i);
+            if (isTrimmable(c)) {
+                start++;
+            } else {
+                break;
+            }
+        }
+
+        // trim right
+        int end = charCount;
+        for (int i = charCount-1; i >= 0; i--) {
+            Character c = text.charAt(i);
+            if (isTrimmable(c)) {
+                end--;
+            } else {
+                break;
+            }
+        }
+
+        if (start == 0 && end == charCount) {
+            return text;
+        } else {
+            if (start >= end) {
+                return "";
+            } else {
+                return text.substring(start, end);
+            }
+        }
+    }
+
+    /**
+     * <pre>Get {@link String} field from {@link JSONObject} instance, return <code>null</code> instead of "null" when field is null</pre>
+     * @param jo {@link JSONObject} instance
+     * @param field field name
+     * @return {@link String} value
+     */
+    public static String getJSONObjectString(JSONObject jo, String field) {
+        if (jo.isNull(field)) {
+            return null;
+        } else {
+            return jo.optString(field, null);
+        }
     }
 }
