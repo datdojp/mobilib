@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.text.TextUtils;
+import android.util.Log;
+
 import com.datdo.mobilib.util.MblSerializer;
 import com.datdo.mobilib.util.MblUtils;
 
@@ -26,7 +29,7 @@ public abstract class MblCacheMaster<T> {
     public MblCacheMaster(Class<T> type, long duration) {
         mDuration       = duration;
         mIdConverter    = new MblIDConverter(type);
-        mMemCache       = new MblMemCache<T>(type, duration);
+        mMemCache       = new MblMemCache<T>(duration);
         mSerializer     = new MblSerializer();
     }
 
@@ -35,8 +38,8 @@ public abstract class MblCacheMaster<T> {
         objects.add(object);
         put(objects);
     }
-    
-    public void put(List<T> objects) {
+
+    public void put(final List<T> objects) {
 
         if (MblUtils.isEmpty(objects)) {
             return;
@@ -46,6 +49,14 @@ public abstract class MblCacheMaster<T> {
             @Override
             public void run(Runnable finishCallback) {
 
+                long now = System.currentTimeMillis();
+                List<MblDatabaseCache> dbCaches = new ArrayList<MblDatabaseCache>();
+                for (T object : objects) {
+                    String id = getObjectId(object);
+                    mMemCache.put(id, object);
+                    dbCaches.add(new MblDatabaseCache(mIdConverter.toComboId(id), now));
+                }
+                MblDatabaseCache.upsert(dbCaches);
             }
         });
     }
@@ -101,10 +112,13 @@ public abstract class MblCacheMaster<T> {
             @Override
             public void run(final Runnable finishCallback) {
 
+                Log.d(TAG, "get: ids=" + TextUtils.join(",", ids));
+
                 // firstly, load from memory
                 final List<T> results = mMemCache.get(ids);
 
                 if (results.size() == ids.size()) {
+                    Log.d(TAG, "get: all ids are in memory-cache -> OK");
                     done(results, finishCallback);
                 } else {
 
@@ -114,6 +128,7 @@ public abstract class MblCacheMaster<T> {
                         idsNotInMemCache.remove(getObjectId(o));
                     }
 
+                    Log.d(TAG, "get: load from DB cache: ids=" + TextUtils.join(",", idsNotInMemCache));
                     List<MblDatabaseCache> dbCaches = MblDatabaseCache.get(
                             mIdConverter.toComboIds(idsNotInMemCache),
                             mDuration);
@@ -123,6 +138,7 @@ public abstract class MblCacheMaster<T> {
                                 mIdConverter.toOriginId(c.getKey()),
                                 c);
                     }
+                    Log.d(TAG, "get: fetch from DB: ids=" + TextUtils.join(",", mapIdAndDbCache.keySet()));
                     List<T> objectsInDatabase = fetchFromDatabase(new ArrayList<String>(mapIdAndDbCache.keySet()));
                     for (T o : objectsInDatabase) {
                         results.add(o);
@@ -133,6 +149,7 @@ public abstract class MblCacheMaster<T> {
                     }
 
                     if (results.size() == ids.size()) {
+                        Log.d(TAG, "get: remaining ids are fetched from DB -> OK");
                         done(results, finishCallback);
                     } else {
 
@@ -141,10 +158,12 @@ public abstract class MblCacheMaster<T> {
                         for (T o : results) {
                             idsNotInMemCacheAndDbCache.remove(getObjectId(o));
                         }
+                        Log.d(TAG, "get: fetch from server: ids=" + TextUtils.join(",", idsNotInMemCacheAndDbCache));
                         fetchFromServer(idsNotInMemCacheAndDbCache, new MblGetManyCallback<T>() {
 
                             @Override
                             public void onSuccess(List<T> objects) {
+                                Log.d(TAG, "get: fetch from server: SUCCESS");
                                 long now = System.currentTimeMillis();
                                 List<MblDatabaseCache> dbCaches = new ArrayList<MblDatabaseCache>();
                                 for (T o : objects) {
@@ -156,8 +175,10 @@ public abstract class MblCacheMaster<T> {
                                 results.addAll(objects);
                                 MblDatabaseCache.upsert(dbCaches);
                                 if (results.size() == ids.size()) {
+                                    Log.d(TAG, "get: remaining ids are fetched from server -> OK");
                                     done(results, finishCallback);
                                 } else {
+                                    Log.d(TAG, "get: some id is not fetched from server -> NG");
                                     done(null, finishCallback);
                                 }
                             }
@@ -165,16 +186,22 @@ public abstract class MblCacheMaster<T> {
                             @Override
                             public void onError() {
 
+                                Log.d(TAG, "get: fetch from server: ERROR");
+                                
                                 // failed to load from server -> fallback -> load from database
                                 if (fallbackToDatabaseWhenServerFail()) {
+                                    Log.d(TAG, "get: fallback to DB");
                                     List<T> objectsInDatabase = fetchFromDatabase(idsNotInMemCacheAndDbCache);
                                     results.addAll(objectsInDatabase);
                                     if (results.size() == ids.size()) {
+                                        Log.d(TAG, "get: remaining ids are fetched from DB -> OK");
                                         done(results, finishCallback);
                                     } else {
+                                        Log.d(TAG, "get: some id is not fetched from DB -> NG");
                                         done(null, finishCallback);
                                     }
                                 } else {
+                                    Log.d(TAG, "get: NG");
                                     done(null, finishCallback);
                                 }
                             }
