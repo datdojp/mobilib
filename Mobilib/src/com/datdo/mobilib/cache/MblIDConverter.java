@@ -63,4 +63,8 @@ class MblIDConverter {
     public boolean isOriginId(String id) {
         return id != null && !isComboId(id);
     }
+
+    public String getPrefix() {
+        return mPrefix;
+    }
 }

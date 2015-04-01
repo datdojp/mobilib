@@ -46,6 +46,29 @@ public class MblDatabaseCache extends DBBase {
         getDatabase().delete(TABLE, null, null);
     }
 
+    public static void deleteByPrefix(String prefix) {
+        getDatabase().delete(
+                TABLE,
+                COL_KEY + " LIKE ?",
+                new String[] { prefix + "%" });
+    }
+
+    public static void deleteByKey(String key) {
+        getDatabase().delete(
+                TABLE,
+                COL_KEY + " = ?",
+                new String[] { key });
+    }
+
+    public static void deleteByKeys(List<String> keys) {
+        getDatabase().beginTransaction();
+        for (String k : keys) {
+            deleteByKey(k);
+        }
+        getDatabase().setTransactionSuccessful();
+        getDatabase().endTransaction();
+    }
+
     private static MblDatabaseCache fromCursor(Cursor cur) {
         MblDatabaseCache c = new MblDatabaseCache();
         c.setKey(cur.getString(0));

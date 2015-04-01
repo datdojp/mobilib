@@ -98,6 +98,19 @@ public class MblMemCache<T> {
         }
     }
 
+    public List<T> remove(List<String> ids) {
+        synchronized (this) {
+            List<T> ret = new ArrayList<T>();
+            for (String id : ids) {
+                T object = remove(id);
+                if (object != null) {
+                    ret.add(object);
+                }
+            }
+            return ret;
+        }
+    }
+
     public void iterateWithCallback(IterateCallback<T> callback) {
 
         Assert.assertNotNull(callback);
@@ -123,5 +136,13 @@ public class MblMemCache<T> {
         synchronized (this) {
             mMap.clear();
         }
+    }
+
+    public long getDuration() {
+        return mDuration;
+    }
+
+    public void setDuration(long duration) {
+        mDuration = duration;
     }
 }
