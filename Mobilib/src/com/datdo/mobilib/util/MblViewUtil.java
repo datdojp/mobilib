@@ -25,6 +25,7 @@ import com.datdo.mobilib.base.MblDecorView;
 import com.datdo.mobilib.event.MblCommonEvents;
 import com.datdo.mobilib.event.MblEventCenter;
 import com.datdo.mobilib.event.MblEventListener;
+import com.datdo.mobilib.event.MblStrongEventListener;
 
 /**
  * <pre>
@@ -118,9 +119,10 @@ public class MblViewUtil {
         } else{
             FrameLayout wrappingView = (FrameLayout) sv.getChildAt(0);
             View contentView = wrappingView.getChildAt(0);
-            contentView.setLayoutParams(new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    sv.getHeight()));
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) contentView.getLayoutParams();
+            lp.width    = FrameLayout.LayoutParams.MATCH_PARENT;
+            lp.height   = sv.getHeight();
+            contentView.setLayoutParams(lp);
         }
     }
 
@@ -129,10 +131,13 @@ public class MblViewUtil {
      * Set background image for a screen, and ensure that it won't shrink even when decor view size is changed (keyboard ON/OFF, orientation change, etc)
      * </pre>
      * @param decorView top-level view of screen
-     * @param bm bitmap data
-     * @return ImageView object used to display background
+     * @param portraitBitmap bitmap data for portrait orientation
+     * @param landscapBitmap bitmap data for landscape orientation
      */
-    public static ImageView setBackgroundNoShrinking(ViewGroup decorView, Bitmap bm) {
+    public static ImageView setBackgroundNoShrinking(
+            ViewGroup decorView,
+            final Bitmap portraitBitmap,
+            final Bitmap landscapeBitmap) {
 
         Assert.assertNotNull(decorView);
 
@@ -142,7 +147,7 @@ public class MblViewUtil {
             public boolean onTouchEvent(MotionEvent ev) {
                 return false;
             }
-            
+
             @Override
             public boolean onInterceptTouchEvent(MotionEvent ev) {
                 return false;
@@ -152,29 +157,53 @@ public class MblViewUtil {
                 MblDecorView.LayoutParams.MATCH_PARENT,
                 MblDecorView.LayoutParams.MATCH_PARENT));
 
-        EventListeningImageView iv = new EventListeningImageView(decorView.getContext());
-        MblEventCenter.addListener((iv.mEventListener = new MblEventListener() {
+        final EventListeningImageView iv = new EventListeningImageView(decorView.getContext());
+        iv.mEventListener = new MblEventListener() {
             @Override
             public void onEvent(Object sender, String name, Object... args) {
-                fixScrollViewContentHeight(sv);
+                if (MblUtils.isKeyboardOn()) {
+                    MblEventCenter.addListener(new MblStrongEventListener() {
+                        @Override
+                        public void onEvent(Object sender, String name, Object... args) {
+                            justifyHeight();
+                            terminate();
+                        }
+                    }, MblCommonEvents.KEYBOARD_HIDDEN);
+                    MblUtils.hideKeyboard();
+                } else {
+                    justifyHeight();
+                }
             }
-        }), MblCommonEvents.ORIENTATION_CHANGED);
+
+            void justifyHeight() {
+                MblUtils.getMainThreadHandler().post(new Runnable() {
+                    @Override
+                    public void run() {
+                        fixScrollViewContentHeight(sv);
+                        if (MblUtils.isPortraitDisplay()) {
+                            iv.setImageBitmap(portraitBitmap);
+                        } else {
+                            iv.setImageBitmap(landscapeBitmap);
+                        }
+                    }
+                });
+            }
+        };
+        MblEventCenter.addListener(iv.mEventListener, MblCommonEvents.ORIENTATION_CHANGED);
         iv.setLayoutParams(new ScrollView.LayoutParams(
                 ScrollView.LayoutParams.MATCH_PARENT,
                 ScrollView.LayoutParams.WRAP_CONTENT));
         iv.setScaleType(ScaleType.CENTER_CROP);
-        iv.setImageBitmap(bm);
 
         sv.addView(iv);
         decorView.addView(sv, 0);
-        fixScrollViewContentHeight(sv);
+        iv.mEventListener.onEvent(null, null);
 
         return iv;
     }
 
     private static class EventListeningImageView extends ImageView {
 
-        @SuppressWarnings("unused")
         MblEventListener mEventListener;
 
         public EventListeningImageView(Context context) {
@@ -185,13 +214,20 @@ public class MblViewUtil {
     /**
      * <pre>Same as {@link #setBackgroundNoShrinking(ViewGroup, Bitmap)}</pre>
      */
-    public static ImageView setBackgroundNoShrinking(ViewGroup decorView, int bgResId) {
-        Drawable drawable = MblUtils.getCurrentContext().getResources().getDrawable(bgResId);
-        if (drawable instanceof BitmapDrawable) {
-            return setBackgroundNoShrinking(decorView, ((BitmapDrawable) drawable).getBitmap());
-        } else {
-            return setBackgroundNoShrinking(decorView, null);
+    public static ImageView setBackgroundNoShrinking(ViewGroup decorView, int portraitBgResId, int landscapeBgResId) {
+        Drawable portraitDrawable   = MblUtils.getCurrentContext().getResources().getDrawable(portraitBgResId);
+        Bitmap portraitBitmap = null;
+        if (portraitDrawable instanceof BitmapDrawable) {
+            portraitBitmap = ((BitmapDrawable) portraitDrawable).getBitmap();
         }
+
+        Drawable landscapeDrawable  = MblUtils.getCurrentContext().getResources().getDrawable(landscapeBgResId);
+        Bitmap landscapeBitmap = null;
+        if (landscapeDrawable instanceof BitmapDrawable) {
+            landscapeBitmap = ((BitmapDrawable) landscapeDrawable).getBitmap();
+        }
+
+        return setBackgroundNoShrinking(decorView, portraitBitmap, landscapeBitmap);
     }
 
     /**

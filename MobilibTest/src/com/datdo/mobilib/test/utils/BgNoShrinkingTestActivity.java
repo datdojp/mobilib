@@ -12,6 +12,6 @@ public class BgNoShrinkingTestActivity extends MblBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bg_no_shrinking_test);
-        MblViewUtil.setBackgroundNoShrinking(getDecorView(), R.drawable.background);
+        MblViewUtil.setBackgroundNoShrinking(getDecorView(), R.drawable.portrait_bg, R.drawable.landscape_bg);
     }
 }
