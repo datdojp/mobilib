@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -1823,29 +1825,61 @@ public class MblUtils {
 
     /**
      * <pre>
-     * Extract file path from URI, which can be used when handling {@link Intent#ACTION_SEND} or {@link Intent#ACTION_SEND_MULTIPLE}
+     * Extract file path or URL from URI
      * </pre>
      * @param uri {@link Uri} object to extract
-     * @return path to the file
+     * @return {@link File} object if URI contains file path, {@link URL} object if URI contains URL, otherwise return NULL
      */
-    public static String extractFilePathFromUri(Uri uri) {
+    public static Object extractUri(Uri uri) {
         String uriString = uri.toString();
         if (uriString != null && uriString.startsWith(URI_FILE_PREFIX)) {
             try {
-                return URLDecoder.decode(uriString.substring(URI_FILE_PREFIX.length()), UTF8);
+                String filePath = URLDecoder.decode(uriString.substring(URI_FILE_PREFIX.length()), UTF8);
+                return new File(filePath);
             } catch (UnsupportedEncodingException e) {
                 Log.e(TAG, "Failed to extract file path from Uri", e);
                 return null;
             }
         }
         if (uriString != null && uriString.startsWith(URI_CONTENT_PREFIX)) {
-            Cursor cursor = getCurrentContext().getContentResolver().query(uri, null, null, null, null);
+            Cursor cursor = getCurrentContext().getContentResolver().query(uri, new String[] { Images.Media.DATA }, null, null, null);
             String filePath = null;
             if (cursor != null && cursor.moveToFirst()) {
-                filePath = cursor.getString(cursor.getColumnIndexOrThrow(Images.Media.DATA));
+                int colIndex = cursor.getColumnIndex(Images.Media.DATA);
+                if (colIndex >= 0) {
+                    filePath = cursor.getString(colIndex);
+                }
             }
-            return filePath;
+
+            // file
+            if (!MblUtils.isEmpty(filePath)) {
+                return new File(filePath);
+            }
+
+            // url
+            String encodedPath = uri.getEncodedPath();
+            if (!MblUtils.isEmpty(encodedPath)) {
+                String[] splitted = encodedPath.split("/");
+                for (String token : splitted) {
+                    if (MblUtils.isEmpty(token)) {
+                        continue;
+                    }
+                    String url;
+                    try {
+                        url = URLDecoder.decode(token, UTF8);
+                    } catch (UnsupportedEncodingException e1) {
+                        continue;
+                    }
+                    if (isLink(url)) {
+                        try {
+                            return new URL(url);
+                        } catch (MalformedURLException e) {}
+                    }
+                }
+            }
         }
+
+        Log.d(TAG, "Invalid Uri: " + uriString);
         return null; // invalid URI
     }
 
