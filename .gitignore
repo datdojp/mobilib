@@ -7,3 +7,6 @@ android-api-reference
 build.xml
 .gradle
 build
+.idea
+*.iml
+
