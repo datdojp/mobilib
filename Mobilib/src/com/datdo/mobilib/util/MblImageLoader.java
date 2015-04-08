@@ -1,8 +1,5 @@
 package com.datdo.mobilib.util;
 
-import java.util.Vector;
-
-import junit.framework.Assert;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -16,6 +13,12 @@ import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.ImageView;
 import android.widget.ListView;
+
+import com.nineoldandroids.animation.ObjectAnimator;
+
+import junit.framework.Assert;
+
+import java.util.Vector;
 
 /**
  * <pre>
@@ -506,6 +509,7 @@ public abstract class MblImageLoader<T> {
     private void postLoadImageForItem(final T item, final View view) {
         if (isItemBoundWithView(item, view)) {
             loadImage(view);
+            animateImageView(getImageViewFromView(view));
         }
 
         // run loadNextImage() using "post" to prevent deep recursion
@@ -556,5 +560,12 @@ public abstract class MblImageLoader<T> {
         } else {
             return lp.height; // specified height
         }
+    }
+
+    protected void animateImageView(ImageView imageView) {
+        // animation alpha 0 -> 1
+        ObjectAnimator.ofFloat(imageView, "alpha", 0, 1)
+        .setDuration(250)
+        .start();
     }
 }
