@@ -78,10 +78,13 @@ public abstract class MblInterceptor extends FrameLayout {
         MblUtils.cleanupView(this);
     }
 
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {}
+    public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+        return false;
+    }
 
-    public void onBackPressed() {
+    public boolean onBackPressed() {
         finish();
+        return true;
     }
 
     public boolean isTop() {

@@ -2,6 +2,7 @@ package com.datdo.mobilib.carrier;
 
 import junit.framework.Assert;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
@@ -14,7 +15,11 @@ import com.nineoldandroids.animation.ValueAnimator;
 import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
 
 @SuppressLint("RtlHardcoded")
-public abstract class MblSlidingCarrier extends MblCarrier {
+public class MblSlidingCarrier extends MblCarrier {
+
+    public MblSlidingCarrier(Context context, FrameLayout interceptorContainerView, MblCarrierCallback callback) {
+        super(context, interceptorContainerView, callback);
+    }
 
     public static enum SlidingDirection {
         LEFT_RIGHT, RIGHT_LEFT,
@@ -94,16 +99,16 @@ public abstract class MblSlidingCarrier extends MblCarrier {
         final int to;
         switch (mSlidingDirection) {
         case LEFT_RIGHT:
-            to = getDecorView().getWidth();
+            to = mInterceptorContainerView.getWidth();
             break;
         case RIGHT_LEFT:
-            to = -getDecorView().getWidth();
+            to = -mInterceptorContainerView.getWidth();
             break;
         case TOP_BOTTOM:
-            to = getDecorView().getHeight();
+            to = mInterceptorContainerView.getHeight();
             break;
         case BOTTOM_TOP:
-            to = -getDecorView().getHeight();
+            to = -mInterceptorContainerView.getHeight();
             break;
         default:
             return; // never happen
@@ -122,16 +127,16 @@ public abstract class MblSlidingCarrier extends MblCarrier {
         final int to;
         switch (mSlidingDirection) {
         case LEFT_RIGHT:
-            to = -getDecorView().getWidth();
+            to = -mInterceptorContainerView.getWidth();
             break;
         case RIGHT_LEFT:
-            to = getDecorView().getWidth();
+            to = mInterceptorContainerView.getWidth();
             break;
         case TOP_BOTTOM:
-            to = -getDecorView().getHeight();
+            to = -mInterceptorContainerView.getHeight();
             break;
         case BOTTOM_TOP:
-            to = getDecorView().getHeight();
+            to = mInterceptorContainerView.getHeight();
             break;
         default:
             return; // never happen
