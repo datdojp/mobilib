@@ -1,9 +1,5 @@
 package com.datdo.mobilib.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import junit.framework.Assert;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
@@ -20,12 +16,18 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.ScrollView;
+import android.widget.TextView;
 
 import com.datdo.mobilib.base.MblDecorView;
 import com.datdo.mobilib.event.MblCommonEvents;
 import com.datdo.mobilib.event.MblEventCenter;
 import com.datdo.mobilib.event.MblEventListener;
 import com.datdo.mobilib.event.MblStrongEventListener;
+
+import junit.framework.Assert;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <pre>
@@ -132,7 +134,7 @@ public class MblViewUtil {
      * </pre>
      * @param decorView top-level view of screen
      * @param portraitBitmap bitmap data for portrait orientation
-     * @param landscapBitmap bitmap data for landscape orientation
+     * @param landscapeBitmap bitmap data for landscape orientation
      */
     public static ImageView setBackgroundNoShrinking(
             ViewGroup decorView,
@@ -212,7 +214,7 @@ public class MblViewUtil {
     }
 
     /**
-     * <pre>Same as {@link #setBackgroundNoShrinking(ViewGroup, Bitmap)}</pre>
+     * <pre>Same as {@link #setBackgroundNoShrinking(ViewGroup, Bitmap, Bitmap)}</pre>
      */
     public static ImageView setBackgroundNoShrinking(ViewGroup decorView, int portraitBgResId, int landscapeBgResId) {
         Drawable portraitDrawable   = MblUtils.getCurrentContext().getResources().getDrawable(portraitBgResId);
@@ -307,7 +309,7 @@ public class MblViewUtil {
 
     /**
      * <pre>
-     * Same as {@link #makeEditTextAutoScrollOnFocused(MblDecorView, EditText[], ScrollView)}.
+     * Same as {@link #makeEditTextAutoScrollOnFocused(View, EditText[], ScrollView)}.
      * <code>editTexts</code> is omitted. {@link EditText} objects are collected automatically by traversing view.
      * </pre>
      */
@@ -332,11 +334,9 @@ public class MblViewUtil {
     }
 
     /**
-     * <pre>Extract {@link String} instace from {@link EditText}</pre>
-     * @param editText
-     * @return
+     * <pre>Extract {@link String} instance from {@link TextView}</pre>
      */
-    public static String extractText(EditText editText) {
+    public static String extractText(TextView editText) {
         return MblUtils.trim(editText.getText().toString());
     }
 }
