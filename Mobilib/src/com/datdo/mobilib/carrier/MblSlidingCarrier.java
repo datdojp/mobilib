@@ -14,13 +14,28 @@ import com.nineoldandroids.animation.Animator.AnimatorListener;
 import com.nineoldandroids.animation.ValueAnimator;
 import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
 
+/**
+ * <pre>
+ * An implementation of {@link com.datdo.mobilib.carrier.MblCarrier} with sliding animation when navigatings betweens interceptor.
+ * 4 direction: LeftRight, RightLeft, TopBottom, BottomTop.
+ * Default direction is LeftRight.
+ * The animation works on all Android API >= 10
+ * </pre>
+ */
 @SuppressLint("RtlHardcoded")
 public class MblSlidingCarrier extends MblCarrier {
 
+    /**
+     * Contructor
+     * @see com.datdo.mobilib.carrier.MblCarrier#MblCarrier(android.content.Context, android.widget.FrameLayout, com.datdo.mobilib.carrier.MblCarrier.MblCarrierCallback)
+     */
     public MblSlidingCarrier(Context context, FrameLayout interceptorContainerView, MblCarrierCallback callback) {
         super(context, interceptorContainerView, callback);
     }
 
+    /**
+     * Sliding direction
+     */
     public static enum SlidingDirection {
         LEFT_RIGHT, RIGHT_LEFT,
         TOP_BOTTOM, BOTTOM_TOP;
@@ -28,10 +43,16 @@ public class MblSlidingCarrier extends MblCarrier {
 
     private SlidingDirection mSlidingDirection = SlidingDirection.LEFT_RIGHT;
 
+    /**
+     * Get direction to animate.
+     */
     public SlidingDirection getSlidingDirection() {
         return mSlidingDirection;
     }
 
+    /**
+     * Set direction to animate.
+     */
     public void setSlidingDirection(SlidingDirection slidingOrientation) {
         Assert.assertNotNull(slidingOrientation);
         mSlidingDirection = slidingOrientation;
