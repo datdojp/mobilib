@@ -599,6 +599,54 @@ MblUtils.executeOnAsyncThread(new Runnable() {
 });
 ```
 
+**MblSerializer**
+
+Tiny but very useful. Every instance of this class is a queue which you can push any task into it and wait for them to complete one after one.
+
+Task is defined by implementing `MblSerializer#Task` interface.
+
+Task is always invoked in main thread, then it can split processing to another thread itself if needed.
+  
+Sample code:
+```  
+MblSerializer s = new MblSerializer();
+
+s.run(new MblSerializer.Task() {
+    @Override
+    public void run(Runnable finishCallback) {
+        // run task 1 in async thread
+        MblUtils.executeOnAsyncThread(new Runnable() {
+            @Override
+            public void run() {
+                // ... do something here
+
+                // finally, invoke callback
+                finishCallback.run();
+            }
+        });
+    }
+});
+
+s.run(new MblSerializer.Task() {
+public void run(Runnable finishCallback) {
+    @Override
+    public void run(Runnable finishCallback) {
+        // run task 2 in async thread
+        MblUtils.executeOnAsyncThread(new Runnable() {
+            @Override
+            public void run() {
+                // ... do something here
+
+                // finally, invoke callback
+                finishCallback.run();
+            }
+        });
+    }
+});
+
+// ... next task/action comes here
+```
+
 **Common bundle to save object temporarily.**
 ```java
 MblUtils.putToCommonBundle(key, value);
