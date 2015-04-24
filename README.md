@@ -16,7 +16,9 @@ Features
 --------
   - Event API to register/unregister an event listener and to post an event to all listeners (observer pattern). It is thread-safe and immune from memory leak threat.
   - Detect events which are not supported by pure Android via Event API: app goes to background, app goes to foreground, keyboard shown, keyboard hidden, network on, network off.
-  - HTTP/HTTPS API to send GET/POST/PUT/DELETE request and receive response. It is thread-safe and provides almost all you need for a typical HTTP/HTTPS request: parameters (InputStream and File parameter are also supported for uploading), headers, caching, ignore SSL Certificate (for Dev environment).
+  - HTTP/HTTPS API to send GET/POST/PUT/DELETE request and receive response. It is thread-safe and provides almost all you need for a typical HTTP/HTTPS request: parameters (InputStream and File parameter are also supported for uploading big files), headers, caching, ignore SSL Certificate (for Dev environment).
+  - Carrier/Interceptor model which is alternative of old Activity/Fragment model.
+  - Cache Master which is a full solution for retrieving and caching objects.
   - Smart image loader to load and display images for child views of an AdapterView.
   - Extra library to get image input from user: pick images from gallery, take image, crop image (MobilibImageInput).
   - And lots of utility classes and methods.
@@ -214,6 +216,151 @@ MblApi.post(
 	},
 	MblUtils.getMainThreadHandler()
 )
+```
+
+Carrier/Interceptor
+-------------------
+Carrier/Interceptor is a alternative of old Activity/Fragment model.
+Due to the fact that Activity/Fragment model has too many drawbacks:
+  - Quite complicated to start and manage lifecycle.
+
+***How you start a Fragment with parameters***
+```
+Fragment newFragment = new ExampleFragment();
+Bundle args = new Bundle();
+args.putInt("param1", param1);
+args.putInt("param2", param2);
+newFragment.setArguments(args);
+FragmentTransaction transaction = getFragmentManager().beginTransaction(); // or getSupportFragmentManager()
+transaction.replace(R.id.fragment_container, newFragment);
+transaction.addToBackStack(null);
+transaction.commit();
+```
+ 
+***Fragment 's lifecycle (quite different from Activity 's lifecycle, why Google didn't make coding simpler?)***
+```
+onAttach -> onCreate -> onCreateView -> onActivityCreated -> onStart -> onResume -> onPause -> onStop -> onDestroyView -> onDestroy -> onDetach
+```
+
+  - Cause potential bugs (especially {@code Fragment#getActivity()} method which causes `NullPointerException`.
+  - Fragment can not contain another fragment (for example: you can not add Google MapFragment into your fragment)
+  - Unable to start a fragment directly from another fragment while an Activity can be started directly from another Activity (you can do it by using getActivity() method, but it is still complicated, as mentioned in [1])
+  - Activity must be subclass of FragmentActivity.
+it is recommended to use Carrier/Interceptor alternative when you need to render multiple sub-screens in a parent screen.
+ 
+Benefits of Carrier/Interceptor:
+  - Easy to use
+
+***How you start an Interceptor with parameters***
+```
+carrier.startInterceptor(ExampleInterceptor.class, "param1", param1, "param2", param2);
+```
+
+***Interceptor 's lifecycle just looks like Activity 's lifecycle, even simpler***
+```
+onCreate -> onResume -> onPause -> onDestroy
+```
+  - Interceptor can contains another interceptor due to the fact that interceptor is just a View
+  - You can start an interceptor from another interceptor, just like starting Activity from another Activity, even simpler
+```
+public class ExampleInterceptor extends MblInterceptor {
+    public void foo() {
+        startInterceptor(NextInterceptor.class, "param1", param1, "param2", param2);
+    }
+}
+```
+  - MblCarrier is just an object wrapping a `FrameLayout` view which is the container view of its Interceptors, therefore Carrier can be plugged in any Activity or View.
+ 
+Sample code:
+```
+FrameLayout interceptorContainerView = (FrameLayout) findViewById(R.id.interceptor_container);
+mCarrier = new MblSlidingCarrier(this, interceptorContainerView, new MblCarrier.MblCarrierCallback() {
+    @Override
+    public void onNoInterceptor() {
+        // ... handle when Carrier does not contain any Interceptor
+    }
+});
+mCarrier.startInterceptor(Interceptor1.class);
+```
+ 
+**P/S: the name "Carrier/Interceptor" is inspired by legendary game Starcraft ;)**
+
+Cache Master
+------------
+Cache Master (CM) is a full solution for retrieving and caching objects in Android app.
+Objects can be retrieved from 3 data-sources:
+1. Memory                           -> high speed, can get object instantly without blocking main thread, lost all objects when app is killed
+2. Database/file                    -> medium speed, should be executed on asynchronous thread, objects is still intact even when app is killed
+3. Server (via RESTful API, etc)    -> slow speed, use this way to retrieve new objects or expired objects, must be executed on asynchronous thread
+
+The mechanism of CM is that objects are stored in Memory for instant retrieval, also stored in Database to keep them intact even when app is killed,
+and fetched from server when they are expired or not existing in both Memory and Database.
+
+The following example steps depicts how CM works to retrieve list of objects by their ids:
+1. Given that we need to retrieve objects whose ids is [1,2,3,4]
+2. Firstly, CM searches in Memory for [1,2,3,4]. It finds object1 and object2 but object2 is too old (expired). 3 & 4 is not found. Result = [object1]
+3. Next, CM searches in Mobilib 's database for [2,3,4]. It finds out that 2 is existing but expired, 3 is existing and still fresh, 4 is not found.
+    Then it searches in App 's database for 3 and retrieves object3. Result = [object1, object3]
+4. Finally, CM calls RESTful API to fetch object2 and object4 from server. Result = [object1, object2, object3, object4]
+
+Of course this is just a happy case. At step 4, we may not be able to fetch objects from server, and have to fallback to fetch them from App 's database even though they are expired.
+
+***Note that Mobilib 's database and App 's database is different. Mobilib 's database is to determine whether object of certain id is existing or expired. App 's database is where App stores objects.***
+
+For Memory Cache, CM utilizes `MblMemCache` which is just a simple id:object mapping with expiration.
+
+For Database Cache, CM utilizes `MblDatabaseCache` which is just a simple id:timeInMs mapping to determine whether object of id is expired.
+
+Fetching objects from App 's database and server is done by App by overriding 2 method `fetchFromDatabase(List)` and `fetchFromServer(List, MblCacheMaster.MblGetManyCallback)`.
+
+get/put/delete/clear methods are executed serially by `MblSerializer` to make CM thread-safe, and also to ensure that we don't send 2 server requests for the same object.
+
+All accesses to Databases are executed on asynchronous thread so that it doesn't burden main thread.
+
+Sample code:
+```
+MblCacheMaster cm = new MblCacheMaster<User>(User.class, 60 * 1000) {
+
+    protected String getObjectId(User user) {
+       return user.getId();
+    }
+
+    protected List<T> fetchFromDatabase(List<String> ids) {
+       return UserDatabase.fetchUsers(ids);
+    }
+
+    protected void storeToDatabase(List<User> users) {
+       UserDatabase.saveUsers(users);
+    }
+
+    protected void fetchFromServer(List<String> ids, final MblGetManyCallback<T> callback) {
+       UserRestApi.fetchUsers(ids, new FetchUsersCallback() {
+           
+           public void onSuccess(List<User> users) {
+               callback.onSuccess(users);
+           }
+
+           public void onError() {
+               callback.onError();
+           }
+       });
+    }
+
+    protected boolean  fallbackToDatabaseWhenServerFail() {
+       return true;
+    }
+}
+
+cm.get(new String[] { "1", "2", "3", "4" }, new MblGetManyCallback<User>() {
+
+    public void onSuccess(List<User> users) {
+       // ... display users
+    }
+
+    public void onError() {
+       // ... show error message
+    }
+});
 ```
 
 Smart image loader
