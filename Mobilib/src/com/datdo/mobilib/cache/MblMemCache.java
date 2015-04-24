@@ -11,6 +11,10 @@ import junit.framework.Assert;
 
 import com.datdo.mobilib.util.MblUtils;
 
+/**
+ * Cache objects in memory until they are expired. Obviously all accesses to cached object must be thread-safe.
+ * @param <T> class of object being cached
+ */
 public class MblMemCache<T> {
 
     private static class CacheItem<T> {
@@ -24,6 +28,10 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * Interface to iterate through all object of this cache.
+     * @see #iterateWithCallback(com.datdo.mobilib.cache.MblMemCache.IterateCallback)
+     */
     public static interface IterateCallback<T> {
         public void onInterate(T object);
     }
@@ -31,14 +39,29 @@ public class MblMemCache<T> {
     private final Map<String, CacheItem<T>> mMap = new HashMap<String, CacheItem<T>>();
     private long mDuration;
 
+    /**
+     * Constructor.
+     * @param duration time in milliseconds before an object become expired
+     */
     public MblMemCache(long duration) {
         mDuration = duration;
     }
 
+    /**
+     * Put an object to cache.
+     * @param id key
+     * @param object value
+     */
     public void put(String id, T object) {
         put(id, object, System.currentTimeMillis());
     }
 
+    /**
+     * Put an object to cache and specify when the object was retrieved
+     * @param id key
+     * @param object value
+     * @param putAt when the object was retrieved (in milliseconds)
+     */
     public void put(String id, T object, long putAt) {
         synchronized (this) {
             CacheItem<T> cacheItem = mMap.get(id);
@@ -52,6 +75,11 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * Get an object from cache by its id.
+     * @param id key
+     * @return object if it exists in cache and not expired, otherwise return nul
+     */
     public T get(String id) {
         synchronized (this) {
             CacheItem<T> cacheItem = mMap.get(id);
@@ -68,6 +96,9 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * Like {@link #get(String)}, but for multiple ids.
+     */
     public List<T> get(List<String> ids) {
 
         if (MblUtils.isEmpty(ids)) {
@@ -86,6 +117,11 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * Remove an object from cache by its id.
+     * @param id key
+     * @return removed object if it exists in cache, otherwise null
+     */
     public T remove(String id) {
         synchronized (this) {
             CacheItem<T> cacheItem = mMap.get(id);
@@ -98,6 +134,9 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * Like {@link #remove(String)}, but for multiple ids.
+     */
     public List<T> remove(List<String> ids) {
         synchronized (this) {
             List<T> ret = new ArrayList<T>();
@@ -111,6 +150,10 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * iterate through all object of this cache.
+     * @see com.datdo.mobilib.cache.MblMemCache.IterateCallback
+     */
     public void iterateWithCallback(IterateCallback<T> callback) {
 
         Assert.assertNotNull(callback);
@@ -126,22 +169,36 @@ public class MblMemCache<T> {
         }
     }
 
+    /**
+     * Check if object exists in cache by its id.
+     * @param id key
+     * @return true if object exists in cache
+     */
     public boolean containsKey(String id) {
         synchronized (this) {
             return get(id) != null;
         }
     }
 
+    /**
+     * Remove all objects.
+     */
     public void clear() {
         synchronized (this) {
             mMap.clear();
         }
     }
 
+    /**
+     * Get time in milliseconds before an object become expired.
+     */
     public long getDuration() {
         return mDuration;
     }
 
+    /**
+     * Set time in milliseconds before an object become expired
+     */
     public void setDuration(long duration) {
         mDuration = duration;
     }
