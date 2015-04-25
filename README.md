@@ -636,7 +636,6 @@ s.run(new MblSerializer.Task() {
 });
 
 s.run(new MblSerializer.Task() {
-public void run(Runnable finishCallback) {
     @Override
     public void run(Runnable finishCallback) {
         // run task 2 in async thread
