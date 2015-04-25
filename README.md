@@ -248,6 +248,7 @@ Due to the fact that Activity/Fragment model has too many drawbacks:
 3. Fragment can not contain another fragment (for example: you can not add Google MapFragment into your fragment)
 4. Unable to start a fragment directly from another fragment while an Activity can be started directly from another Activity (you can do it by using getActivity() method, but it is still complicated, as mentioned in [1])
 5. Activity must be subclass of FragmentActivity.
+
 it is recommended to use Carrier/Interceptor alternative when you need to render multiple sub-screens in a parent screen.
  
 **Benefits of Carrier/Interceptor:**
@@ -292,7 +293,9 @@ mCarrier.startInterceptor(Interceptor1.class);
 Cache Master
 ------------
 Cache Master (CM) is a full solution for retrieving and caching objects in Android app.
+
 Objects can be retrieved from 3 data-sources:
+
 1. Memory                           -> high speed, can get object instantly without blocking main thread, lost all objects when app is killed
 2. Database/file                    -> medium speed, should be executed on asynchronous thread, objects is still intact even when app is killed
 3. Server (via RESTful API, etc)    -> slow speed, use this way to retrieve new objects or expired objects, must be executed on asynchronous thread
@@ -301,6 +304,7 @@ The mechanism of CM is that objects are stored in Memory for instant retrieval, 
 and fetched from server when they are expired or not existing in both Memory and Database.
 
 The following example steps depicts how CM works to retrieve list of objects by their ids:
+
 1. Given that we need to retrieve objects whose ids is [1,2,3,4]
 2. Firstly, CM searches in Memory for [1,2,3,4]. It finds object1 and object2 but object2 is too old (expired). 3 & 4 is not found. Result = [object1]
 3. Next, CM searches in Mobilib 's database for [2,3,4]. It finds out that 2 is existing but expired, 3 is existing and still fresh, 4 is not found.
@@ -322,7 +326,7 @@ get/put/delete/clear methods are executed serially by `MblSerializer` to make CM
 All accesses to Databases are executed on asynchronous thread so that it doesn't burden main thread.
 
 Sample code:
-```
+```java
 MblCacheMaster cm = new MblCacheMaster<User>(User.class, 60 * 1000) {
 
     protected String getObjectId(User user) {
@@ -612,7 +616,7 @@ Task is defined by implementing `MblSerializer#Task` interface.
 Task is always invoked in main thread, then it can split processing to another thread itself if needed.
   
 Sample code:
-```  
+```java
 MblSerializer s = new MblSerializer();
 
 s.run(new MblSerializer.Task() {
