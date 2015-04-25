@@ -221,58 +221,62 @@ MblApi.post(
 Carrier/Interceptor
 -------------------
 Carrier/Interceptor is a alternative of old Activity/Fragment model.
+
 Due to the fact that Activity/Fragment model has too many drawbacks:
-  - Quite complicated to start and manage lifecycle.
 
-***How you start a Fragment with parameters***
-```
-Fragment newFragment = new ExampleFragment();
-Bundle args = new Bundle();
-args.putInt("param1", param1);
-args.putInt("param2", param2);
-newFragment.setArguments(args);
-FragmentTransaction transaction = getFragmentManager().beginTransaction(); // or getSupportFragmentManager()
-transaction.replace(R.id.fragment_container, newFragment);
-transaction.addToBackStack(null);
-transaction.commit();
-```
- 
-***Fragment 's lifecycle (quite different from Activity 's lifecycle, why Google didn't make coding simpler?)***
-```
-onAttach -> onCreate -> onCreateView -> onActivityCreated -> onStart -> onResume -> onPause -> onStop -> onDestroyView -> onDestroy -> onDetach
-```
+1. Quite complicated to start and manage lifecycle.
 
-  - Cause potential bugs (especially {@code Fragment#getActivity()} method which causes `NullPointerException`.
-  - Fragment can not contain another fragment (for example: you can not add Google MapFragment into your fragment)
-  - Unable to start a fragment directly from another fragment while an Activity can be started directly from another Activity (you can do it by using getActivity() method, but it is still complicated, as mentioned in [1])
-  - Activity must be subclass of FragmentActivity.
+	How you start a Fragment with parameters
+	```java
+	Fragment newFragment = new ExampleFragment();
+	Bundle args = new Bundle();
+	args.putInt("param1", param1);
+	args.putInt("param2", param2);
+	newFragment.setArguments(args);
+	FragmentTransaction transaction = getFragmentManager().beginTransaction(); // or getSupportFragmentManager()
+	transaction.replace(R.id.fragment_container, newFragment);
+	transaction.addToBackStack(null);
+	transaction.commit();
+	```
+	 
+	Fragment 's lifecycle (quite different from Activity 's lifecycle, why Google didn't make coding simpler?)
+	```java
+	onAttach -> onCreate -> onCreateView -> onActivityCreated -> onStart -> onResume -> onPause -> onStop -> onDestroyView -> onDestroy -> onDetach
+	```
+
+2. Cause potential bugs (especially `Fragment#getActivity()` method which causes `NullPointerException`).
+3. Fragment can not contain another fragment (for example: you can not add Google MapFragment into your fragment)
+4. Unable to start a fragment directly from another fragment while an Activity can be started directly from another Activity (you can do it by using getActivity() method, but it is still complicated, as mentioned in [1])
+5. Activity must be subclass of FragmentActivity.
 it is recommended to use Carrier/Interceptor alternative when you need to render multiple sub-screens in a parent screen.
  
-Benefits of Carrier/Interceptor:
-  - Easy to use
+**Benefits of Carrier/Interceptor:**
 
-***How you start an Interceptor with parameters***
-```
-carrier.startInterceptor(ExampleInterceptor.class, "param1", param1, "param2", param2);
-```
+1. Easy to use
+	
+	How you start an Interceptor with parameters
+	```java
+	carrier.startInterceptor(ExampleInterceptor.class, "param1", param1, "param2", param2);
+	```
+	
+	Interceptor 's lifecycle just looks like Activity 's lifecycle, even simpler
+	```java
+	onCreate -> onResume -> onPause -> onDestroy
+	```
+2. Interceptor can contains another interceptor due to the fact that interceptor is just a View
+3. You can start an interceptor from another interceptor, just like starting Activity from another Activity, even simpler
 
-***Interceptor 's lifecycle just looks like Activity 's lifecycle, even simpler***
-```
-onCreate -> onResume -> onPause -> onDestroy
-```
-  - Interceptor can contains another interceptor due to the fact that interceptor is just a View
-  - You can start an interceptor from another interceptor, just like starting Activity from another Activity, even simpler
-```
-public class ExampleInterceptor extends MblInterceptor {
-    public void foo() {
-        startInterceptor(NextInterceptor.class, "param1", param1, "param2", param2);
-    }
-}
-```
-  - MblCarrier is just an object wrapping a `FrameLayout` view which is the container view of its Interceptors, therefore Carrier can be plugged in any Activity or View.
+	```java
+	public class ExampleInterceptor extends MblInterceptor {
+	    public void foo() {
+	        startInterceptor(NextInterceptor.class, "param1", param1, "param2", param2);
+	    }
+	}
+	```
+4. MblCarrier is just an object wrapping a `FrameLayout` view which is the container view of its Interceptors, therefore Carrier can be plugged in any Activity or View.
  
 Sample code:
-```
+```java
 FrameLayout interceptorContainerView = (FrameLayout) findViewById(R.id.interceptor_container);
 mCarrier = new MblSlidingCarrier(this, interceptorContainerView, new MblCarrier.MblCarrierCallback() {
     @Override
