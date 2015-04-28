@@ -22,6 +22,8 @@ import java.util.Vector;
 
 /**
  * <pre>
+ * DEPRECATED. Should use {@link com.datdo.mobilib.util.MblSimpleImageLoader} instead.
+ *
  * Smart loader to display images for child views in a {@link ViewGroup}.
  * Features of this loader:
  *   1. Load images sequentially.
@@ -55,6 +57,7 @@ import java.util.Vector;
  * </pre>
  * @param <T> class of object bound with an child views of {@link ViewGroup}
  */
+@Deprecated
 public abstract class MblImageLoader<T> {
 
     /**

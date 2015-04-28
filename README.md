@@ -373,81 +373,67 @@ cm.get(new String[] { "1", "2", "3", "4" }, new MblGetManyCallback<User>() {
 
 Smart image loader
 -----------------
-Subclasses of AdapterView (like ListView, GridView, ...) are used very frequently in Android apps. Most of them contains at least one image for each item and we need to handle some thing as following:
+Smart loader to display images for child views in a `ViewGroup`, like `ListView`, `LinearLayout`, `GridView`, etc.
 
-  - Scale bitmap to match sizes of ImageView.
-  - Cache loaded bitmaps in LruCache so that we don't need to reload previous images when scrolling back to top.
-  - An important problem: in case that AdapterView has many items and user scrolls to bottom, lots of bitmap will be loaded, which takes much time. Therefore, user has to wait very long for currently displayed image being fully loaded.
+Features:
+1. Load images sequentially.
+2. Automatically scale images to match sizes of `ImageView`.
+3. Cache images using `LruCache`.
+4. Only load images for currently displayed cells, which is very useful for `ListView`.
+5. Fading animation when bitmap is loaded successfully.
+6. Display `ProgressBar` to indicate bitmap loading
 
-All problems above are solved by using **MblImageLoader**.
-
-**MblImageLoader** is an implementation of Template Method pattern. You need to override some abstract methods to make it work.
+**MblSimpleImageLoader** is an implementation of Template Method pattern. You need to override some abstract methods to make it work.
 
 ```java
-public class UserAdapter extends BaseAdapter<User> {
+public class UserAdapter extends BaseAdapter {
 
-	private MblImageLoader<User> mImageLoader = new MblImageLoader<User>() {
+    private MblSimpleImageLoader<User> mUserAvatarLoader = new MblSimpleImageLoader<User>() {
 
-		@Override
-	    protected boolean shouldLoadImageForItem(User user) {
-	        return user.getAvatar() != null;
-	    }
+        @Override
+        protected User getItemBoundWithView(View view) {
+            return (User) view.getTag();
+        }
 
-	    @Override
-	    protected int getDefaultImageResource(User user) {
-	        return R.drawable.default_img;
-	    }
+        @Override
+        protected ImageView getImageViewBoundWithView(View view) {
+            return (ImageView) view.findViewById(R.id.avatar_image_view);
+        }
 
-	    @Override
-	    protected int getErrorImageResource(User user) {
-	        return R.drawable.error_img;
-	    }
+        @Override
+        protected String getItemId(User user) {
+            return user.getId();
+        }
 
-	    @Override
-	    protected int getLoadingIndicatorImageResource(User user) {
-	        return R.drawable.loading_img;
-	    }
+        @Override
+        protected void retrieveImage(User user, final MblRetrieveImageCallback cb) {
+            MblApi.get(item, null, null, Long.MAX_VALUE, true, new MblApiCallback() {
 
-		@Override
-	    protected User getItemBoundWithView(View view) {
-	        return (User) view.getTag();
-	    }
+                public void onSuccess(int statusCode, byte[] data) {
+                    cb.onRetrievedByteArray(data);
+                };
 
-	    @Override
-	    protected ImageView getImageViewFromView(View view) {
-	        return (ImageView) view.findViewById(R.id.avatar_img);
-	    }
+                public void onFailure(int error, String errorMessage) {
+                    cb.onRetrievedError();
+                }
+            }, null);
+        }
 
-	    @Override
-	    protected String getItemId(User user) {
-	        return user.getId();
-	    }
+        @Override
+        protected void onError(ImageView imageView, T item) {
+            imageView.setImageResource(R.drawable.default_avatar);
+        }
+    };
 
-	    @Override
-	    protected void retrieveImage(User user, final MblRetrieveImageCallback cb) {
-	        MblApi.get(user.getAvatar(), null, null, true, Long.MAX_VALUE, true, new MblApiGetCallback() {
+    @Override
+    public View getView(int pos, View convertView, ViewGroup parent) {
 
-	            @Override
-	            public void onSuccess(int statusCode, byte[] data) {
-	                cb.onRetrievedByteArray(data);
-	            };
+        // ...
 
-	            @Override
-	            public void onFailure(int error, String errorMessage) {
-	                cb.onRetrievedByteArray(null);
-	            }
-	        }, MblUtils.getMainThreadHandler());
-	    }
-	};
+        view.setTag(user);
+        mUserImageLoader.loadImage(view);
 
-	@Override
-    public View getView(int pos, View view, ViewGroup parent) {
-    	...
-
-    	User user = (User) getItem(pos);
-    	view.setTag(user);
-    	mImageLoader.loadImage(view);
-    	return view;
+        return view;
     }
 }
 ```
