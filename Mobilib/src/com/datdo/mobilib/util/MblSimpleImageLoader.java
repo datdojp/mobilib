@@ -316,9 +316,11 @@ public abstract class MblSimpleImageLoader<T> {
                                         MblUtils.executeOnMainThread(new Runnable() {
                                             @Override
                                             public void run() {
-                                                imageView.setImageBitmap(bm);
-                                                hideProgressBar(imageView);
-                                                animateImageView(imageView);
+                                                if (isStillBound(view, item)) {
+                                                    imageView.setImageBitmap(bm);
+                                                    hideProgressBar(imageView);
+                                                    animateImageView(imageView);
+                                                }
                                                 finishCallback.run();
                                             }
                                         });
@@ -362,8 +364,10 @@ public abstract class MblSimpleImageLoader<T> {
                         MblUtils.executeOnMainThread(new Runnable() {
                             @Override
                             public void run() {
-                                hideProgressBar(imageView);
-                                onError(imageView, item);
+                                if (isStillBound(view, item)) {
+                                    hideProgressBar(imageView);
+                                    onError(imageView, item);
+                                }
                                 finishCallback.run();
                             }
                         });
