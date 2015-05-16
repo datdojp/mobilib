@@ -1135,7 +1135,11 @@ public class MblUtils {
             @Override
             public void run() {
                 if (sProgressDialog != null && sProgressDialog.isShowing()) {
-                    sProgressDialog.dismiss();
+                    try {
+                        sProgressDialog.dismiss();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
                 sProgressDialog = new ProgressDialog(getCurrentContext());
                 sProgressDialog.setMessage(message);
