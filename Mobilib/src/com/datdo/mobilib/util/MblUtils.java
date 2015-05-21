@@ -53,8 +53,12 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -2264,5 +2268,62 @@ public class MblUtils {
         } else {
             return jo.optString(field, null);
         }
+    }
+
+    /**
+     * <pre>
+     * Crop bitmap from rectangle to square. If bitmap is already a square, just return original bitmap
+     * </pre>
+     */
+    public static Bitmap createSquareCroppedBitmap(Bitmap bitmap) {
+
+        if (bitmap.getWidth() == bitmap.getHeight()) {
+            return bitmap;
+        }
+
+        int minSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
+        return Bitmap.createBitmap(
+                bitmap,
+                (bitmap.getWidth() - minSize) / 2,
+                (bitmap.getHeight() - minSize) / 2,
+                minSize,
+                minSize);
+    }
+
+    /**
+     * <pre>
+     * Crop bitmap from rectangle to circle.
+     * The cropping is done via 2 croppings: rectangle -> square -> circle.
+     * </pre>
+     */
+    public static Bitmap createCircleCroppedBitmap(Bitmap bitmap) {
+
+        Bitmap squareBitmap = createSquareCroppedBitmap(bitmap);
+
+        Bitmap output = Bitmap.createBitmap(
+                squareBitmap.getWidth(),
+                squareBitmap.getHeight(),
+                Bitmap.Config.ARGB_8888);
+
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        Canvas canvas = new Canvas(output);
+        canvas.drawARGB(0, 0, 0, 0);
+        canvas.drawCircle(
+                squareBitmap.getWidth() / 2,
+                squareBitmap.getHeight() / 2,
+                squareBitmap.getWidth() / 2,
+                paint);
+
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        Rect rect = new Rect(0, 0, squareBitmap.getWidth(), squareBitmap.getHeight());
+        canvas.drawBitmap(squareBitmap, rect, rect, paint);
+
+        if (squareBitmap != bitmap) {
+            squareBitmap.recycle();
+        }
+
+        return output;
     }
 }
