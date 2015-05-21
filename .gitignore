@@ -1,19 +1,16 @@
-*.apk
-*.ap_
-*.dex
-*.class
-bin/
-gen/
-local.properties
-.classpath
-.project
-proguard/
+# Gradle
+.gradle
+build
+out
+
+# IntelliJ IDEA
+.idea
 *.iml
 *.ipr
 *.iws
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/libraries/
-.gradle
-app/build/
+classes
+gen-external-apklibs
+
+# Other
 .DS_Store
+local.properties
