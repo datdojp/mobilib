@@ -1,5 +1,9 @@
 apply plugin: 'com.android.application'
 
+repositories {
+    mavenCentral()
+}
+
 android {
     compileSdkVersion 22
     buildToolsVersion "22"
