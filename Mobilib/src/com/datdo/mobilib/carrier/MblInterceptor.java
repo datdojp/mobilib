@@ -1,8 +1,5 @@
 package com.datdo.mobilib.carrier;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -10,9 +7,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.datdo.mobilib.carrier.MblCarrier.Events;
-import com.datdo.mobilib.event.MblEventCenter;
 import com.datdo.mobilib.util.MblUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <pre>
@@ -33,11 +32,14 @@ import com.datdo.mobilib.util.MblUtils;
 @SuppressLint("InflateParams")
 public abstract class MblInterceptor extends FrameLayout {
 
-    private boolean                     mIsTop;
+    private static final String TAG = MblUtils.getTag(MblInterceptor.class);
+
+    private MblCarrier                  mCarrier;
     private final Map<String, Object>   mExtras = new ConcurrentHashMap<String, Object>();
 
-    public MblInterceptor(Context context, Map<String, Object> extras) {
+    public MblInterceptor(Context context, MblCarrier carrier, Map<String, Object> extras) {
         super(context);
+        mCarrier = carrier;
         mExtras.clear();
         if (!MblUtils.isEmpty(extras)) {
             mExtras.putAll(extras);
@@ -90,7 +92,9 @@ public abstract class MblInterceptor extends FrameLayout {
      * @see android.app.Activity#finish()
      */
     public void finish() {
-        MblEventCenter.postEvent(this, Events.FINISH_INTERCEPTOR);
+        if (mCarrier != null) {
+            mCarrier.finishInterceptor(this);
+        }
     }
 
     /**
@@ -110,7 +114,9 @@ public abstract class MblInterceptor extends FrameLayout {
      * @param extras parameters passed to the new interceptor, in key,value
      */
     public void startInterceptor(Class<? extends MblInterceptor> clazz, MblCarrier.Options options, Map<String, Object> extras) {
-        MblEventCenter.postEvent(this, Events.START_INTERCEPTOR, clazz, options, extras);
+        if (mCarrier != null) {
+            mCarrier.startInterceptor(clazz, options, extras);
+        }
     }
 
     /**
@@ -124,7 +130,6 @@ public abstract class MblInterceptor extends FrameLayout {
      * @see android.app.Activity#onResume()
      */
     public void onResume() {
-        mIsTop = true;
     }
 
     /**
@@ -132,7 +137,6 @@ public abstract class MblInterceptor extends FrameLayout {
      * @see android.app.Activity#onPause()
      */
     public void onPause() {
-        mIsTop = false;
     }
 
     /**
@@ -166,6 +170,19 @@ public abstract class MblInterceptor extends FrameLayout {
      * Check if this interceptor is on top of interceptor stack of its parent carrier.
      */
     public boolean isTop() {
-        return mIsTop;
+        if (mCarrier == null) {
+            return false;
+        }
+        List<MblInterceptor> list = mCarrier.getInterceptors();
+        int index = list.indexOf(this);
+        return index >= 0 && index == list.size() - 1;
+    }
+
+    /**
+     * Get {@link com.datdo.mobilib.carrier.MblCarrier} instance bound with this interceptor
+     * @return
+     */
+    public MblCarrier getCarrier() {
+        return mCarrier;
     }
 }

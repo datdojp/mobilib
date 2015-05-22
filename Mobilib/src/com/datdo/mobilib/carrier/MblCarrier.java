@@ -14,7 +14,9 @@ import com.datdo.mobilib.util.MblUtils;
 
 import junit.framework.Assert;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -87,11 +89,6 @@ public abstract class MblCarrier implements MblEventListener {
 
     private static final String TAG = MblUtils.getTag(MblCarrier.class);
 
-    static final class Events {
-        static final String FINISH_INTERCEPTOR      = Events.class + "#finish_interceptor";
-        static final String START_INTERCEPTOR       = Events.class + "#start_interceptor";
-    }
-
     /**
      * <pre>
      * Extra options when starting new interceptor.
@@ -143,8 +140,6 @@ public abstract class MblCarrier implements MblEventListener {
         mCallback                   = callback;
 
         MblEventCenter.addListener(this, new String[] {
-                Events.START_INTERCEPTOR,
-                Events.FINISH_INTERCEPTOR,
                 MblCommonEvents.ACTIVITY_RESUMED,
                 MblCommonEvents.ACTIVITY_PAUSED,
                 MblCommonEvents.ACTIVITY_DESTROYED
@@ -204,26 +199,6 @@ public abstract class MblCarrier implements MblEventListener {
     @SuppressWarnings("unchecked")
     @Override
     public void onEvent(Object sender, String name, Object... args) {
-
-        if (sender instanceof MblInterceptor) {
-            MblInterceptor interceptor = (MblInterceptor) sender;
-            if (!mInterceptorStack.contains(interceptor)) {
-                return;
-            }
-
-            if (Events.START_INTERCEPTOR == name) {
-                startInterceptor((Class<? extends MblInterceptor>) args[0], (Options) args[1], (Map<String, Object>) args[2]);
-            }
-
-            if (Events.FINISH_INTERCEPTOR == name) {
-                try {
-                    finishInterceptor((MblInterceptor) sender);
-                } catch (MblInterceptorNotBelongToCarrierException e) {
-                    Log.e(TAG, "", e);
-                }
-            }
-        }
-
         if (sender instanceof Activity) {
             if (sender != mContext) {
                 return;
@@ -285,7 +260,7 @@ public abstract class MblCarrier implements MblEventListener {
         }
 
         try {
-            final MblInterceptor nextInterceptor = clazz.getConstructor(Context.class, Map.class).newInstance(mContext, extras);
+            final MblInterceptor nextInterceptor = clazz.getConstructor(Context.class, MblCarrier.class, Map.class).newInstance(mContext, this, extras);
 
             if (mInterceptorStack.isEmpty()) {
                 mInterceptorContainerView.addView(nextInterceptor);
@@ -319,13 +294,8 @@ public abstract class MblCarrier implements MblEventListener {
     /**
      * Destroy an interceptor.
      * @param currentInterceptor interceptor to destroy
-     * @throws MblInterceptorNotBelongToCarrierException thrown when the interceptor does not belongs to this carrier
      */
-    public void finishInterceptor(final MblInterceptor currentInterceptor) throws MblInterceptorNotBelongToCarrierException {
-
-        if (!mInterceptorStack.contains(currentInterceptor)) {
-            throw new MblInterceptorNotBelongToCarrierException("Unable to finish interceptor: interceptor does not belong to carrier.");
-        }
+    public void finishInterceptor(final MblInterceptor currentInterceptor) {
 
         try {
             boolean isTop = currentInterceptor == mInterceptorStack.peek();
@@ -468,5 +438,13 @@ public abstract class MblCarrier implements MblEventListener {
         }
 
         return mapExtras;
+    }
+
+    /**
+     * Get {@link com.datdo.mobilib.carrier.MblInterceptor} instances bound with this carrier
+     * @return
+     */
+    public List<MblInterceptor> getInterceptors() {
+        return new ArrayList<MblInterceptor>(mInterceptorStack);
     }
 }

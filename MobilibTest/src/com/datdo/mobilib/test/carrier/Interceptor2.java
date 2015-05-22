@@ -6,13 +6,14 @@ import android.content.Context;
 import android.view.View;
 import android.widget.TextView;
 
+import com.datdo.mobilib.carrier.MblCarrier;
 import com.datdo.mobilib.carrier.MblInterceptor;
 import com.datdo.mobilib.test.R;
 
 public class Interceptor2 extends MblInterceptor {
 
-    public Interceptor2(Context context, Map<String, Object> extras) {
-        super(context, extras);
+    public Interceptor2(Context context, MblCarrier carrier, Map<String, Object> extras) {
+        super(context, carrier, extras);
     }
 
     @Override
