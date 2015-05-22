@@ -28,7 +28,7 @@ public class CarrierTestActivity extends MblBaseActivity {
                 finish();
             }
         });
-        mCarrier.startInterceptor(Interceptor1.class);
+        mCarrier.startInterceptor(Interceptor1.class, null);
 
         selectSlidingDirection();
     }

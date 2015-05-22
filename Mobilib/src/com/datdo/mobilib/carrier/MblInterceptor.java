@@ -36,7 +36,7 @@ public abstract class MblInterceptor extends FrameLayout {
     private boolean                     mIsTop;
     private final Map<String, Object>   mExtras = new ConcurrentHashMap<String, Object>();
 
-    protected MblInterceptor(Context context, Map<String, Object> extras) {
+    public MblInterceptor(Context context, Map<String, Object> extras) {
         super(context);
         mExtras.clear();
         if (!MblUtils.isEmpty(extras)) {
@@ -96,19 +96,21 @@ public abstract class MblInterceptor extends FrameLayout {
     /**
      * Start another interceptor.
      * @param clazz class of interceptor to start
+     * @param options extra option when adding new interceptor to carrier
      * @param extras parameters passed to the new interceptor, in key,value (for example: "param1", param1Value, "param1", param2Value, ...)
      */
-    public void startInterceptor(Class<? extends MblInterceptor> clazz, Object... extras) {
-        startInterceptor(clazz, MblCarrier.convertExtraArrayToMap(extras));
+    public void startInterceptor(Class<? extends MblInterceptor> clazz, MblCarrier.Options options, Object... extras) {
+        startInterceptor(clazz, options, MblCarrier.convertExtraArrayToMap(extras));
     }
 
     /**
      * Start another interceptor.
      * @param clazz class of interceptor to start
+     * @param options extra option when adding new interceptor to carrier
      * @param extras parameters passed to the new interceptor, in key,value
      */
-    public void startInterceptor(Class<? extends MblInterceptor> clazz, Map<String, Object> extras) {
-        MblEventCenter.postEvent(this, Events.START_INTERCEPTOR, clazz, extras);
+    public void startInterceptor(Class<? extends MblInterceptor> clazz, MblCarrier.Options options, Map<String, Object> extras) {
+        MblEventCenter.postEvent(this, Events.START_INTERCEPTOR, clazz, options, extras);
     }
 
     /**

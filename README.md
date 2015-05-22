@@ -257,7 +257,7 @@ it is recommended to use Carrier/Interceptor alternative when you need to render
 	
 	How you start an Interceptor with parameters
 	```java
-	carrier.startInterceptor(ExampleInterceptor.class, "param1", param1, "param2", param2);
+	carrier.startInterceptor(ExampleInterceptor.class, null, "param1", param1, "param2", param2);
 	```
 	
 	Interceptor 's lifecycle just looks like Activity 's lifecycle, even simpler
@@ -270,7 +270,7 @@ it is recommended to use Carrier/Interceptor alternative when you need to render
 	```java
 	public class ExampleInterceptor extends MblInterceptor {
 	    public void foo() {
-	        startInterceptor(NextInterceptor.class, "param1", param1, "param2", param2);
+	        startInterceptor(NextInterceptor.class, null, "param1", param1, "param2", param2);
 	    }
 	}
 	```
@@ -285,7 +285,7 @@ mCarrier = new MblSlidingCarrier(this, interceptorContainerView, new MblCarrier.
         // ... handle when Carrier does not contain any Interceptor
     }
 });
-mCarrier.startInterceptor(Interceptor1.class);
+mCarrier.startInterceptor(Interceptor1.class, new Options().newInterceptorStack(), "param1", param1);
 ```
  
 **P/S: the name "Carrier/Interceptor" is inspired by legendary game Starcraft ;)**

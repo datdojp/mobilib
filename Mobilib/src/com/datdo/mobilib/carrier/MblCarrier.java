@@ -50,7 +50,7 @@ import java.util.Stack;
  *   1. Easy to use
  *     :::How you start an Interceptor with parameters
  *     {@code
- *     carrier.startInterceptor(ExampleInterceptor.class, "param1", param1, "param2", param2);
+ *     carrier.startInterceptor(ExampleInterceptor.class, null, "param1", param1, "param2", param2);
  *     }
  *     :::Interceptor 's lifecycle just looks like Activity 's lifecycle, even simpler
  *     onCreate -> onResume -> onPause -> onDestroy
@@ -59,7 +59,7 @@ import java.util.Stack;
  *     {@code
  *     public class ExampleInterceptor extends MblInterceptor {
  *         public void foo() {
- *             startInterceptor(NextInterceptor.class, "param1", param1, "param2", param2);
+ *             startInterceptor(NextInterceptor.class, null, "param1", param1, "param2", param2);
  *         }
  *     }
  *     }
@@ -75,7 +75,7 @@ import java.util.Stack;
  *              // ... handle when Carrier does not contain any Interceptor
  *          }
  *      });
- *      mCarrier.startInterceptor(Interceptor1.class);
+ *      mCarrier.startInterceptor(Interceptor1.class, new Options().newInterceptorStack(), "param1", param1);
  * }
  *
  * P/S: the name "Carrier/Interceptor" is inspired by legendary game Starcraft ;)
@@ -90,6 +90,27 @@ public abstract class MblCarrier implements MblEventListener {
     static final class Events {
         static final String FINISH_INTERCEPTOR      = Events.class + "#finish_interceptor";
         static final String START_INTERCEPTOR       = Events.class + "#start_interceptor";
+    }
+
+    /**
+     * <pre>
+     * Extra options when starting new interceptor.
+     * All options is OFF (false) by default.
+     * </pre>
+     */
+    public static final class Options {
+        private boolean mNewInterceptorStack;
+
+        /**
+         * <pre>
+         * Clear all interceptor in stack before starting new interceptor.
+         * </pre>
+         * @return this
+         */
+        public Options newInterceptorStack() {
+            mNewInterceptorStack = true;
+            return this;
+        }
     }
 
     /**
@@ -191,7 +212,7 @@ public abstract class MblCarrier implements MblEventListener {
             }
 
             if (Events.START_INTERCEPTOR == name) {
-                startInterceptor((Class<? extends MblInterceptor>) args[0], (Map<String, Object>) args[1]);
+                startInterceptor((Class<? extends MblInterceptor>) args[0], (Options) args[1], (Map<String, Object>) args[2]);
             }
 
             if (Events.FINISH_INTERCEPTOR == name) {
@@ -225,26 +246,43 @@ public abstract class MblCarrier implements MblEventListener {
     /**
      * Start an interceptor for this Carrier.
      * @param clazz class of interceptor to start
+     * @param options extra option when adding new interceptor to carrier
      * @param extras parameters passed to the new interceptor, in key,value (for example: "param1", param1Value, "param1", param2Value, ...)
      * @return the new interceptor instance
      */
-    public MblInterceptor startInterceptor(Class<? extends MblInterceptor> clazz, Object... extras) {
-        return startInterceptor(clazz, convertExtraArrayToMap(extras));
+    public MblInterceptor startInterceptor(Class<? extends MblInterceptor> clazz, Options options, Object... extras) {
+        return startInterceptor(clazz, options, convertExtraArrayToMap(extras));
     }
 
     /**
      * Start an interceptor for this Carrier.
      * @param clazz class of interceptor to start
+     * @param options extra option when adding new interceptor to carrier
      * @param extras parameters passed to the new interceptor, in key,value
      * @return the new interceptor instance
      */
-    public MblInterceptor startInterceptor(final Class<? extends MblInterceptor> clazz, final Map<String, Object> extras) {
+    public MblInterceptor startInterceptor(final Class<? extends MblInterceptor> clazz, Options options, final Map<String, Object> extras) {
 
         if (mInterceptorBeingStarted) {
             return null;
         }
 
         mInterceptorBeingStarted = true;
+
+        if (options != null) {
+            if (options.mNewInterceptorStack) {
+                try {
+                    mInterceptorContainerView.removeAllViews();
+                    while(!mInterceptorStack.isEmpty()) {
+                        MblInterceptor interceptor = mInterceptorStack.pop();
+                        interceptor.onPause();
+                        interceptor.onDestroy();
+                    }
+                } catch (Throwable e) {
+                    Log.e(TAG, "Unable to finish all interceptors", e);
+                }
+            }
+        }
 
         try {
             final MblInterceptor nextInterceptor = clazz.getConstructor(Context.class, Map.class).newInstance(mContext, extras);

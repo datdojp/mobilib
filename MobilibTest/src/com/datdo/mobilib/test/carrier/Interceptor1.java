@@ -22,7 +22,7 @@ public class Interceptor1 extends MblInterceptor {
         findViewById(R.id.button).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                startInterceptor(Interceptor2.class, "text", "From Interceptor 1");
+                startInterceptor(Interceptor2.class, null, "text", "From Interceptor 1");
             }
         });
     }
