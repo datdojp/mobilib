@@ -5,6 +5,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.ListView;
 
+@Deprecated
 public class MblListViewWithScrollableItems extends ListView {
     private Delegate mDelegate;
 
