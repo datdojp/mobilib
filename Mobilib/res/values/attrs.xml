@@ -16,4 +16,11 @@
         </attr>
     </declare-styleable>
 
+    <declare-styleable name="MblFlexibleSizedImageView">
+        <attr name="flexibleSize" format="enum">
+            <enum name="width" value="0"/>
+            <enum name="height" value="1"/>
+        </attr>
+    </declare-styleable>
+
 </resources>
