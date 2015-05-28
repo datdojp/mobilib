@@ -23,4 +23,9 @@
         </attr>
     </declare-styleable>
 
+    <declare-styleable name="MblYieldLayout">
+        <attr name="yieldId" format="reference"/>
+        <attr name="layoutId" format="reference"/>
+    </declare-styleable>
+
 </resources>
