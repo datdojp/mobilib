@@ -668,6 +668,53 @@ public class MyActivity extends MblActivity {
 }
 ```
 
+**MblYieldLayout**
+
+If you are familiar with Web development, you must know concept of "layout".
+
+To use layout, you create an HTML file and one "yield" tag where your page 's content will be inserted in.
+
+This widget brings Web 's "layout" concept to Android.
+
+Firstly, you create a common layout named "common_layout.xml":
+```xml
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include layout="@layout/header"/>
+
+    <LinearLayout
+        android:id="@+id/yield"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+    </LinearLayout>
+
+    <include layout="@layout/footer"/>
+</LinearLayout>
+```
+
+Secondly, use common layout in your layout for each screen. Pay attention to "layoutId" and "yieldId":
+```xml
+<com.datdo.mobilib.widget.MblYieldLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layoutId="@layout/common_layout"
+    app:yieldId="@+id/yield">
+
+    <!-- Content of this screen-->
+
+</com.datdo.mobilib.widget.MblYieldLayout>
+}
+```
+
 **Keyboard**
 ```java
 MblUtils.showKeyboard(editText);
