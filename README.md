@@ -712,7 +712,6 @@ Secondly, use common layout in your layout for each screen. Pay attention to "la
     <!-- Content of this screen-->
 
 </com.datdo.mobilib.widget.MblYieldLayout>
-}
 ```
 
 **Keyboard**
