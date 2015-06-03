@@ -32,6 +32,22 @@ public final class MblCommonEvents {
 
     /**
      * <pre>
+     * Bluetooth is turned on.
+     * Call {@link MblUtils#isBluetoothOn()} to get current network status.
+     * </pre>
+     */
+    public static final String BLUETOOTH_ON                     = MblCommonEvents.class + "#bluetooth_on";
+
+    /**
+     * <pre>
+     * Bluetooth is turned off.
+     * Call {@link MblUtils#isBluetoothOn()} to get current network status.
+     * </pre>
+     */
+    public static final String BLUETOOTH_OFF                    = MblCommonEvents.class + "#bluetooth_off";
+
+    /**
+     * <pre>
      * Keyboard is shown.
      * </pre>
      * Call {@link MblUtils#isKeyboardOn()} to get current keyboard status.

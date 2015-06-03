@@ -36,6 +36,7 @@ import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Context;
@@ -411,6 +412,16 @@ public class MblUtils {
         ConnectivityManager conMan = (ConnectivityManager) getCurrentContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = conMan.getActiveNetworkInfo();
         return activeNetwork != null && activeNetwork.isConnected();
+    }
+
+    /**
+     * <pre>
+     * Determine whether Bluetooth is currently turned on.
+     * </pre>
+     */
+    public static boolean isBluetoothOn() {
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
     }
 
     /**

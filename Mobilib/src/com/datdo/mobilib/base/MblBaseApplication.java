@@ -3,6 +3,7 @@ package com.datdo.mobilib.base;
 import java.io.IOException;
 
 import android.app.Application;
+import android.bluetooth.BluetoothAdapter;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.text.TextUtils;
@@ -77,6 +78,11 @@ public abstract class MblBaseApplication extends Application {
         registerReceiver(
                 new MblNetworkStatusChangedReceiver(), 
                 new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
+        // register bluetooth receiver
+        registerReceiver(
+                new MblBluetoothStatusChangedReceiver(),
+                new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
 
     /**
@@ -94,8 +100,8 @@ public abstract class MblBaseApplication extends Application {
      * For migration.
      * Invoked when a change of "android:versionName" in AndroidManifest.xml is detected
      * </pre>
-     * @param oldVersionCode
-     * @param newVersionCode
+     * @param oldVersionName
+     * @param newVersionName
      */
     public abstract void onVersionNameChanged(String oldVersionName, String newVersionName);
 }
