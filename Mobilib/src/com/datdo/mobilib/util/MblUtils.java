@@ -2037,6 +2037,60 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Load bitmap from byte array in async thread, then set bitmap data to {@link ImageView} object in main thread.
+     * Also support scaling to specific sizes.
+     * </pre>
+     * @param bmData bitmap byte array data
+     * @param imageView {@link ImageView} object to display image
+     * @param width specific width to scale. -1 to ignore
+     * @param height specific height to scale. -1 to ignore
+     * @param callback callback to receive result
+     */
+    public static void loadBitmapForImageView(
+            final byte[] bmData,
+            final ImageView imageView,
+            final int width,
+            final int height,
+            final MblLoadBitmapForImageViewCallback callback) {
+
+        MblUtils.executeOnAsyncThread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+
+                    final Bitmap bm = MblUtils.loadBitmapMatchSpecifiedSize(width, height, bmData);
+
+                    MblUtils.executeOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            imageView.setImageBitmap(bm);
+                            if (callback != null) {
+                                if (bm != null) {
+                                    callback.onSuccess();
+                                } else {
+                                    callback.onError();
+                                }
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                    Log.e(TAG, "Error occurred when loading bitmap for image view", e);
+                    if (callback != null) {
+                        MblUtils.executeOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onError();
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * <pre>
      * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
      * Also support scaling to specific sizes.
      * </pre>
@@ -2087,39 +2141,6 @@ public class MblUtils {
                 }
             }
         });
-    }
-
-    /**
-     * <pre>
-     * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
-     * Automatically scale bitmap to ImageView sizes.
-     * </pre>
-     * @param path path to image file
-     * @param imageView {@link ImageView} object to display image
-     * @param callback callback to receive result
-     */
-    public static void loadBitmapForImageView(
-            final String path,
-            final ImageView imageView,
-            final MblLoadBitmapForImageViewCallback callback) {
-
-        if (imageView.getWidth() == 0 || imageView.getHeight() == 0) {
-            imageView.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    removeOnGlobalLayoutListener(imageView, this);
-                    loadBitmapForImageView(path, imageView, callback);
-                }
-            });
-            return;
-        }
-
-        loadBitmapForImageView(
-                path,
-                imageView,
-                imageView.getWidth(),
-                imageView.getHeight(),
-                callback);
     }
 
     /**
