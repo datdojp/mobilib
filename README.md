@@ -165,57 +165,47 @@ HTTP/HTTPS API is light-weight and straightforward.
 
 ***Download an image***
 ```java
-MblApi.get(
-	"http://your.website.com/img/logo.png", // url
-	null, 					// no parameter required
-	null, 					// no header required
-	true, 					// enable cache
-	1000l * 60l * 60l * 24l,// cache expires within 1 day
-	true,					// ignore invalid SSL Certificate
-    new MblApiCallback() {
+MblApi.run(new MblRequest()
+    .setMethod(MblApi.Method.GET)
+    .setUrl("http://your.website.com/img/logo.png")
+    .setCacheDuration(1000l * 60l * 60l * 24l)
+    .setCallback(new MblApi.MblApiCallback() {
 
         @Override
         public void onSuccess(int statusCode, byte[] data) {
-            ...
+            // ...
         };
 
         @Override
         public void onFailure(int error, String errorMessage) {
-            ...
+            // ...
         }
-    },
-    MblUtils.getMainThreadHandler()  // callback methods are executed in main thread
-);
+    }));
 ```
 
 ***Upload file***
 ```java
-Map<String, Object> params = new HashMap<String, Object>();
-params.put("user-name", username);
-params.put("avatar", new File(uploadedFilePath));
+MblApi.run(new MblRequest()
+    .setMethod(MblApi.Method.POST)
+    .setUrl("https://your.website.com/v1/upload/avatar")
+    .setParams(
+            "user-name", username,
+            "avatar", new File(uploadedFilePath)
+    )
+    .setHeaderParams("access-token", accessToken)
+    .setVerifySSL(true)
+    .setCallback(new MblApi.MblApiCallback() {
 
-Map<String, String> headers = new HashMap<String, String>();
-headers.put("access-token", accessToken);
+        @Override
+        public void onSuccess(int statusCode, String data) {
+            // ...
+        }
 
-MblApi.post(
-	"https://your.website.com/v1/upload/avatar",
-	params,
-	headers,
-	false,  // must check SSL Certificate
-    new MblApiCallback() {
-
-		@Override
-		public void onSuccess(int statusCode, String data) {
-			...
-		}
-
-		@Override
-		public void onFailure(int error, String errorMessage) {
-			...
-		}
-	},
-	MblUtils.getMainThreadHandler()
-)
+        @Override
+        public void onFailure(int error, String errorMessage) {
+            // ...
+        }
+    }));
 ```
 
 Carrier/Interceptor
