@@ -13,6 +13,8 @@ import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
 import com.datdo.mobilib.widget.MblTouchImageView;
 
+import java.util.Map;
+
 public class ViewImageActivity extends MblBaseActivity {
 
     private MblTouchImageView mImageView;
@@ -42,7 +44,7 @@ public class ViewImageActivity extends MblBaseActivity {
                     .setCallback(new MblApiCallback() {
 
                         @Override
-                        public void onSuccess(int statusCode, byte[] data) {
+                        public void onSuccess(int statusCode, byte[] data, Map<String, String> headers) {
                             final Bitmap bm = BitmapFactory.decodeByteArray(data, 0, data.length);
                             if (bm != null) {
                                 mImageView.setImageBitmap(bm);

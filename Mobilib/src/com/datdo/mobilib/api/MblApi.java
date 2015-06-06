@@ -15,6 +15,7 @@ import junit.framework.Assert;
 
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
@@ -24,11 +25,15 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
@@ -94,7 +99,7 @@ public class MblApi {
          * @param statusCode HTTP status code or -1 (in case of fetching data from cache)
          * @param data result data in byte array
          */
-        public void onSuccess(int statusCode, byte[] data);
+        public void onSuccess(int statusCode, byte[] data, Map<String, String> headers);
         /**
          * <pre>
          * Invoked on request failure.
@@ -125,7 +130,8 @@ public class MblApi {
                     !request.isVerifySSL(),
                     request.getCallback(),
                     request.getCallbackHandler(),
-                    request.getStatusCodeValidator());
+                    request.getStatusCodeValidator(),
+                    request.isRedirectEnabled());
         } else {
             sendRequestWithBody(
                     request.getMethod(),
@@ -135,7 +141,9 @@ public class MblApi {
                     !request.isVerifySSL(),
                     request.getCallback(),
                     request.getCallbackHandler(),
-                    request.getStatusCodeValidator());
+                    request.getStatusCodeValidator(),
+                    request.getData(),
+                    request.isRedirectEnabled());
         }
     }
 
@@ -171,7 +179,8 @@ public class MblApi {
                 isIgnoreSSLCertificate,
                 callback,
                 callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator);
+                MblRequest.sDefaultStatusCodeValidator,
+                false);
     }
 
     @SuppressWarnings("unchecked")
@@ -183,7 +192,8 @@ public class MblApi {
             final boolean isIgnoreSSLCertificate,
             final MblApiCallback callback,
             Handler callbackHandler,
-            final MblStatusCodeValidator statusCodeValidator) {
+            final MblStatusCodeValidator statusCodeValidator,
+            final boolean redirectEnabled) {
 
         final boolean isCacheEnabled = cacheDuration > 0;
 
@@ -250,7 +260,7 @@ public class MblApi {
                                     MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                         @Override
                                         public void run() {
-                                            callback.onSuccess(-1, data);
+                                            callback.onSuccess(-1, data, new HashMap<String, String>());
                                         }
                                     });
                                 }
@@ -268,6 +278,9 @@ public class MblApi {
                     HttpClient httpClient = getHttpClient(fullUrl, isIgnoreSSLCertificate);
                     HttpContext httpContext = new BasicHttpContext();
                     HttpGet httpGet = new HttpGet(fullUrl);
+                    if (!redirectEnabled) {
+                        disableRedirect(httpGet);
+                    }
 
                     httpGet.setHeaders(getHeaderArray(headerParams));
 
@@ -288,6 +301,10 @@ public class MblApi {
                     }
 
                     final byte[] data = EntityUtils.toByteArray(response.getEntity());
+                    final Map<String, String> headers = new HashMap<String, String>();
+                    for (Header h : response.getAllHeaders()) {
+                        headers.put(h.getName(), h.getValue());
+                    }
 
                     if (isCacheEnabled) {
                         saveCache(fullUrl, data);
@@ -297,7 +314,7 @@ public class MblApi {
                         MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onSuccess(statusCode, data);
+                                callback.onSuccess(statusCode, data, headers);
                             }
                         });
                     }
@@ -372,7 +389,9 @@ public class MblApi {
                 isIgnoreSSLCertificate,
                 callback,
                 callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator);
+                MblRequest.sDefaultStatusCodeValidator,
+                null,
+                false);
     }
 
     public static enum Method {
@@ -404,7 +423,9 @@ public class MblApi {
             final boolean isIgnoreSSLCertificate,
             final MblApiCallback callback,
             Handler callbackHandler,
-            final MblStatusCodeValidator statusCodeValidator) {
+            final MblStatusCodeValidator statusCodeValidator,
+            final String data,
+            final boolean redirectEnabled) {
 
         Assert.assertNotNull(method);
 
@@ -468,6 +489,9 @@ public class MblApi {
                     HttpClient httpClient = getHttpClient(url, isIgnoreSSLCertificate);
                     HttpContext httpContext = new BasicHttpContext();
                     HttpEntityEnclosingRequestBase httpRequest = method.getHttpRequest(url);
+                    if (!redirectEnabled) {
+                        disableRedirect(httpRequest);
+                    }
 
                     if (!MblUtils.isEmpty(paramsNoEmptyVal)) {
                         if (fIsMultipart) {
@@ -494,6 +518,8 @@ public class MblApi {
                             }
                             httpRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs, UTF8));
                         }
+                    } else if (!MblUtils.isEmpty(data)) {
+                        httpRequest.setEntity(new StringEntity(data, UTF8));
                     }
 
                     httpRequest.setHeaders(getHeaderArray(headerParams));
@@ -516,12 +542,16 @@ public class MblApi {
                     }
 
                     final byte[] data = EntityUtils.toByteArray(response.getEntity());
+                    final Map<String, String> headers = new HashMap<String, String>();
+                    for (Header h : response.getAllHeaders()) {
+                        headers.put(h.getName(), h.getValue());
+                    }
 
                     if (callback != null) {
                         MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onSuccess(statusCode, data);
+                                callback.onSuccess(statusCode, data, headers);
                             }
                         });
                     }
@@ -572,7 +602,9 @@ public class MblApi {
                 isIgnoreSSLCertificate,
                 callback,
                 callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator);
+                MblRequest.sDefaultStatusCodeValidator,
+                null,
+                false);
     }
 
     /**
@@ -606,7 +638,9 @@ public class MblApi {
                 isIgnoreSSLCertificate,
                 callback,
                 callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator);
+                MblRequest.sDefaultStatusCodeValidator,
+                null,
+                false);
     }
 
     @SuppressWarnings("unused")
@@ -742,5 +776,11 @@ public class MblApi {
         } else {
             return null;
         }
+    }
+
+    private static void disableRedirect(HttpRequest httpRequest) {
+        HttpParams params = new BasicHttpParams();
+        params.setParameter(ClientPNames.HANDLE_REDIRECTS, false);
+        httpRequest.setParams(params);
     }
 }

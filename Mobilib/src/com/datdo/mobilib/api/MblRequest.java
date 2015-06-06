@@ -30,7 +30,7 @@ public class MblRequest {
 
     static MblApiCallback sDefaultCallback = new MblApiCallback() {
         @Override
-        public void onSuccess(int statusCode, byte[] data) {
+        public void onSuccess(int statusCode, byte[] data, Map<String, String> headers) {
 
         }
 
@@ -49,6 +49,8 @@ public class MblRequest {
     private MblApiCallback                  mCallback               = sDefaultCallback;
     private Handler                         mCallbackHandler        = MblUtils.getMainThreadHandler();
     private MblStatusCodeValidator          mStatusCodeValidator    = sDefaultStatusCodeValidator;
+    private String                          mData;
+    private boolean                         mRedirectEnabled         = false;
 
     public MblRequest() {}
 
@@ -133,16 +135,6 @@ public class MblRequest {
         return this;
     }
 
-    public MblRequest setSuccessStatusCodes(final int from, final int to) {
-        mStatusCodeValidator = new MblStatusCodeValidator() {
-            @Override
-            boolean isSuccess(int statusCode) {
-                return from <= statusCode && statusCode <= to;
-            }
-        };
-        return this;
-    }
-
     public MblRequest setSuccessStatusCodes(final String regex) {
         mStatusCodeValidator = new MblStatusCodeValidator() {
             @Override
@@ -165,6 +157,16 @@ public class MblRequest {
                 return false;
             }
         };
+        return this;
+    }
+
+    public MblRequest setData(String data) {
+        mData = data;
+        return this;
+    }
+
+    public MblRequest setRedirectEnabled(boolean redirectEnabled) {
+        mRedirectEnabled = redirectEnabled;
         return this;
     }
 
@@ -202,5 +204,13 @@ public class MblRequest {
 
     MblStatusCodeValidator getStatusCodeValidator() {
         return mStatusCodeValidator;
+    }
+
+    public String getData() {
+        return mData;
+    }
+
+    public boolean isRedirectEnabled() {
+        return mRedirectEnabled;
     }
 }

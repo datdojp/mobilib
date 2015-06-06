@@ -22,6 +22,8 @@ import com.datdo.mobilib.util.MblImageLoader;
 import com.datdo.mobilib.util.MblSimpleImageLoader;
 import com.datdo.mobilib.util.MblUtils;
 
+import java.util.Map;
+
 public class ImageLoaderTestActivity extends MblBaseActivity {
 
     private static final String[] LINKS = new String[] {
@@ -90,7 +92,7 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
                         .setCallback(new MblApiCallback() {
 
                             @Override
-                            public void onSuccess(int statusCode, byte[] data) {
+                            public void onSuccess(int statusCode, byte[] data, Map<String, String> headers) {
                                 cb.onRetrievedByteArray(data);
                             };
 
