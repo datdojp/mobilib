@@ -3,6 +3,7 @@ package com.datdo.mobilib.widget;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -66,6 +67,13 @@ public class MblYieldLayout extends LinearLayout {
     }
 
     private void init(Context context, AttributeSet attrs) {
+
+        setOrientation(VERTICAL);
+
+        if (isInEditMode()) {
+            return;
+        }
+
         TypedArray ta = context.getTheme().obtainStyledAttributes(attrs, R.styleable.MblYieldLayout, 0, 0);
         mYieldId = ta.getResourceId(R.styleable.MblYieldLayout_yieldId, -1);
         mLayoutId = ta.getResourceId(R.styleable.MblYieldLayout_layoutId, -1);
@@ -77,6 +85,10 @@ public class MblYieldLayout extends LinearLayout {
     @Override
     protected void onFinishInflate() {
         super.onFinishInflate();
+
+        if (isInEditMode()) {
+            return;
+        }
 
         View[] children = new View[getChildCount()];
         for (int i = 0; i < getChildCount(); i++) {
@@ -95,6 +107,6 @@ public class MblYieldLayout extends LinearLayout {
             removeView(child);
             yieldLayout.addView(child);
         }
-        addView(layout);
+        addView(layout, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
     }
 }
