@@ -274,7 +274,6 @@ public abstract class MblSimpleImageLoader<T> {
                 if (isValidBitmap(bm)) {
                     imageView.setImageBitmap(bm);
                     hideProgressBar(imageView);
-                    animateImageView(imageView);
                     finishCallback.run();
                     return;
                 }
@@ -396,13 +395,6 @@ public abstract class MblSimpleImageLoader<T> {
             return;
         }
 
-        // check if ImageView has valid sizes
-        int w = getImageViewWidth(imageView);
-        int h = getImageViewHeight(imageView);
-        if (!isValidSizes(w, h)) {
-            return;
-        }
-
         // create Frame
         final FrameLayout frame = new FrameLayout(MblUtils.getCurrentContext());
         frame.setId(FRAME_ID);
@@ -428,8 +420,8 @@ public abstract class MblSimpleImageLoader<T> {
                 ProgressBar progress = new ProgressBar(MblUtils.getCurrentContext());
                 progress.setIndeterminate(true);
                 FrameLayout.LayoutParams pbLp = new FrameLayout.LayoutParams(
-                        frame.getWidth() / 2,
-                        frame.getHeight() / 2);
+                        Math.min(MblUtils.pxFromDp(50), frame.getWidth() / 2),
+                        Math.min(MblUtils.pxFromDp(50), frame.getHeight() / 2));
                 pbLp.gravity = Gravity.CENTER;
                 progress.setLayoutParams(pbLp);
                 frame.addView(progress);
