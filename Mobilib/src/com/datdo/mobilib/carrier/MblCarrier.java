@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import com.datdo.mobilib.event.MblCommonEvents;
@@ -275,7 +276,7 @@ public abstract class MblCarrier implements MblEventListener {
                         new Runnable() {
                             @Override
                             public void run() {
-                                mInterceptorContainerView.removeView(currentInterceptor);
+                                currentInterceptor.setVisibility(View.INVISIBLE);
                                 currentInterceptor.onPause();
                                 nextInterceptor.onResume();
                                 mInterceptorBeingStarted = false;
@@ -308,7 +309,7 @@ public abstract class MblCarrier implements MblEventListener {
                     currentInterceptor.onDestroy();
                 } else {
                     final MblInterceptor previousInterceptor = mInterceptorStack.peek();
-                    mInterceptorContainerView.addView(previousInterceptor);
+                    previousInterceptor.setVisibility(View.VISIBLE);
                     animateForFinishing(
                             currentInterceptor,
                             previousInterceptor,
