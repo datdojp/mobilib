@@ -590,7 +590,6 @@ public class MblUtils {
             bmOptions.inSampleSize = scaleFactor;
             bmOptions.inPurgeable = true;
             bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-            bmOptions.inDither = true;
 
             // decode the bitmap
             Bitmap bm = decodeBitmap(input, bmOptions);
