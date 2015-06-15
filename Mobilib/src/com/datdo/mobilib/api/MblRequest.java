@@ -64,10 +64,10 @@ public class MblRequest {
         tokens.add("METHOD="            + mMethod.name());
         tokens.add("HEADERS="           + mHeaderParams);
         tokens.add("PARAMS="            + mParams);
-        tokens.add("CACHE_DURATION="     + mCacheDuration);
-        tokens.add("VERIFY_SSL="         + mVerifySSL);
+        tokens.add("CACHE_DURATION="    + mCacheDuration);
+        tokens.add("VERIFY_SSL="        + mVerifySSL);
         tokens.add("DATA="              + mData);
-        tokens.add("REDIRECT_ENABLED="   + mRedirectEnabled);
+        tokens.add("REDIRECT_ENABLED="  + mRedirectEnabled);
         return "{" + TextUtils.join(", ", tokens) + "}";
     }
 

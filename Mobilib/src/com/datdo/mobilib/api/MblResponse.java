@@ -2,6 +2,8 @@ package com.datdo.mobilib.api;
 
 import android.text.TextUtils;
 
+import com.datdo.mobilib.util.MblUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,10 +25,10 @@ public class MblResponse {
     @Override
     public String toString() {
         List<String> tokens = new ArrayList<>();
-        tokens.add("STATUS_CODE="        + mStatusCode);
-        tokens.add("STATUS_CODE_REASON="  + mStatusCodeReason);
-        tokens.add("HEADERS="           + mHeaders);
-        tokens.add("DATA="              + new String(mData));
+        tokens.add("STATUS_CODE="           + mStatusCode);
+        tokens.add("STATUS_CODE_REASON="    + mStatusCodeReason);
+        tokens.add("HEADERS="               + mHeaders);
+        tokens.add("DATA="                  + (!MblUtils.isEmpty(mData) ? new String(mData) : ""));
         return "{" + TextUtils.join(", ", tokens) + "}";
     }
 
