@@ -1,8 +1,11 @@
 package com.datdo.mobilib.api;
 
 import android.os.Handler;
+import android.text.TextUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -30,12 +33,12 @@ public class MblRequest {
 
     static MblApiCallback sDefaultCallback = new MblApiCallback() {
         @Override
-        public void onSuccess(int statusCode, byte[] data, Map<String, String> headers) {
+        public void onSuccess(MblResponse response) {
 
         }
 
         @Override
-        public void onFailure(int error, String errorMessage) {
+        public void onFailure(MblResponse response) {
 
         }
     };
@@ -53,6 +56,20 @@ public class MblRequest {
     private boolean                         mRedirectEnabled         = false;
 
     public MblRequest() {}
+
+    @Override
+    public String toString() {
+        List<String> tokens = new ArrayList<>();
+        tokens.add("URL="               + mUrl);
+        tokens.add("METHOD="            + mMethod.name());
+        tokens.add("HEADERS="           + mHeaderParams);
+        tokens.add("PARAMS="            + mParams);
+        tokens.add("CACHE_DURATION="     + mCacheDuration);
+        tokens.add("VERIFY_SSL="         + mVerifySSL);
+        tokens.add("DATA="              + mData);
+        tokens.add("REDIRECT_ENABLED="   + mRedirectEnabled);
+        return "{" + TextUtils.join(", ", tokens) + "}";
+    }
 
     public MblRequest setUrl(String url) {
         mUrl = url;

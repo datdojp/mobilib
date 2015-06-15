@@ -1,15 +1,12 @@
 package com.datdo.mobilib.api;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import android.net.Uri;
+import android.os.Handler;
+import android.util.Log;
+
+import com.datdo.mobilib.api.MblRequest.MblStatusCodeValidator;
+import com.datdo.mobilib.cache.MblDatabaseCache;
+import com.datdo.mobilib.util.MblUtils;
 
 import junit.framework.Assert;
 
@@ -38,14 +35,16 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.util.Log;
-
-import com.datdo.mobilib.cache.MblDatabaseCache;
-import com.datdo.mobilib.util.MblUtils;
-import com.datdo.mobilib.api.MblRequest.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <pre>
@@ -96,18 +95,14 @@ public class MblApi {
          * <pre>
          * Invoked on request success.
          * </pre>
-         * @param statusCode HTTP status code or -1 (in case of fetching data from cache)
-         * @param data result data in byte array
          */
-        public void onSuccess(int statusCode, byte[] data, Map<String, String> headers);
+        public void onSuccess(MblResponse response);
         /**
          * <pre>
          * Invoked on request failure.
          * </pre>
-         * @param error HTTP status code (in case status code != 2xx) or -1 (in case of unknown error)
-         * @param errorMessage cause of error (returned from server or message of local exception)
          */
-        public abstract void onFailure(int error, String errorMessage);
+        public abstract void onFailure(MblResponse response);
     }
 
     /**
@@ -131,7 +126,8 @@ public class MblApi {
                     request.getCallback(),
                     request.getCallbackHandler(),
                     request.getStatusCodeValidator(),
-                    request.isRedirectEnabled());
+                    request.isRedirectEnabled(),
+                    request);
         } else {
             sendRequestWithBody(
                     request.getMethod(),
@@ -143,44 +139,9 @@ public class MblApi {
                     request.getCallbackHandler(),
                     request.getStatusCodeValidator(),
                     request.getData(),
-                    request.isRedirectEnabled());
+                    request.isRedirectEnabled(),
+                    request);
         }
-    }
-
-    /**
-     * <pre>
-     * DEPRECATED. User {@link #run(MblRequest)} instead.
-     * Send GET request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters (combined with "url" to generate full URL). Value accepts String, Long, Integer, Double, Float
-     * @param headerParams {key,value} containing request headers
-     * @param cacheDuration how long cached data will valid (pass value <= 0 if you don't want to cache)
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    @Deprecated
-    public static void get(
-            String url,
-            Map<String, ? extends Object> params,
-            Map<String, String> headerParams,
-            long cacheDuration,
-            boolean isIgnoreSSLCertificate,
-            MblApiCallback callback,
-            Handler callbackHandler) {
-
-        get(    url,
-                params,
-                headerParams,
-                cacheDuration,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator,
-                false);
     }
 
     @SuppressWarnings("unchecked")
@@ -193,7 +154,8 @@ public class MblApi {
             final MblApiCallback callback,
             Handler callbackHandler,
             final MblStatusCodeValidator statusCodeValidator,
-            final boolean redirectEnabled) {
+            final boolean redirectEnabled,
+            final MblRequest request) {
 
         final boolean isCacheEnabled = cacheDuration > 0;
 
@@ -231,7 +193,10 @@ public class MblApi {
                     MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                         @Override
                         public void run() {
-                            callback.onFailure(-1, message);
+                            callback.onFailure(new MblResponse()
+                                    .setRequest(request)
+                                    .setStatusCode(-1)
+                                    .setStatusCodeReason(message));
                         }
                     });
                 }
@@ -260,7 +225,10 @@ public class MblApi {
                                     MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                         @Override
                                         public void run() {
-                                            callback.onSuccess(-1, data, new HashMap<String, String>());
+                                            callback.onSuccess(new MblResponse()
+                                                    .setRequest(request)
+                                                    .setStatusCode(-1)
+                                                    .setData(data));
                                         }
                                     });
                                 }
@@ -287,23 +255,29 @@ public class MblApi {
                     final HttpResponse response = httpClient.execute(httpGet, httpContext);
 
                     final int statusCode = response.getStatusLine().getStatusCode();
+                    final String statusCodeReason = response.getStatusLine().getReasonPhrase();
+                    final Map<String, String> headers = new HashMap<String, String>();
+                    for (Header h : response.getAllHeaders()) {
+                        headers.put(h.getName(), h.getValue());
+                    }
+                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
+
                     if (!statusCodeValidator.isSuccess(statusCode)) {
                         if (callback != null) {
                             MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                 @Override
                                 public void run() {
-                                    callback.onFailure(statusCode, response.getStatusLine().getReasonPhrase());
+                                    callback.onFailure(new MblResponse()
+                                            .setRequest(request)
+                                            .setStatusCode(statusCode)
+                                            .setStatusCodeReason(statusCodeReason)
+                                            .setHeaders(headers)
+                                            .setData(data));
                                 }
                             });
                         }
 
                         return;
-                    }
-
-                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
-                    final Map<String, String> headers = new HashMap<String, String>();
-                    for (Header h : response.getAllHeaders()) {
-                        headers.put(h.getName(), h.getValue());
                     }
 
                     if (isCacheEnabled) {
@@ -314,7 +288,12 @@ public class MblApi {
                         MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onSuccess(statusCode, data, headers);
+                                callback.onSuccess(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(statusCode)
+                                        .setStatusCodeReason(statusCodeReason)
+                                        .setHeaders(headers)
+                                        .setData(data));
                             }
                         });
                     }
@@ -324,7 +303,10 @@ public class MblApi {
                         MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onFailure(-1, "Unexpected exception: " + e.getMessage());
+                                callback.onFailure(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(-1)
+                                        .setStatusCodeReason("Unexpected exception: " + e.getMessage()));
                             }
                         });
                     }
@@ -358,42 +340,6 @@ public class MblApi {
         return null;
     }
 
-    /**
-     * <pre>
-     * DEPRECATED. User {@link #run(MblRequest)} instead.
-     * Send POST request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters. Value accepts String, Long, Integer, Double, Float, InputStream or File
-     * @param headerParams {key,value} containing request headers
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    @Deprecated
-    public static void post(
-            String url,
-            Map<String, ? extends Object> params,
-            Map<String, String> headerParams,
-            boolean isIgnoreSSLCertificate,
-            MblApiCallback callback,
-            Handler callbackHandler) {
-
-        sendRequestWithBody(
-                Method.POST,
-                url,
-                params,
-                headerParams,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator,
-                null,
-                false);
-    }
-
     public static enum Method {
         GET,
         POST,
@@ -425,7 +371,8 @@ public class MblApi {
             Handler callbackHandler,
             final MblStatusCodeValidator statusCodeValidator,
             final String data,
-            final boolean redirectEnabled) {
+            final boolean redirectEnabled,
+            final MblRequest request) {
 
         Assert.assertNotNull(method);
 
@@ -472,7 +419,10 @@ public class MblApi {
                     MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                         @Override
                         public void run() {
-                            callback.onFailure(-1, message);
+                            callback.onFailure(new MblResponse()
+                                    .setRequest(request)
+                                    .setStatusCode(-1)
+                                    .setStatusCodeReason(message));
                         }
                     });
                 }
@@ -527,31 +477,42 @@ public class MblApi {
                     final HttpResponse response = httpClient.execute(httpRequest, httpContext);
 
                     final int statusCode = response.getStatusLine().getStatusCode();
+                    final String statusCodeReason = response.getStatusLine().getReasonPhrase();
+                    final Map<String, String> headers = new HashMap<String, String>();
+                    for (Header h : response.getAllHeaders()) {
+                        headers.put(h.getName(), h.getValue());
+                    }
+                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
+
                     if (!statusCodeValidator.isSuccess(statusCode)) {
                         if (callback != null) {
                             MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                 @Override
                                 public void run() {
-                                    callback.onFailure(
-                                            statusCode,
-                                            response.getStatusLine().getReasonPhrase());
+                                    callback.onFailure(new MblResponse()
+                                            .setRequest(request)
+                                            .setStatusCode(statusCode)
+                                            .setStatusCodeReason(statusCodeReason)
+                                            .setHeaders(headers)
+                                            .setData(data));
                                 }
                             });
                         }
                         return;
                     }
 
-                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
-                    final Map<String, String> headers = new HashMap<String, String>();
-                    for (Header h : response.getAllHeaders()) {
-                        headers.put(h.getName(), h.getValue());
-                    }
+
 
                     if (callback != null) {
                         MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onSuccess(statusCode, data, headers);
+                                callback.onSuccess(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(statusCode)
+                                        .setStatusCodeReason(statusCodeReason)
+                                        .setHeaders(headers)
+                                        .setData(data));
                             }
                         });
                     }
@@ -562,85 +523,16 @@ public class MblApi {
                         MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onFailure(-1, "Unexpected exception: " + e.getMessage());
+                                callback.onFailure(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(-1)
+                                        .setStatusCodeReason("Unexpected exception: " + e.getMessage()));
                             }
                         });
                     }
                 }
             }
         });
-    }
-
-    /**
-     * <pre>
-     * DEPRECATED. User {@link #run(MblRequest)} instead.
-     * Send DELETE request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters. Value accepts String, Long, Integer, Double, Float, InputStream or File
-     * @param headerParams {key,value} containing request headers
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    @Deprecated
-    public static void delete(
-            String url,
-            Map<String, ? extends Object> params,
-            Map<String, String> headerParams,
-            boolean isIgnoreSSLCertificate,
-            MblApiCallback callback,
-            Handler callbackHandler) {
-
-        sendRequestWithBody(
-                Method.DELETE,
-                url,
-                params,
-                headerParams,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator,
-                null,
-                false);
-    }
-
-    /**
-     * <pre>
-     * DEPRECATED. User {@link #run(MblRequest)} instead.
-     * Send PUT request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters. Value accepts String, Long, Integer, Double, Float, InputStream or File
-     * @param headerParams {key,value} containing request headers
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    @Deprecated
-    public static void put(
-            String url,
-            Map<String, ? extends Object> params,
-            Map<String, String> headerParams,
-            boolean isIgnoreSSLCertificate,
-            MblApiCallback callback,
-            Handler callbackHandler) {
-
-        sendRequestWithBody(
-                Method.PUT,
-                url,
-                params,
-                headerParams,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler,
-                MblRequest.sDefaultStatusCodeValidator,
-                null,
-                false);
     }
 
     @SuppressWarnings("unused")
