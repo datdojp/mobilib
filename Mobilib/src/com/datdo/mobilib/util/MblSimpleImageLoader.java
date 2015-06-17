@@ -121,6 +121,15 @@ public abstract class MblSimpleImageLoader<T> {
     protected abstract void onError(ImageView imageView, T item);
 
     /**
+     * Optional. Return load-indicating progress view.
+     */
+    protected View getProgressView() {
+        ProgressBar progress = new ProgressBar(MblUtils.getCurrentContext());
+        progress.setIndeterminate(true);
+        return progress;
+    }
+
+    /**
      * <pre>
      * Callback class for {@link #retrieveImage(Object, MblRetrieveImageCallback)}
      * Choose appropriate method to invoke when bitmap data is successfully loaded, or {@link #onRetrievedError()} when fail
@@ -417,8 +426,7 @@ public abstract class MblSimpleImageLoader<T> {
             @Override
             public void onGlobalLayout() {
                 MblUtils.removeOnGlobalLayoutListener(frame, this);
-                ProgressBar progress = new ProgressBar(MblUtils.getCurrentContext());
-                progress.setIndeterminate(true);
+                View progress = getProgressView();
                 FrameLayout.LayoutParams pbLp = new FrameLayout.LayoutParams(
                         Math.min(MblUtils.pxFromDp(50), frame.getWidth() / 2),
                         Math.min(MblUtils.pxFromDp(50), frame.getHeight() / 2));
