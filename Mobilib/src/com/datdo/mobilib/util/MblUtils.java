@@ -259,8 +259,8 @@ public class MblUtils {
         final Runnable hookedAction = new Runnable() {
             @Override
             public void run() {
-                action.run();
                 getMainThreadHandler().postDelayed(this, delayMillis);
+                action.run();
             }
         };
 
