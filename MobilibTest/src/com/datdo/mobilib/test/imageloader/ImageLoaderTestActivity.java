@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.datdo.mobilib.api.MblApi;
 import com.datdo.mobilib.api.MblApi.MblApiCallback;
 import com.datdo.mobilib.api.MblRequest;
+import com.datdo.mobilib.api.MblResponse;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.base.MblBaseAdapter;
 import com.datdo.mobilib.test.R;
@@ -92,12 +93,12 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
                         .setCallback(new MblApiCallback() {
 
                             @Override
-                            public void onSuccess(int statusCode, byte[] data, Map<String, String> headers) {
-                                cb.onRetrievedByteArray(data);
+                            public void onSuccess(MblResponse response) {
+                                cb.onRetrievedByteArray(response.getData());
                             };
 
                             @Override
-                            public void onFailure(int error, String errorMessage) {
+                            public void onFailure(MblResponse response) {
                                 cb.onRetrievedError();
                             }
                         }));
