@@ -16,6 +16,10 @@ import android.widget.ProgressBar;
 
 import com.nineoldandroids.animation.ObjectAnimator;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * <pre>
  * Simplified version of deprecated {@link com.datdo.mobilib.util.MblImageLoader}
@@ -146,7 +150,8 @@ public abstract class MblSimpleImageLoader<T> {
     private static final int FRAME_ID = 1430125134;
 
     private static LruCache<String, Bitmap> sBitmapCache;
-    private static boolean sDoubleCacheSize = false;
+    private static Set<String>              sKeySet             = Collections.synchronizedSet(new HashSet<String>());
+    private static boolean                  sDoubleCacheSize    = false;
 
     private MblSerializer mSerializer;
 
@@ -168,6 +173,12 @@ public abstract class MblSimpleImageLoader<T> {
                 @Override
                 protected int sizeOf(String key, Bitmap value) {
                     return value.getRowBytes() * value.getHeight();
+                }
+
+                @Override
+                protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
+                    super.entryRemoved(evicted, key, oldValue, newValue);
+                    sKeySet.remove(key);
                 }
             };
         }
@@ -321,6 +332,7 @@ public abstract class MblSimpleImageLoader<T> {
                                     }
                                     if (isValidBitmap(bm)) {
                                         sBitmapCache.put(cacheKey, bm);
+                                        sKeySet.add(cacheKey);
                                         MblUtils.executeOnMainThread(new Runnable() {
                                             @Override
                                             public void run() {
@@ -471,10 +483,21 @@ public abstract class MblSimpleImageLoader<T> {
 
     private String generateCacheKey(T item, int w, int h) {
         String key = TextUtils.join("#", new Object[]{
-                item.getClass().getSimpleName(),
-                getItemId(item),
+                generateCacheKey(item),
                 w,
                 h
+        });
+        return key;
+    }
+
+    private String generateCacheKey(T item) {
+        return generateCacheKey(item.getClass(), getItemId(item));
+    }
+
+    private String generateCacheKey(Class clazz, String id) {
+        String key = TextUtils.join("#", new Object[]{
+                clazz,
+                id,
         });
         return key;
     }
@@ -517,5 +540,24 @@ public abstract class MblSimpleImageLoader<T> {
         ObjectAnimator.ofFloat(imageView, "alpha", 0, 1)
                 .setDuration(250)
                 .start();
+    }
+
+    public void invalidate(T item) {
+        invalidate(item.getClass(), getItemId(item));
+    }
+
+    public void invalidate(final Class clazz, final String id) {
+        MblUtils.executeOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                String cacheKey = generateCacheKey(clazz, id);
+                Set<String> keys = new HashSet<String>(sKeySet);
+                for (String key : keys) {
+                    if (key.startsWith(cacheKey)) {
+                        sBitmapCache.remove(key);
+                    }
+                }
+            }
+        });
     }
 }
