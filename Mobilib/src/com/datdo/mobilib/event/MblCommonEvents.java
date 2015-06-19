@@ -88,6 +88,14 @@ public final class MblCommonEvents {
 
     /**
      * <pre>
+     * Activity 's onStart methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre>
+     */
+    public static final String ACTIVITY_STARTED                 = MblCommonEvents.class + "#activity_started";
+
+    /**
+     * <pre>
      * Activity 's onResume methods.
      * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
      * </pre> 
@@ -101,6 +109,14 @@ public final class MblCommonEvents {
      * </pre> 
      */
     public static final String ACTIVITY_PAUSED                  = MblCommonEvents.class + "#activity_paused";
+
+    /**
+     * <pre>
+     * Activity 's onStop methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre>
+     */
+    public static final String ACTIVITY_STOPPED                 = MblCommonEvents.class + "#activity_stopped";
 
     /**
      * <pre>

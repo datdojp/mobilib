@@ -24,6 +24,18 @@ public class MblBaseActionBarActivity extends ActionBarActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        mPlugin.onStart(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mPlugin.onStop(this);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         mPlugin.onResume(this);

@@ -57,6 +57,14 @@ public class MblActivityPlugin {
     }
 
     /**
+     * Extends Activity#onStart()
+     * @param activity targeted activity
+     */
+    public void onStart(Activity activity) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_STARTED, activity);
+    }
+
+    /**
      * Extends Activity#onResume()
      * @param activity targeted activity
      */
@@ -82,6 +90,14 @@ public class MblActivityPlugin {
         MblUtils.getMainThreadHandler().postDelayed(sBackgroundStatusCheckTask, mMaxAllowedTrasitionBetweenActivity);
 
         MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_PAUSED, activity);
+    }
+
+    /**
+     * Extends Activity#onStop()
+     * @param activity targeted activity
+     */
+    public void onStop(Activity activity) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_STOPPED, activity);
     }
 
     /**
