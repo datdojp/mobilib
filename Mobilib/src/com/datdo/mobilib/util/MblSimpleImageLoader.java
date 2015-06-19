@@ -542,10 +542,21 @@ public abstract class MblSimpleImageLoader<T> {
                 .start();
     }
 
+    /**
+     * <pre>
+     * Remove bitmap of item from memory cache. Bitmap will be reloaded when it is required.
+     * </pre>
+     * @param item
+     */
     public void invalidate(T item) {
         invalidate(item.getClass(), getItemId(item));
     }
 
+    /**
+     * Similar to {@link #invalidate(Object)}
+     * @param clazz class of item
+     * @param id id of item (similar to id retrieved by {@link #getItemId(Object)})
+     */
     public void invalidate(final Class clazz, final String id) {
         MblUtils.executeOnMainThread(new Runnable() {
             @Override
