@@ -7,12 +7,15 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 
 import com.datdo.mobilib.event.MblCommonEvents;
 import com.datdo.mobilib.event.MblEventCenter;
 import com.datdo.mobilib.event.MblEventListener;
+import com.datdo.mobilib.event.MblStrongEventListener;
 import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.util.MblViewUtil;
 
 /**
  * <pre>
@@ -149,7 +152,7 @@ public class MblActivityPlugin {
     }
 
     private View createDecorViewAndAddContent(Activity activity, int layoutResId, LayoutParams params) {
-        View content = activity.getLayoutInflater().inflate(layoutResId, null);
+        View content = MblUtils.getLayoutInflater().inflate(layoutResId, null);
         return createDecorViewAndAddContent(activity, content, params);
     }
 
@@ -165,7 +168,50 @@ public class MblActivityPlugin {
 
         mDecorView = decorView;
 
+        setViewProcessor(activity);
+
         return decorView;
+    }
+
+    private void setViewProcessor(final Activity activity) {
+        if (MblViewUtil.getGlobalViewProcessor() == null) {
+            return;
+        }
+
+        final boolean[] scrollDirty = new boolean[] { false };
+
+        final Runnable stopper = MblUtils.repeatDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (scrollDirty[0]) {
+                    MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
+                    scrollDirty[0] = false;
+                }
+            }
+        }, 100);
+
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                if (args[0] == activity) {
+                    stopper.run();
+                    terminate();
+                }
+            }
+        }, MblCommonEvents.ACTIVITY_DESTROYED);
+
+        mDecorView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+            @Override
+            public void onScrollChanged() {
+                scrollDirty[0] = true;
+            }
+        });
+        mDecorView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
+            }
+        });
     }
 
     /**

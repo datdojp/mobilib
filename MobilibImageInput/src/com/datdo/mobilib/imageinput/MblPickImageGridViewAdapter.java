@@ -60,7 +60,7 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
     @SuppressLint("InflateParams")
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
-        View view = LayoutInflater.from(context).inflate(R.layout.mbl_image_picker_item, null);
+        View view = MblUtils.getLayoutInflater().inflate(R.layout.mbl_image_picker_item, null);
 
         final Holder holder = new Holder();
         holder.mThumbnailImageView = (MblAutoResizeSquareImageView) view.findViewById(R.id.image_picker_imageview);

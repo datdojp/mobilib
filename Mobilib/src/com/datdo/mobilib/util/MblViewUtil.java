@@ -339,4 +339,23 @@ public class MblViewUtil {
     public static String extractText(TextView editText) {
         return MblUtils.trim(editText.getText().toString());
     }
+
+    private static MblInterateViewDelegate sGlobalViewProcessor;
+
+    /**
+     * Get global view processor set by {@link #setGlobalViewProcessor(MblInterateViewDelegate)}
+     */
+    public static MblInterateViewDelegate getGlobalViewProcessor() {
+        return sGlobalViewProcessor;
+    }
+
+    /**
+     * <pre>
+     * Customize the way to process each view in the activity 's layout.
+     * This method is used to apply common processing to views like setting default font, default behaviours, default attributes, etc
+     * </pre>
+     */
+    public static void setGlobalViewProcessor(MblInterateViewDelegate globalViewProcessor) {
+        sGlobalViewProcessor = globalViewProcessor;
+    }
 }
