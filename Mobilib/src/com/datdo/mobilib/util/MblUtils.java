@@ -1737,6 +1737,11 @@ public class MblUtils {
         closeApp(mainActivityClass, null);
     }
 
+    /**
+     * <pre>
+     * Same like {@link #closeApp(Class)}. Allow to run custom action before app being closed.
+     * </pre>
+     */
     public static void closeApp(
             final Class<? extends Activity> mainActivityClass,
             final Runnable beforeCloseAction) {
@@ -1765,6 +1770,16 @@ public class MblUtils {
                 }
             }
         }, MblCommonEvents.ACTIVITY_CREATED);
+    }
+
+    /**
+     * Move app to background without killing it.
+     */
+    public static void moveAppToBackground() {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        getCurrentContext().startActivity(intent);
     }
 
     /**
