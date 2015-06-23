@@ -212,6 +212,9 @@ public class MblActivityPlugin {
                 MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
             }
         });
+
+        // run view processing right after inflating
+        MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
     }
 
     /**
