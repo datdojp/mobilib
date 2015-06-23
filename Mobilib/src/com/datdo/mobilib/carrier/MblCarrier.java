@@ -448,4 +448,11 @@ public abstract class MblCarrier implements MblEventListener {
     public List<MblInterceptor> getInterceptors() {
         return new ArrayList<MblInterceptor>(mInterceptorStack);
     }
+
+    /**
+     * Get view that contains all interceptors.
+     */
+    public FrameLayout getInterceptorContainerView() {
+        return mInterceptorContainerView;
+    }
 }
