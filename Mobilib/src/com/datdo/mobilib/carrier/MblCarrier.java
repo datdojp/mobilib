@@ -114,11 +114,11 @@ public abstract class MblCarrier implements MblEventListener {
     /**
      * Callback interface for {@link com.datdo.mobilib.carrier.MblCarrier}.
      */
-    public static interface MblCarrierCallback {
-        /**
-         * Invoked when Carrier does not contain any Interceptor.
-         */
-        public void onNoInterceptor();
+    public static class MblCarrierCallback {
+        public void beforeStart(Class<? extends MblInterceptor> clazz, Options options, Map<String, Object> extras) {}
+        public void afterStart(Class<? extends MblInterceptor> clazz, Options options, Map<String, Object> extras) {}
+        public void beforeFinish(MblInterceptor currentInterceptor) {}
+        public void afterFinish(MblInterceptor currentInterceptor) {}
     }
 
     protected Context                   mContext;
@@ -138,7 +138,7 @@ public abstract class MblCarrier implements MblEventListener {
 
         mContext                    = context;
         mInterceptorContainerView   = interceptorContainerView;
-        mCallback                   = callback;
+        mCallback                   = callback != null ? callback : new MblCarrierCallback();
 
         MblEventCenter.addListener(this, new String[] {
                 MblCommonEvents.ACTIVITY_RESUMED,
@@ -179,43 +179,34 @@ public abstract class MblCarrier implements MblEventListener {
      * Destroy all interceptors.
      */
     public void finishAllInterceptors() {
-        try {
-            mInterceptorContainerView.removeAllViews();
-            while(!mInterceptorStack.isEmpty()) {
-                MblInterceptor interceptor = mInterceptorStack.pop();
-                interceptor.onPause();
-                interceptor.onDestroy();
-            }
-        } catch (Throwable e) {
-            Log.e(TAG, "Unable to finish all interceptors", e);
+        if (isVisible()) {
+            onPause();
         }
-
-        if (mInterceptorStack.isEmpty()) {
-            if (mCallback != null) {
-                mCallback.onNoInterceptor();
-            }
-        }
+        destroyAllInterceptors();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void onEvent(Object sender, String name, Object... args) {
-        if (sender instanceof Activity) {
-            if (sender != mContext) {
-                return;
-            }
+        Activity activity = (Activity) args[0];
+        if (activity != mContext) {
+            return;
+        }
 
-            if (MblCommonEvents.ACTIVITY_RESUMED == name) {
+        if (MblCommonEvents.ACTIVITY_RESUMED == name) {
+            if (isVisible()) {
                 onResume();
             }
+        }
 
-            if (MblCommonEvents.ACTIVITY_PAUSED == name) {
+        if (MblCommonEvents.ACTIVITY_PAUSED == name) {
+            if (isVisible()) {
                 onPause();
             }
+        }
 
-            if (MblCommonEvents.ACTIVITY_DESTROYED == name) {
-                onDestroy();
-            }
+        if (MblCommonEvents.ACTIVITY_DESTROYED == name) {
+            onDestroy();
         }
     }
 
@@ -237,7 +228,7 @@ public abstract class MblCarrier implements MblEventListener {
      * @param extras parameters passed to the new interceptor, in key,value
      * @return the new interceptor instance
      */
-    public MblInterceptor startInterceptor(final Class<? extends MblInterceptor> clazz, Options options, final Map<String, Object> extras) {
+    public MblInterceptor startInterceptor(final Class<? extends MblInterceptor> clazz, final Options options, final Map<String, Object> extras) {
 
         if (mInterceptorBeingStarted) {
             return null;
@@ -247,16 +238,7 @@ public abstract class MblCarrier implements MblEventListener {
 
         if (options != null) {
             if (options.mNewInterceptorStack) {
-                try {
-                    mInterceptorContainerView.removeAllViews();
-                    while(!mInterceptorStack.isEmpty()) {
-                        MblInterceptor interceptor = mInterceptorStack.pop();
-                        interceptor.onPause();
-                        interceptor.onDestroy();
-                    }
-                } catch (Throwable e) {
-                    Log.e(TAG, "Unable to finish all interceptors", e);
-                }
+                finishAllInterceptors();
             }
         }
 
@@ -264,12 +246,17 @@ public abstract class MblCarrier implements MblEventListener {
             final MblInterceptor nextInterceptor = clazz.getConstructor(Context.class, MblCarrier.class, Map.class).newInstance(mContext, this, extras);
 
             if (mInterceptorStack.isEmpty()) {
+                mCallback.beforeStart(clazz, options, extras);
                 mInterceptorContainerView.addView(nextInterceptor);
+                mInterceptorStack.push(nextInterceptor);
                 nextInterceptor.onResume();
                 mInterceptorBeingStarted = false;
+                mCallback.afterStart(clazz, options, extras);
             } else {
+                mCallback.beforeStart(clazz, options, extras);
                 final MblInterceptor currentInterceptor = mInterceptorStack.peek();
                 mInterceptorContainerView.addView(nextInterceptor);
+                mInterceptorStack.push(nextInterceptor);
                 animateForStarting(
                         currentInterceptor,
                         nextInterceptor,
@@ -280,11 +267,10 @@ public abstract class MblCarrier implements MblEventListener {
                                 currentInterceptor.onPause();
                                 nextInterceptor.onResume();
                                 mInterceptorBeingStarted = false;
+                                mCallback.afterStart(clazz, options, extras);
                             }
                         });
             }
-
-            mInterceptorStack.push(nextInterceptor);
             return nextInterceptor;
         } catch (Throwable e) {
             Log.e(TAG, "Unable to start interceptor: " + clazz, e);
@@ -301,12 +287,14 @@ public abstract class MblCarrier implements MblEventListener {
         try {
             boolean isTop = currentInterceptor == mInterceptorStack.peek();
             if (isTop) {
+                mCallback.beforeFinish(currentInterceptor);
                 mInterceptorStack.pop();
                 if (mInterceptorStack.isEmpty()) {
                     // just remove top interceptor
                     mInterceptorContainerView.removeView(currentInterceptor);
                     currentInterceptor.onPause();
                     currentInterceptor.onDestroy();
+                    mCallback.afterFinish(currentInterceptor);
                 } else {
                     final MblInterceptor previousInterceptor = mInterceptorStack.peek();
                     previousInterceptor.setVisibility(View.VISIBLE);
@@ -320,27 +308,28 @@ public abstract class MblCarrier implements MblEventListener {
                                     currentInterceptor.onPause();
                                     currentInterceptor.onDestroy();
                                     previousInterceptor.onResume();
+                                    mCallback.afterFinish(currentInterceptor);
                                 }
                             });
                 }
             } else {
                 // just remove interceptor from stack silently
+                mCallback.beforeFinish(currentInterceptor);
                 mInterceptorStack.remove(currentInterceptor);
+                mInterceptorContainerView.removeView(currentInterceptor);
                 currentInterceptor.onPause();
                 currentInterceptor.onDestroy();
+                mCallback.afterFinish(currentInterceptor);
             }
         } catch (Throwable e) {
             Log.e(TAG, "Unable to finish interceptor: " + currentInterceptor, e);
         }
-
-        if (mInterceptorStack.isEmpty()) {
-            if (mCallback != null) {
-                mCallback.onNoInterceptor();
-            }
-        }
     }
 
-    private void onResume() {
+    /**
+     * Manually trigger onResume() for top interceptor.
+     */
+    public void onResume() {
         try {
             MblInterceptor currentInterceptor = mInterceptorStack.peek();
             currentInterceptor.onResume();
@@ -349,7 +338,10 @@ public abstract class MblCarrier implements MblEventListener {
         }
     }
 
-    private void onPause() {
+    /**
+     * Manually trigger onPause() for top interceptor.
+     */
+    public void onPause() {
         try {
             MblInterceptor currentInterceptor = mInterceptorStack.peek();
             currentInterceptor.onPause();
@@ -358,8 +350,23 @@ public abstract class MblCarrier implements MblEventListener {
         }
     }
 
-    private void onDestroy() {
-        finishAllInterceptors();
+    /**
+     * Manually trigger onDestroy() for all interceptors.
+     */
+    public void onDestroy() {
+        destroyAllInterceptors();
+    }
+
+    private void destroyAllInterceptors() {
+        try {
+            while(!mInterceptorStack.isEmpty()) {
+                MblInterceptor interceptor = mInterceptorStack.pop();
+                interceptor.onDestroy();
+                mInterceptorContainerView.removeView(interceptor);
+            }
+        } catch (Throwable e) {
+            Log.e(TAG, "Unable to destroy all interceptors", e);
+        }
     }
 
     /**
@@ -450,9 +457,24 @@ public abstract class MblCarrier implements MblEventListener {
     }
 
     /**
-     * Get view that contains all interceptors.
+     * Show/hide this carrier and all of its children.
      */
-    public FrameLayout getInterceptorContainerView() {
-        return mInterceptorContainerView;
+    public void setVisible(boolean isVisible) {
+        if (isVisible() != isVisible) {
+            if (isVisible) {
+                mInterceptorContainerView.setVisibility(View.VISIBLE);
+                onResume();
+            } else {
+                mInterceptorContainerView.setVisibility(View.INVISIBLE);
+                onPause();
+            }
+        }
+    }
+
+    /**
+     * Check if this carrier is visible.
+     */
+    public boolean isVisible() {
+        return mInterceptorContainerView.getVisibility() == View.VISIBLE;
     }
 }
