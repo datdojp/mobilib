@@ -571,4 +571,11 @@ public abstract class MblSimpleImageLoader<T> {
             }
         });
     }
+
+    /**
+     * Invalidate all item of specified class
+     */
+    public void invalidate(final Class clazz) {
+        invalidate(clazz, "");
+    }
 }
