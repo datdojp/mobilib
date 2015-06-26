@@ -92,6 +92,48 @@ public class MblSerializer {
     }
 
     /**
+     * <pre>
+     * Create a super task that wraps sub-tabs, then call {@link #run(Task)} to add super task to queue.
+     * Sub-tasks is executed parallel inside super task. Super task will automatically finish its life right after all sub-tasks is completed.
+     * </pre>
+     */
+    public void run(final Task... subtasks) {
+        Task superTask = new Task() {
+            @Override
+            public void run(final Runnable finishCallback) {
+
+                if (MblUtils.isEmpty(subtasks)) {
+                    finishCallback.run();
+                    return;
+                }
+
+                Runnable hookedFinishCallback = new Runnable() {
+
+                    int count = 0;
+
+                    @Override
+                    public void run() {
+                        MblUtils.executeOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                count++;
+                                if (count == subtasks.length) {
+                                    finishCallback.run();
+                                }
+                            }
+                        });
+                    }
+                };
+
+                for (Task t : subtasks) {
+                    t.run(hookedFinishCallback);
+                }
+            }
+        };
+        run(superTask);
+    }
+
+    /**
      * Cancel a specific task.
      * @return true if task exists in queue
      */
