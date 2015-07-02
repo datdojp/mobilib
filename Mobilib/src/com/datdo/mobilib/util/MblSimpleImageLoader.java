@@ -153,7 +153,9 @@ public abstract class MblSimpleImageLoader<T> {
     private static Set<String>              sKeySet             = Collections.synchronizedSet(new HashSet<String>());
     private static boolean                  sDoubleCacheSize    = false;
 
-    private MblSerializer mSerializer;
+    private MblSerializer   mSerializer;
+    private boolean         mEnableProgressView     = true;
+    private boolean         mEnableFadingAnimation  = true;
 
     public MblSimpleImageLoader() {
 
@@ -408,6 +410,10 @@ public abstract class MblSimpleImageLoader<T> {
 
     private void showProgressBar(ImageView imageView) {
 
+        if (!mEnableProgressView) {
+            return;
+        }
+
         // get parent view of ImageView
         ViewGroup parent = (ViewGroup) imageView.getParent();
 
@@ -450,6 +456,10 @@ public abstract class MblSimpleImageLoader<T> {
     }
 
     private void hideProgressBar(ImageView imageView) {
+
+        if (!mEnableProgressView) {
+            return;
+        }
 
         // get parent view of ImageView
         ViewGroup temp = (ViewGroup) imageView.getParent();
@@ -537,6 +547,9 @@ public abstract class MblSimpleImageLoader<T> {
     }
 
     private void animateImageView(ImageView imageView) {
+        if (!mEnableFadingAnimation) {
+            return;
+        }
         ObjectAnimator.ofFloat(imageView, "alpha", 0, 1)
                 .setDuration(250)
                 .start();
@@ -577,5 +590,15 @@ public abstract class MblSimpleImageLoader<T> {
      */
     public void invalidate(final Class clazz) {
         invalidate(clazz, "");
+    }
+
+    public MblSimpleImageLoader setEnableProgressView(boolean enableProgressView) {
+        mEnableProgressView = enableProgressView;
+        return this;
+    }
+
+    public MblSimpleImageLoader setEnableFadingAnimation(boolean enableFadingAnimation) {
+        mEnableFadingAnimation = enableFadingAnimation;
+        return this;
     }
 }
