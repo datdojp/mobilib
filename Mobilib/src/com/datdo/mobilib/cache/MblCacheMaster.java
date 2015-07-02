@@ -201,11 +201,12 @@ public abstract class MblCacheMaster<T> {
      * Retrieve object by its id.
      * @param id
      * @param callback callback to received result object or error
+     * @return Runnable object to cancel the request if is a pending one.
      */
-    public void get(String id, final MblGetOneCallback<T> callback) {
+    public Runnable get(String id, final MblGetOneCallback<T> callback) {
         List<String> ids = new ArrayList<String>();
         ids.add(id);
-        get(ids, new MblGetManyCallback<T>() {
+        return get(ids, new MblGetManyCallback<T>() {
 
             @Override
             public void onSuccess(List<T> objects) {
@@ -231,12 +232,13 @@ public abstract class MblCacheMaster<T> {
      * Retrieve objects by their ids.
      * @param ids array of ids
      * @param callback callback to received result objects or error
+     * @return Runnable object to cancel the request if is a pending one.
      */
-    public void get(String[] ids, final MblGetManyCallback<T> callback) {
+    public Runnable get(String[] ids, final MblGetManyCallback<T> callback) {
         if (!MblUtils.isEmpty(ids)) {
-            get(Arrays.asList(ids), callback);
+            return get(Arrays.asList(ids), callback);
         } else {
-            get(new ArrayList<String>(), callback);
+            return get(new ArrayList<String>(), callback);
         }
     }
 
@@ -244,8 +246,9 @@ public abstract class MblCacheMaster<T> {
      * Retrieve objects by their ids.
      * @param ids list of ids
      * @param callback callback to received result objects or error
+     * @return Runnable object to cancel the request if is a pending one.
      */
-    public void get(final List<String> ids, final MblGetManyCallback<T> callback) {
+    public Runnable get(final List<String> ids, final MblGetManyCallback<T> callback) {
 
         if (MblUtils.isEmpty(ids)) {
             Log.d(TAG, "get: ids is empty");
@@ -257,10 +260,13 @@ public abstract class MblCacheMaster<T> {
                     }
                 });
             }
-            return;
+            return new Runnable() {
+                @Override
+                public void run() {}
+            };
         }
 
-        mSerializer.run(new MblSerializer.Task() {
+        final MblSerializer.Task task = new MblSerializer.Task() {
             @Override
             public void run(final Runnable finishCallback) {
 
@@ -381,7 +387,6 @@ public abstract class MblCacheMaster<T> {
                         }
                     });
                 }
-
             }
 
             void done(final List<T> objects, final Runnable finishCallback) {
@@ -399,7 +404,16 @@ public abstract class MblCacheMaster<T> {
                     }
                 });
             }
-        });
+        };
+
+        mSerializer.run(task);
+
+        return new Runnable() {
+            @Override
+            public void run() {
+                mSerializer.cancel(task);
+            }
+        };
     }
 
     /**
