@@ -98,6 +98,7 @@ public abstract class MblCarrier implements MblEventListener {
      */
     public static final class Options {
         private boolean mNewInterceptorStack;
+        private boolean mNoAnimation;
 
         /**
          * <pre>
@@ -107,6 +108,14 @@ public abstract class MblCarrier implements MblEventListener {
          */
         public Options newInterceptorStack() {
             mNewInterceptorStack = true;
+            return this;
+        }
+
+        /**
+         * Configure whether animation is played when interceptor is started/finished.
+         */
+        public Options noAnimation() {
+            mNoAnimation = true;
             return this;
         }
     }
@@ -257,19 +266,23 @@ public abstract class MblCarrier implements MblEventListener {
                 final MblInterceptor currentInterceptor = mInterceptorStack.peek();
                 mInterceptorContainerView.addView(nextInterceptor);
                 mInterceptorStack.push(nextInterceptor);
-                animateForStarting(
-                        currentInterceptor,
-                        nextInterceptor,
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                currentInterceptor.setVisibility(View.INVISIBLE);
-                                currentInterceptor.onPause();
-                                nextInterceptor.onResume();
-                                mInterceptorBeingStarted = false;
-                                mCallback.afterStart(clazz, options, extras);
-                            }
-                        });
+
+                Runnable action = new Runnable() {
+                    @Override
+                    public void run() {
+                        currentInterceptor.setVisibility(View.INVISIBLE);
+                        currentInterceptor.onPause();
+                        nextInterceptor.onResume();
+                        mInterceptorBeingStarted = false;
+                        mCallback.afterStart(clazz, options, extras);
+                    }
+                };
+
+                if (options != null && options.mNoAnimation) {
+                    action.run();
+                } else {
+                    animateForStarting(currentInterceptor, nextInterceptor, action);
+                }
             }
             return nextInterceptor;
         } catch (Throwable e) {
@@ -282,7 +295,16 @@ public abstract class MblCarrier implements MblEventListener {
      * Destroy an interceptor.
      * @param currentInterceptor interceptor to destroy
      */
-    public void finishInterceptor(final MblInterceptor currentInterceptor) {
+    public void finishInterceptor(MblInterceptor currentInterceptor) {
+        finishInterceptor(currentInterceptor, null);
+    }
+
+    /**
+     * Destroy an interceptor with options
+     * @param currentInterceptor interceptor to destroy
+     * @param options extra option when finishing an interceptor
+     */
+    public void finishInterceptor(final MblInterceptor currentInterceptor, Options options) {
 
         try {
             boolean isTop = currentInterceptor == mInterceptorStack.peek();
@@ -298,19 +320,23 @@ public abstract class MblCarrier implements MblEventListener {
                 } else {
                     final MblInterceptor previousInterceptor = mInterceptorStack.peek();
                     previousInterceptor.setVisibility(View.VISIBLE);
-                    animateForFinishing(
-                            currentInterceptor,
-                            previousInterceptor,
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    mInterceptorContainerView.removeView(currentInterceptor);
-                                    currentInterceptor.onPause();
-                                    currentInterceptor.onDestroy();
-                                    previousInterceptor.onResume();
-                                    mCallback.afterFinish(currentInterceptor);
-                                }
-                            });
+
+                    Runnable action = new Runnable() {
+                        @Override
+                        public void run() {
+                            mInterceptorContainerView.removeView(currentInterceptor);
+                            currentInterceptor.onPause();
+                            currentInterceptor.onDestroy();
+                            previousInterceptor.onResume();
+                            mCallback.afterFinish(currentInterceptor);
+                        }
+                    };
+
+                    if (options != null && options.mNoAnimation) {
+                        action.run();
+                    } else {
+                        animateForFinishing(currentInterceptor, previousInterceptor, action);
+                    }
                 }
             } else {
                 // just remove interceptor from stack silently
