@@ -592,11 +592,17 @@ public abstract class MblSimpleImageLoader<T> {
         invalidate(clazz, "");
     }
 
+    /**
+     * Configure whether progress view is displayed to indicate that image is being loaded.
+     */
     public MblSimpleImageLoader setEnableProgressView(boolean enableProgressView) {
         mEnableProgressView = enableProgressView;
         return this;
     }
 
+    /**
+     * Configure whether fading animation is played when image is fully loaded and displayed to ImageView.
+     */
     public MblSimpleImageLoader setEnableFadingAnimation(boolean enableFadingAnimation) {
         mEnableFadingAnimation = enableFadingAnimation;
         return this;
