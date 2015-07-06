@@ -589,7 +589,7 @@ public class MblUtils {
             BitmapFactory.Options bmOptions = new BitmapFactory.Options();
             bmOptions.inSampleSize = scaleFactor;
             bmOptions.inPurgeable = true;
-            bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+            bmOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
 
             // decode the bitmap
             Bitmap bm = decodeBitmap(input, bmOptions);
@@ -614,7 +614,7 @@ public class MblUtils {
                 if (s > 0) {
                     Matrix matrix = new Matrix();
                     matrix.postScale(s, s);
-                    Bitmap scaledBm = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), matrix, false);
+                    Bitmap scaledBm = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), matrix, true);
                     bm.recycle();
                     bm = scaledBm;
                 }
