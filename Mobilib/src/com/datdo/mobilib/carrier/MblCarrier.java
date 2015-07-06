@@ -353,6 +353,35 @@ public abstract class MblCarrier implements MblEventListener {
     }
 
     /**
+     * <pre>
+     * Bring an interceptor to front.
+     * Do nothing if interceptor is not in this carrier, or it is already on top of stack.
+     * </pre>
+     */
+    public void bringToFront(MblInterceptor interceptor) {
+        if (interceptor == null
+                || !mInterceptorStack.contains(interceptor)
+                || mInterceptorContainerView.indexOfChild(interceptor) < 0) {
+            return;
+        }
+
+        boolean isTop = interceptor == mInterceptorStack.peek();
+        if (isTop) {
+            return;
+        }
+
+        MblInterceptor topInterceptor = mInterceptorStack.peek();
+
+        mInterceptorStack.remove(interceptor);
+        mInterceptorStack.push(interceptor);
+
+        topInterceptor.setVisibility(View.INVISIBLE);
+        topInterceptor.onPause();
+        interceptor.setVisibility(View.VISIBLE);
+        interceptor.onResume();
+    }
+
+    /**
      * Manually trigger onResume() for top interceptor.
      */
     public void onResume() {
