@@ -1048,6 +1048,17 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Read binary data from file stored in "assets" folder.
+     * </pre>
+     * @param relativePath relative path to asset file
+     * @return binary data
+     */
+    public static byte[] readAssetFile(String relativePath) throws IOException {
+        return readStream(getCurrentContext().getAssets().open(relativePath));
+    }
+
+    /**
+     * <pre>
      * Read binary data from arbitrary file.
      * </pre>
      * @param absolutePath absolute path to source file
@@ -1058,12 +1069,13 @@ public class MblUtils {
         if (!file.exists()) {
             return null;
         }
+        return readStream(new FileInputStream(file));
+    }
 
-        FileInputStream in = new FileInputStream(file);
+    private static byte[] readStream(InputStream in) throws IOException {
         byte[] b = new byte[in.available()];
         in.read(b);
         in.close();
-
         return b;
     }
 
