@@ -225,12 +225,14 @@ public abstract class MblSimpleImageLoader<T> {
         // check if item is available
         final T item = getItemBoundWithView(view);
         if (item == null) {
+            onError(getImageViewBoundWithView(view), getItemBoundWithView(view));
             return;
         }
 
         // check if ImageView is available
         final ImageView imageView = getImageViewBoundWithView(view);
         if (imageView == null) {
+            onError(getImageViewBoundWithView(view), getItemBoundWithView(view));
             return;
         }
 
