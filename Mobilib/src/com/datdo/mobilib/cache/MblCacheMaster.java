@@ -266,6 +266,24 @@ public abstract class MblCacheMaster<T> {
             };
         }
 
+        // if all data are in memory-cache, return right away
+        final List<T> memcachedData = mMemCache.get(ids);
+        if (memcachedData.size() == ids.size()) {
+            Log.d(TAG, "get: all data is in memory cache");
+            if (callback != null) {
+                MblUtils.executeOnMainThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.onSuccess(memcachedData);
+                    }
+                });
+            }
+            return new Runnable() {
+                @Override
+                public void run() {}
+            };
+        }
+
         final MblSerializer.Task task = new MblSerializer.Task() {
             @Override
             public void run(final Runnable finishCallback) {
