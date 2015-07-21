@@ -466,10 +466,11 @@ public class MblSwitch extends FrameLayout {
             scrollTo(getMostLeftX());
             newOnStatus = false;
         }
-        if (mCallback != null && mIsOn != newOnStatus) {
+        boolean isChanged = mIsOn != newOnStatus;
+        mIsOn = newOnStatus;
+        if (mCallback != null && isChanged) {
             mCallback.onStatusChanged(newOnStatus);
         }
-        mIsOn = newOnStatus;
     }
 
     private void handleFling() {
@@ -481,10 +482,11 @@ public class MblSwitch extends FrameLayout {
             scrollTo(getMostLeftX());
             newOnStatus = false;
         }
-        if (mCallback != null && mIsOn != newOnStatus) {
+        boolean isChanged = mIsOn != newOnStatus;
+        mIsOn = newOnStatus;
+        if (mCallback != null && isChanged) {
             mCallback.onStatusChanged(newOnStatus);
         }
-        mIsOn = newOnStatus;
     }
 
     private void handleSingleTap() {
@@ -496,10 +498,11 @@ public class MblSwitch extends FrameLayout {
             scrollTo(getMostRightX());
             newOnStatus = true;
         }
-        if (mCallback != null && mIsOn != newOnStatus) {
+        boolean isChanged = mIsOn != newOnStatus;
+        mIsOn = newOnStatus;
+        if (mCallback != null && isChanged) {
             mCallback.onStatusChanged(newOnStatus);
         }
-        mIsOn = newOnStatus;
     }
 
     private int getMostLeftX() {
