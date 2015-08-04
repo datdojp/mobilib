@@ -125,15 +125,6 @@ public abstract class MblSimpleImageLoader<T> {
     protected abstract void onError(ImageView imageView, T item);
 
     /**
-     * Optional. Return load-indicating progress view.
-     */
-    protected View getProgressView() {
-        ProgressBar progress = new ProgressBar(MblUtils.getCurrentContext());
-        progress.setIndeterminate(true);
-        return progress;
-    }
-
-    /**
      * <pre>
      * Callback class for {@link #retrieveImage(Object, MblRetrieveImageCallback)}
      * Choose appropriate method to invoke when bitmap data is successfully loaded, or {@link #onRetrievedError()} when fail
@@ -146,6 +137,53 @@ public abstract class MblSimpleImageLoader<T> {
         public void onRetrievedError();
     }
 
+    public static class MblOptions {
+
+        /**
+         * Interface to customize progress view which indicates image loading
+         */
+        public static interface MblProgressViewGenerator {
+            public View generate();
+        }
+
+        private boolean mSerializeImageLoading  = true;
+        private boolean mEnableProgressView     = true;
+        private boolean mEnableFadingAnimation  = true;
+        private MblProgressViewGenerator mProgressViewGenerator;
+
+        /**
+         * Configure whether progress view is displayed to indicate that image is being loaded. Default TRUE.
+         */
+        public MblOptions setEnableProgressView(boolean enableProgressView) {
+            mEnableProgressView = enableProgressView;
+            return this;
+        }
+
+        /**
+         * Configure whether fading animation is played when image is fully loaded and displayed to ImageView. Default TRUE.
+         */
+        public MblOptions setEnableFadingAnimation(boolean enableFadingAnimation) {
+            mEnableFadingAnimation = enableFadingAnimation;
+            return this;
+        }
+
+        /**
+         * Configure the progress view to indicate image loading. Default NULL.
+         */
+        public MblOptions setProgressViewGenerator(MblProgressViewGenerator progressViewGenerator) {
+            mProgressViewGenerator = progressViewGenerator;
+            return this;
+        }
+
+        /**
+         * Configure whether image is loaded one by one. Default TRUE.
+         */
+        public MblOptions setSerializeImageLoading(boolean serializeImageLoading) {
+            mSerializeImageLoading = serializeImageLoading;
+            return this;
+        }
+    }
+
     private static final String TAG = MblUtils.getTag(MblImageLoader.class);
     private static final int FRAME_ID = 1430125134;
 
@@ -154,10 +192,12 @@ public abstract class MblSimpleImageLoader<T> {
     private static boolean                  sDoubleCacheSize    = false;
 
     private MblSerializer   mSerializer;
-    private boolean         mEnableProgressView     = true;
-    private boolean         mEnableFadingAnimation  = true;
+    private MblOptions      mOptions;
 
     public MblSimpleImageLoader() {
+
+        // set default options
+        mOptions = new MblOptions();
 
         // initialize bitmap cache
         if (sBitmapCache == null) {
@@ -251,7 +291,7 @@ public abstract class MblSimpleImageLoader<T> {
 
         imageView.setImageBitmap(null);
         showProgressBar(imageView);
-        mSerializer.run(new MblSerializer.Task() {
+        final MblSerializer.Task task = new MblSerializer.Task() {
             @Override
             public void run(final Runnable finishCallback) {
 
@@ -265,7 +305,7 @@ public abstract class MblSimpleImageLoader<T> {
                 int w = getImageViewWidth(imageView);
                 int h = getImageViewHeight(imageView);
                 if (!isValidSizes(w, h)) {
-                    final Runnable[] timeoutAction = new Runnable[] { null };
+                    final Runnable[] timeoutAction = new Runnable[]{null};
                     final ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
                         @Override
                         public void onGlobalLayout() {
@@ -326,11 +366,11 @@ public abstract class MblSimpleImageLoader<T> {
                                     int h = getImageViewHeight(imageView);
                                     final Bitmap bm;
                                     if (data instanceof byte[]) {
-                                        bm = MblUtils.loadBitmapMatchSpecifiedSize(w, h, (byte[])data);
+                                        bm = MblUtils.loadBitmapMatchSpecifiedSize(w, h, (byte[]) data);
                                     } else if (data instanceof Bitmap) {
                                         bm = (Bitmap) data;
                                     } else if (data instanceof String) {
-                                        bm = MblUtils.loadBitmapMatchSpecifiedSize(w, h, (String)data);
+                                        bm = MblUtils.loadBitmapMatchSpecifiedSize(w, h, (String) data);
                                     } else {
                                         bm = null;
                                     }
@@ -398,21 +438,26 @@ public abstract class MblSimpleImageLoader<T> {
                     }
                 });
             }
-        });
+        };
+        if (mOptions.mSerializeImageLoading) {
+            mSerializer.run(task);
+        } else {
+            MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    task.run(new Runnable() {
+                        @Override
+                        public void run() {}
+                    });
+                }
+            }, 500);
+        }
     }
 
-    /**
-     * <pre>
-     * Stop loading. This methods should be called when the view did disappear.
-     * </pre>
-     */
-    public void stop() {
-        mSerializer.cancelAll();
-    }
-
+    @SuppressWarnings("ResourceType")
     private void showProgressBar(ImageView imageView) {
 
-        if (!mEnableProgressView) {
+        if (!mOptions.mEnableProgressView) {
             return;
         }
 
@@ -457,9 +502,10 @@ public abstract class MblSimpleImageLoader<T> {
         });
     }
 
+    @SuppressWarnings("ResourceType")
     private void hideProgressBar(ImageView imageView) {
 
-        if (!mEnableProgressView) {
+        if (!mOptions.mEnableProgressView) {
             return;
         }
 
@@ -549,7 +595,7 @@ public abstract class MblSimpleImageLoader<T> {
     }
 
     private void animateImageView(ImageView imageView) {
-        if (!mEnableFadingAnimation) {
+        if (!mOptions.mEnableFadingAnimation) {
             return;
         }
         ObjectAnimator.ofFloat(imageView, "alpha", 0, 1)
@@ -595,18 +641,30 @@ public abstract class MblSimpleImageLoader<T> {
     }
 
     /**
-     * Configure whether progress view is displayed to indicate that image is being loaded.
+     * Get options for this image loader.
      */
-    public MblSimpleImageLoader setEnableProgressView(boolean enableProgressView) {
-        mEnableProgressView = enableProgressView;
-        return this;
+    public MblOptions getOptions() {
+        return mOptions;
     }
 
     /**
-     * Configure whether fading animation is played when image is fully loaded and displayed to ImageView.
+     * Set options for this image loader.
      */
-    public MblSimpleImageLoader setEnableFadingAnimation(boolean enableFadingAnimation) {
-        mEnableFadingAnimation = enableFadingAnimation;
-        return this;
+    public void setOptions(MblOptions options) {
+        if (options != null) {
+            mOptions = options;
+        } else {
+            mOptions = new MblOptions();
+        }
+    }
+
+    private View getProgressView() {
+        if (mOptions.mProgressViewGenerator != null) {
+            return mOptions.mProgressViewGenerator.generate();
+        } else {
+            ProgressBar progress = new ProgressBar(MblUtils.getCurrentContext());
+            progress.setIndeterminate(true);
+            return progress;
+        }
     }
 }
