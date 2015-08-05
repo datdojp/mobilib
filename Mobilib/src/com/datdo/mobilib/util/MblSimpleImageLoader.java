@@ -10,6 +10,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.*;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -193,6 +194,8 @@ public abstract class MblSimpleImageLoader<T> {
 
     private MblSerializer   mSerializer;
     private MblOptions      mOptions;
+    private int             mProgressViewFrameWidth;
+    private int             mProgressViewFrameHeight;
 
     public MblSimpleImageLoader() {
 
@@ -486,20 +489,48 @@ public abstract class MblSimpleImageLoader<T> {
         frame.addView(imageView);
         parent.addView(frame, index);
 
-        // create ProgressBar and add it to frame when frame is ready
-        frame.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+        // create ProgressBar and add it to frame
+        final View[] progressView = new View[]{null};
+        final Runnable addProgressView = new Runnable() {
+            @Override
+            public void run() {
+                progressView[0] = getProgressView();
+                FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                        Math.min(MblUtils.pxFromDp(50), mProgressViewFrameWidth / 2),
+                        Math.min(MblUtils.pxFromDp(50), mProgressViewFrameHeight / 2));
+                lp.gravity = Gravity.CENTER;
+                progressView[0].setLayoutParams(lp);
+                frame.addView(progressView[0]);
+            }
+        };
+        if (mProgressViewFrameWidth > 0 && mProgressViewFrameHeight > 0) {
+            addProgressView.run();
+        }
+        OnGlobalLayoutListener listener = new ViewTreeObserver.OnGlobalLayoutListener() {
             @Override
             public void onGlobalLayout() {
                 MblUtils.removeOnGlobalLayoutListener(frame, this);
-                View progress = getProgressView();
-                FrameLayout.LayoutParams pbLp = new FrameLayout.LayoutParams(
-                        Math.min(MblUtils.pxFromDp(50), frame.getWidth() / 2),
-                        Math.min(MblUtils.pxFromDp(50), frame.getHeight() / 2));
-                pbLp.gravity = Gravity.CENTER;
-                progress.setLayoutParams(pbLp);
-                frame.addView(progress);
+                frame.setTag(null);
+                if (frame.getWidth() == 0 || frame.getHeight() == 0) {
+                    return;
+                }
+                if (progressView[0] == null) {
+                    mProgressViewFrameWidth = frame.getWidth();
+                    mProgressViewFrameHeight = frame.getHeight();
+                    addProgressView.run();
+                } else if (mProgressViewFrameWidth != frame.getWidth() || mProgressViewFrameHeight != frame.getHeight()) {
+                    mProgressViewFrameWidth = frame.getWidth();
+                    mProgressViewFrameHeight = frame.getHeight();
+                    FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams)progressView[0].getLayoutParams();
+                    lp.width = Math.min(MblUtils.pxFromDp(50), mProgressViewFrameWidth / 2);
+                    lp.height = Math.min(MblUtils.pxFromDp(50), mProgressViewFrameHeight / 2);
+                    progressView[0].setLayoutParams(lp);
+                }
+
             }
-        });
+        };
+        frame.getViewTreeObserver().addOnGlobalLayoutListener(listener);
+        frame.setTag(listener);
     }
 
     @SuppressWarnings("ResourceType")
@@ -526,6 +557,10 @@ public abstract class MblSimpleImageLoader<T> {
 
         // frame & parent
         FrameLayout frame = (FrameLayout) temp;
+        if (frame.getTag() != null) {
+            MblUtils.removeOnGlobalLayoutListener(frame, (OnGlobalLayoutListener)frame.getTag());
+            frame.setTag(null);
+        }
         ViewGroup parent = (ViewGroup) frame.getParent();
 
         // change ImageView
