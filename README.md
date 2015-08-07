@@ -366,14 +366,15 @@ Smart image loader
 Smart loader to display images for child views in a `ViewGroup`, like `ListView`, `LinearLayout`, `GridView`, etc.
 
 Features:
-1. Load images sequentially.
+
+1. Load images sequentially/parallel.
 2. Automatically scale images to match sizes of `ImageView`.
 3. Cache images using `LruCache`.
 4. Only load images for currently displayed cells, which is very useful for `ListView`.
 5. Fading animation when bitmap is loaded successfully.
 6. Display `ProgressBar` to indicate bitmap loading
 
-**MblSimpleImageLoader** is an implementation of Template Method pattern. You need to override some abstract methods to make it work.
+**MblSimpleImageLoader** is an implementation of Template Method pattern. You need to override some abstract methods to make it work. Additional configurations are set via `MblSimpleImageLoader.MblOptions`.
 
 ```java
 public class UserAdapter extends BaseAdapter {

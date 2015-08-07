@@ -33,7 +33,7 @@ import android.widget.ListView;
  *   3. Cache images using {@link LruCache}.
  *   4. Only load images for currently displayed cells, which is very useful for {@link android.widget.ListView}.
  *   5. Fading animation when bitmap is loaded successfully.
- * Override abstract methods use customize this loader.
+ * Override abstract methods to customize this loader. Additional configurations are set via {@link com.datdo.mobilib.util.MblSimpleImageLoader.MblOptions}
  *
  * Sample code:
  *
@@ -139,6 +139,9 @@ public abstract class MblSimpleImageLoader<T> {
         public void onRetrievedError();
     }
 
+    /**
+     * Additional configurations for {@link MblSimpleImageLoader}
+     */
     public static class MblOptions {
 
         /**
