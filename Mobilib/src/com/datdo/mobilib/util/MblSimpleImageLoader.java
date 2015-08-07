@@ -20,6 +20,7 @@ import com.nineoldandroids.animation.ObjectAnimator;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import android.widget.ListView;
 
 /**
  * <pre>
@@ -148,6 +149,7 @@ public abstract class MblSimpleImageLoader<T> {
         }
 
         private boolean mSerializeImageLoading  = true;
+        private long    mDelayedDurationInParallelMode = 500;
         private boolean mEnableProgressView     = true;
         private boolean mEnableFadingAnimation  = true;
         private MblProgressViewGenerator mProgressViewGenerator;
@@ -181,6 +183,19 @@ public abstract class MblSimpleImageLoader<T> {
          */
         public MblOptions setSerializeImageLoading(boolean serializeImageLoading) {
             mSerializeImageLoading = serializeImageLoading;
+            return this;
+        }
+
+        /**
+         * <pre>
+         * If you call {@link #setSerializeImageLoading(boolean)} with FALSE parameter, image loader will load images in parallel mode, which means multiple images are loaded at the same time.
+         * Anyway, parallel mode will cause a problem: if user want to see last views of a very long {@link ListView}, he needs to scroll very fast to bottom, then all views of {@link ListView} will be loaded, which is very bad for performance.
+         * Therefore, in parallel mode, image loader does not load image for view right away, but wait for a delayed duration before starting it. When use scrolls very fast, views are not loaded because their data are replaced by new data before delayed duration expires.
+         * This method is to customize the delayed duration, in millisecond. Default 500
+         * </pre>
+         */
+        public MblOptions setDelayedDurationInParallelMode(long delayedDurationInParallelMode) {
+            mDelayedDurationInParallelMode = delayedDurationInParallelMode;
             return this;
         }
     }
@@ -453,7 +468,7 @@ public abstract class MblSimpleImageLoader<T> {
                         public void run() {}
                     });
                 }
-            }, 500);
+            }, mOptions.mDelayedDurationInParallelMode);
         }
     }
 
@@ -685,12 +700,13 @@ public abstract class MblSimpleImageLoader<T> {
     /**
      * Set options for this image loader.
      */
-    public void setOptions(MblOptions options) {
+    public MblSimpleImageLoader setOptions(MblOptions options) {
         if (options != null) {
             mOptions = options;
         } else {
             mOptions = new MblOptions();
         }
+        return this;
     }
 
     private View getProgressView() {
