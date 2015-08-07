@@ -22,12 +22,7 @@ public class CarrierTestActivity extends MblBaseActivity {
 
 
         FrameLayout interceptorContainerView = (FrameLayout) findViewById(R.id.interceptor_container);
-        mCarrier = new MblSlidingCarrier(this, interceptorContainerView, new MblCarrier.MblCarrierCallback() {
-            @Override
-            public void onNoInterceptor() {
-                finish();
-            }
-        });
+        mCarrier = new MblSlidingCarrier(this, interceptorContainerView, null);
         mCarrier.startInterceptor(Interceptor1.class, null);
 
         selectSlidingDirection();

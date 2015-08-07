@@ -132,15 +132,6 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
 
             return view;
         }
-
-        public void flush() {
-            MblUtils.executeOnMainThread(new Runnable() {
-                @Override
-                public void run() {
-                    mImageLoader.stop();
-                }
-            });
-        }
     };
 
     @SuppressLint("InflateParams")
@@ -160,11 +151,5 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
     protected void onResume() {
         super.onResume();
         ((Adapter) mListView.getAdapter()).notifyDataSetChanged();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        ((Adapter) mListView.getAdapter()).flush();
     }
 }
