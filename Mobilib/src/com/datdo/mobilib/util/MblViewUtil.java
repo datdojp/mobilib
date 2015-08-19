@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.text.Html;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnFocusChangeListener;
@@ -39,6 +40,8 @@ import com.datdo.mobilib.util.MblLinkMovementMethod.*;
  * </pre>
  */
 public class MblViewUtil {
+
+    private static final String TAG = MblUtils.getTag(MblViewUtil.class);
 
     /**
      * <pre>
@@ -375,15 +378,19 @@ public class MblViewUtil {
         textView.setMovementMethod(new MblLinkMovementMethod(new MblLinkMovementMethodCallback() {
             @Override
             public void onLinkClicked(final String link) {
-                if (MblUtils.isEmail(link)) {
-                    MblUtils.sendEmail(null, new String[]{link}, null, null, null, null, null);
-                } else if (MblUtils.isWebUrl(link)) {
-                    MblUtils.openWebUrl(link);
-                } else if (MblUtils.isPhone(link)) {
-                    if (MblUtils.hasPhone()) {
-                        MblUtils.getCurrentContext().startActivity(
-                                new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + link)));
+                try {
+                    if (MblUtils.isEmail(link)) {
+                        MblUtils.sendEmail(null, new String[]{link}, null, null, null, null, null);
+                    } else if (MblUtils.isWebUrl(link)) {
+                        MblUtils.openWebUrl(link);
+                    } else if (MblUtils.isPhone(link)) {
+                        if (MblUtils.hasPhone()) {
+                            MblUtils.getCurrentContext().startActivity(
+                                    new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + link)));
+                        }
                     }
+                } catch (Exception e) {
+                    Log.e(TAG, "Can not open link: " + link, e);
                 }
                 if (callback != null) {
                     callback.onLinkClicked(link);
