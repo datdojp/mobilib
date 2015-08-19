@@ -3,9 +3,12 @@ package com.datdo.mobilib.util;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.text.Html;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnFocusChangeListener;
@@ -28,6 +31,7 @@ import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.datdo.mobilib.util.MblLinkMovementMethod.*;
 
 /**
  * <pre>
@@ -357,5 +361,40 @@ public class MblViewUtil {
      */
     public static void setGlobalViewProcessor(MblInterateViewDelegate globalViewProcessor) {
         sGlobalViewProcessor = globalViewProcessor;
+    }
+
+    /**
+     * <pre>
+     * Display a string that may contains links (email, web-url, phone) using {@link TextView}. Links are clickable.
+     * </pre>
+     * @param callback customize how to handle link-clicked and long-clicked
+     */
+    public static void displayTextWithLinks(TextView textView, String content, final MblLinkMovementMethodCallback callback) {
+        String html = MblLinkRecognizer.getLinkRecognizedHtmlText(content);
+        textView.setText(Html.fromHtml(html));
+        textView.setMovementMethod(new MblLinkMovementMethod(new MblLinkMovementMethodCallback() {
+            @Override
+            public void onLinkClicked(final String link) {
+                if (MblUtils.isEmail(link)) {
+                    MblUtils.sendEmail(null, new String[]{link}, null, null, null, null, null);
+                } else if (MblUtils.isWebUrl(link)) {
+                    MblUtils.openWebUrl(link);
+                } else if (MblUtils.isPhone(link)) {
+                    if (MblUtils.hasPhone()) {
+                        MblUtils.getCurrentContext().startActivity(
+                                new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + link)));
+                    }
+                }
+                if (callback != null) {
+                    callback.onLinkClicked(link);
+                }
+            }
+            @Override
+            public void onLongClicked() {
+                if (callback != null) {
+                    callback.onLongClicked();
+                }
+            }
+        }));
     }
 }

@@ -12,7 +12,7 @@ import android.widget.TextView;
  * <pre>
  * A movement method that detects links in {@link TextView}.
  * Also support callback methods when link is clicked.
- * This class is used together with {@link MblUrlRecognizer}
+ * This class is used together with {@link MblLinkRecognizer}
  * </pre>
  */
 public class MblLinkMovementMethod extends LinkMovementMethod {

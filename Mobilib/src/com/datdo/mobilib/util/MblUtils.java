@@ -1838,7 +1838,34 @@ public class MblUtils {
      * </pre>
      */
     public static boolean isLink(String s) {
-        return MblUrlRecognizer.isLink(s);
+        return MblLinkRecognizer.isLink(s);
+    }
+
+    /**
+     * <pre>
+     * Determine whether a {@link String} object is an email address.
+     * </pre>
+     */
+    public static boolean isEmail(String s) {
+        return MblLinkRecognizer.isEmail(s);
+    }
+
+    /**
+     * <pre>
+     * Determine whether a {@link String} object is a web url.
+     * </pre>
+     */
+    public static boolean isWebUrl(String s) {
+        return MblLinkRecognizer.isWebUrl(s);
+    }
+
+    /**
+     * <pre>
+     * Determine whether a {@link String} object is a phone number.
+     * </pre>
+     */
+    public static boolean isPhone(String s) {
+        return MblLinkRecognizer.isPhone(s);
     }
 
     /**
@@ -1848,16 +1875,16 @@ public class MblUtils {
      * </pre>
      */
     public static String lowerCaseHttpxPrefix(String link) {
-        return MblUrlRecognizer.lowerCaseHttpxPrefix(link);
+        return MblLinkRecognizer.lowerCaseHttpxPrefix(link);
     }
 
     /**
      * <pre>
-     * Open other app to view a link.
+     * Open other app to view a web url.
      * </pre>
      */
-    public static void openLink(String link) {
-        if (isEmpty(link) || !isLink(link)) {
+    public static void openWebUrl(String link) {
+        if (isEmpty(link) || !isWebUrl(link)) {
             return;
         }
         link = lowerCaseHttpxPrefix(link);
@@ -1915,7 +1942,7 @@ public class MblUtils {
                     } catch (UnsupportedEncodingException e1) {
                         continue;
                     }
-                    if (isLink(url)) {
+                    if (isWebUrl(url)) {
                         try {
                             return new URL(url);
                         } catch (MalformedURLException e) {}
