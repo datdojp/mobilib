@@ -1888,6 +1888,12 @@ public class MblUtils {
             return;
         }
         link = lowerCaseHttpxPrefix(link);
+        if (!link.startsWith("http")) {
+            link = "http://" + link;
+            if (!isWebUrl(link)) {
+                return;
+            }
+        }
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
         getCurrentContext().startActivity(browserIntent);
     }
