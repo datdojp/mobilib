@@ -371,9 +371,10 @@ public class MblViewUtil {
      * Display a string that may contains links (email, web-url, phone) using {@link TextView}. Links are clickable.
      * </pre>
      * @param callback customize how to handle link-clicked and long-clicked
+     * @param options options for {@link MblLinkRecognizer}
      */
-    public static void displayTextWithLinks(TextView textView, String content, final MblLinkMovementMethodCallback callback) {
-        String html = MblLinkRecognizer.getLinkRecognizedHtmlText(content);
+    public static void displayTextWithLinks(TextView textView, String content, MblLinkRecognizer.MblOptions options, final MblLinkMovementMethodCallback callback) {
+        String html = MblLinkRecognizer.getLinkRecognizedHtmlText(content, options);
         textView.setText(Html.fromHtml(html));
         textView.setMovementMethod(new MblLinkMovementMethod(new MblLinkMovementMethodCallback() {
             @Override

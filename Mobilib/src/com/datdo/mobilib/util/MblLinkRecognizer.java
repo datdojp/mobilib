@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
  * }));
  * </code>
  *
- * @see MblViewUtil#displayTextWithLinks(TextView, String)
+ * @see MblViewUtil#displayTextWithLinks(TextView, String, MblOptions, MblLinkMovementMethod.MblLinkMovementMethodCallback)
  * </pre>
  */
 public class MblLinkRecognizer {
@@ -42,19 +42,42 @@ public class MblLinkRecognizer {
     static final Pattern pattern =  Pattern.compile(Patterns.EMAIL_ADDRESS + "|" + Patterns.WEB_URL + "|" + Patterns.PHONE);
     StringBuilder result = new StringBuilder();
     StringBuilder source;
+    MblOptions options;
+
+    public static class MblOptions {
+        private boolean mRecognizeEmail;
+        private boolean mRecognizeWebUrl;
+        private boolean mRecognizePhone;
+
+        public MblOptions setRecognizeEmail(boolean recognizeEmail) {
+            mRecognizeEmail = recognizeEmail;
+            return this;
+        }
+
+        public MblOptions setRecognizeWebUrl(boolean recognizeWebUrl) {
+            mRecognizeWebUrl = recognizeWebUrl;
+            return this;
+        }
+
+        public MblOptions setRecognizePhone(boolean recognizePhone) {
+            mRecognizePhone = recognizePhone;
+            return this;
+        }
+    }
 
     /**
      * <pre>
      * Recognize links in a String and build new HTML String which wraps links in "<a>...</a>".
      * </pre>
      */
-    public static String getLinkRecognizedHtmlText(String text) {
-        return new MblLinkRecognizer(text).getResult();
+    public static String getLinkRecognizedHtmlText(String text, MblOptions options) {
+        return new MblLinkRecognizer(text, options).getResult();
     }
 
-    private MblLinkRecognizer(String s) {
+    private MblLinkRecognizer(String s, MblOptions options) {
         if (s == null) s = "";
         source = new StringBuilder(s);
+        this.options = options != null ? options : new MblOptions();
     }
 
     private String getResult() {
@@ -74,11 +97,23 @@ public class MblLinkRecognizer {
         result.append(replaceChars(source.substring(0, m.start())));
 
         if (isEmail(text)) {
-            result.append("<a " + "href=\"mailto:" + text + "\">" + text + "</a>");
+            if (options.mRecognizeEmail) {
+                result.append("<a " + "href=\"mailto:" + text + "\">" + text + "</a>");
+            } else {
+                result.append(text);
+            }
         } if (isWebUrl(text)) {
-            result.append("<a " + "href=\"" + lowerCaseHttpxPrefix(replaceChars(text)) + "\">" + replaceChars(text) + "</a>");
+            if (options.mRecognizeWebUrl) {
+                result.append("<a " + "href=\"" + lowerCaseHttpxPrefix(replaceChars(text)) + "\">" + replaceChars(text) + "</a>");
+            } else {
+                result.append(text);
+            }
         } else if (isPhone(text)) {
-            result.append("<a " + "href=\"tel:" + text + "\">" + text + "</a>");
+            if (options.mRecognizePhone) {
+                result.append("<a " + "href=\"tel:" + text + "\">" + text + "</a>");
+            } else {
+                result.append(text);
+            }
         }
         source.delete(0, m.end());
         return true;
