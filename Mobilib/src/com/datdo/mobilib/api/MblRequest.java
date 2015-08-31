@@ -53,7 +53,8 @@ public class MblRequest {
     private Handler                         mCallbackHandler        = MblUtils.getMainThreadHandler();
     private MblStatusCodeValidator          mStatusCodeValidator    = sDefaultStatusCodeValidator;
     private String                          mData;
-    private boolean                         mRedirectEnabled         = false;
+    private boolean                         mRedirectEnabled        = false;
+    private long                            mTimeout                = -1;
 
     public MblRequest() {}
 
@@ -187,6 +188,11 @@ public class MblRequest {
         return this;
     }
 
+    public MblRequest setTimeout(long timeout) {
+        mTimeout = timeout;
+        return this;
+    }
+
     public String getUrl() {
         return mUrl;
     }
@@ -229,5 +235,9 @@ public class MblRequest {
 
     public boolean isRedirectEnabled() {
         return mRedirectEnabled;
+    }
+
+    public long getTimeout() {
+        return mTimeout;
     }
 }

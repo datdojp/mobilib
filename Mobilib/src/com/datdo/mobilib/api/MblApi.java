@@ -110,20 +110,63 @@ public class MblApi {
      * General method to run an arbitrary request.
      * </pre>
      */
-    public static void run(MblRequest request) {
+    public static void run(final MblRequest request) {
         if (request == null) {
             throw new RuntimeException("request must not be NULL");
         }
         if (request.getUrl() == null || request.getMethod() == null) {
             throw new RuntimeException("request.url and request.method must not be NULL");
         }
+
+        final MblApiCallback callback;
+        if (request.getCallback() != null && request.getTimeout() > 0) {
+            final long requestedAt = System.currentTimeMillis();
+            final Runnable timeout = new Runnable() {
+                @Override
+                public void run() {
+                    MblResponse response = new MblResponse();
+                    response.setRequest(request);
+                    response.setStatusCode(-1);
+                    response.setStatusCodeReason("Time out");
+                    request.getCallback().onFailure(response);
+                }
+            };
+            MblUtils.getMainThreadHandler().postDelayed(timeout, request.getTimeout());
+            callback = new MblApiCallback() {
+
+                boolean isExpired() {
+                    return System.currentTimeMillis() - requestedAt > request.getTimeout();
+                }
+
+                @Override
+                public void onSuccess(MblResponse response) {
+                    MblUtils.getMainThreadHandler().removeCallbacks(timeout);
+                    if (isExpired()) {
+                        return;
+                    }
+                    request.getCallback().onSuccess(response);
+                }
+
+                @Override
+                public void onFailure(MblResponse response) {
+                    MblUtils.getMainThreadHandler().removeCallbacks(timeout);
+                    if (isExpired()) {
+                        return;
+                    }
+                    request.getCallback().onFailure(response);
+                }
+            };
+        } else {
+            callback = request.getCallback();
+        }
+
         if (request.getMethod() == Method.GET) {
             get(    request.getUrl(),
                     request.getParams(),
                     request.getHeaderParams(),
                     request.getCacheDuration(),
                     !request.isVerifySSL(),
-                    request.getCallback(),
+                    callback,
                     request.getCallbackHandler(),
                     request.getStatusCodeValidator(),
                     request.isRedirectEnabled(),
@@ -135,7 +178,7 @@ public class MblApi {
                     request.getParams(),
                     request.getHeaderParams(),
                     !request.isVerifySSL(),
-                    request.getCallback(),
+                    callback,
                     request.getCallbackHandler(),
                     request.getStatusCodeValidator(),
                     request.getData(),
@@ -500,7 +543,6 @@ public class MblApi {
                         }
                         return;
                     }
-
 
 
                     if (callback != null) {
