@@ -32,6 +32,10 @@ class MblBluetoothStatusChangedReceiver extends BroadcastReceiver {
     }
 
     private MblBluetoothStatus getStatus() {
-        return MblUtils.isBluetoothOn() ? MblBluetoothStatus.ON : MblBluetoothStatus.OFF;
+        try {
+            return MblUtils.isBluetoothOn() ? MblBluetoothStatus.ON : MblBluetoothStatus.OFF;
+        } catch (Exception e) { // android.permission.BLUETOOTH is not allowed, etc...
+            return null;
+        }
     }
 }

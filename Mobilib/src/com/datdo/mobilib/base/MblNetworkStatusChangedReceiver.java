@@ -32,6 +32,10 @@ class MblNetworkStatusChangedReceiver extends BroadcastReceiver {
     }
 
     private MblNetworkStatus getStatus() {
-        return MblUtils.isNetworkConnected() ? MblNetworkStatus.ON : MblNetworkStatus.OFF;
+        try {
+            return MblUtils.isNetworkConnected() ? MblNetworkStatus.ON : MblNetworkStatus.OFF;
+        } catch (Exception e) { // android.permission.ACCESS_NETWORK_STATE is not allowed, etc...
+            return null;
+        }
     }
 }
