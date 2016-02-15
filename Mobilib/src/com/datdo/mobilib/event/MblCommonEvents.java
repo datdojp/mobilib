@@ -32,6 +32,22 @@ public final class MblCommonEvents {
 
     /**
      * <pre>
+     * Bluetooth is turned on.
+     * Call {@link MblUtils#isBluetoothOn()} to get current network status.
+     * </pre>
+     */
+    public static final String BLUETOOTH_ON                     = MblCommonEvents.class + "#bluetooth_on";
+
+    /**
+     * <pre>
+     * Bluetooth is turned off.
+     * Call {@link MblUtils#isBluetoothOn()} to get current network status.
+     * </pre>
+     */
+    public static final String BLUETOOTH_OFF                    = MblCommonEvents.class + "#bluetooth_off";
+
+    /**
+     * <pre>
      * Keyboard is shown.
      * </pre>
      * Call {@link MblUtils#isKeyboardOn()} to get current keyboard status.
@@ -64,9 +80,57 @@ public final class MblCommonEvents {
 
     /**
      * <pre>
-     * An activity is resumed.
-     * The activity is attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * Activity 's onCreate methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
+    public static final String ACTIVITY_CREATED                 = MblCommonEvents.class + "#activity_created";
+
+    /**
+     * <pre>
+     * Activity 's onStart methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre>
+     */
+    public static final String ACTIVITY_STARTED                 = MblCommonEvents.class + "#activity_started";
+
+    /**
+     * <pre>
+     * Activity 's onResume methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
      * </pre> 
      */
     public static final String ACTIVITY_RESUMED                 = MblCommonEvents.class + "#activity_resumed";
+
+    /**
+     * <pre>
+     * Activity 's onPause methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
+    public static final String ACTIVITY_PAUSED                  = MblCommonEvents.class + "#activity_paused";
+
+    /**
+     * <pre>
+     * Activity 's onStop methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre>
+     */
+    public static final String ACTIVITY_STOPPED                 = MblCommonEvents.class + "#activity_stopped";
+
+    /**
+     * <pre>
+     * Activity 's onDestroy methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
+    public static final String ACTIVITY_DESTROYED               = MblCommonEvents.class + "#activity_destroyed";
+
+    /**
+     * <pre>
+     * Activity 's onActivityResult methods.
+     * The activity object and corresponding data are attached in args of {@link MblEventListener#onEvent(Object, String, Object...)}.
+     * </pre> 
+     */
+    public static final String ACTIVITY_RESULT                  = MblCommonEvents.class + "#activity_result";
 }

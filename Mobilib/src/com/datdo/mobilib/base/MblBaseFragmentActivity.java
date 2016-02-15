@@ -1,6 +1,7 @@
 package com.datdo.mobilib.base;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -23,6 +24,18 @@ public abstract class MblBaseFragmentActivity extends FragmentActivity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        mPlugin.onStart(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        mPlugin.onStop(this);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         mPlugin.onResume(this);
@@ -31,7 +44,7 @@ public abstract class MblBaseFragmentActivity extends FragmentActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        mPlugin.onPause();
+        mPlugin.onPause(this);
     }
 
     @Override
@@ -66,6 +79,12 @@ public abstract class MblBaseFragmentActivity extends FragmentActivity {
     protected void onDestroy() {
         super.onDestroy();
         mPlugin.onDestroy(this);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        mPlugin.onActivityResult(this, requestCode, resultCode, data);
     }
 
     /**

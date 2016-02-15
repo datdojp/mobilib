@@ -24,6 +24,8 @@ public class CommonEventsTestActivity extends MblBaseActivity implements MblEven
                 MblCommonEvents.ORIENTATION_CHANGED,
                 MblCommonEvents.NETWORK_OFF,
                 MblCommonEvents.NETWORK_ON,
+                MblCommonEvents.BLUETOOTH_OFF,
+                MblCommonEvents.BLUETOOTH_ON,
                 MblCommonEvents.GO_TO_BACKGROUND,
                 MblCommonEvents.GO_TO_FOREGROUND,
                 MblCommonEvents.KEYBOARD_HIDDEN,
@@ -64,6 +66,10 @@ public class CommonEventsTestActivity extends MblBaseActivity implements MblEven
             MblUtils.showToast("KEYBOARD HIDDEN", Toast.LENGTH_SHORT);
         } else if (MblCommonEvents.KEYBOARD_SHOWN.equals(name)) {
             MblUtils.showToast("KEYBOARD SHOWN", Toast.LENGTH_SHORT);
+        } else if (MblCommonEvents.BLUETOOTH_OFF.equals(name)) {
+            MblUtils.showToast("BLUETOOTH OFF", Toast.LENGTH_SHORT);
+        } else if (MblCommonEvents.BLUETOOTH_ON.equals(name)) {
+            MblUtils.showToast("BLUETOOTH ON", Toast.LENGTH_SHORT);
         }
     }
 }

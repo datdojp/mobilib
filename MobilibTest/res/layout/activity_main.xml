@@ -77,6 +77,26 @@
             android:paddingTop="10dp"
             android:text="ImageInput"
             tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_api_clear_cache"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="ApiClearCache"
+            tools:ignore="HardcodedText" />
+
+        <Button
+            android:id="@+id/bt_carrier"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:paddingBottom="15dp"
+            android:paddingTop="10dp"
+            android:text="Carrier"
+            tools:ignore="HardcodedText" />
     </LinearLayout>
 
 </ScrollView>

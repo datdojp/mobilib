@@ -43,7 +43,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.image_picker_layout);
+        setContentView(R.layout.mbl_image_picker_layout);
 
         // get data from extra
         int photoNumberLimit = 1;
@@ -56,7 +56,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
         // back button
         Button backButton = (Button) findViewById(R.id.nav_bar_left_button);
         backButton.setVisibility(View.VISIBLE);
-        backButton.setText(R.string.back);
+        backButton.setText(R.string.mbl_back);
         backButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -67,7 +67,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
         // camera button
         Button cameraButton = (Button) findViewById(R.id.nav_bar_right_button);
         cameraButton.setVisibility(View.VISIBLE);
-        cameraButton.setBackgroundResource(R.drawable.green_camera_button_state);
+        cameraButton.setBackgroundResource(R.drawable.mbl_green_camera_button_state);
         cameraButton.setText(null);
         cameraButton.getLayoutParams().width = cameraButton.getLayoutParams().height;
         cameraButton.setOnClickListener(new View.OnClickListener() {
@@ -80,7 +80,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
         // title
         TextView textView= (TextView) findViewById(R.id.nav_bar_text);
         textView.setVisibility(View.VISIBLE);
-        textView.setText(R.string.select_photo);
+        textView.setText(R.string.mbl_select_photo);
 
         // init grid view
         GridView imageGrid = (GridView) findViewById(R.id.image_gridview);
@@ -236,7 +236,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
 
         if (mShouldRescanMediaFilesOnResume) {
 
-            MblUtils.showProgressDialog(R.string.scanning, false);
+            MblUtils.showProgressDialog(R.string.mbl_scanning, false);
             final String[] imageFolders = MblImageFolderScanner.getAllImageFolders();
             MblImagePickingScanEngine.scan(imageFolders, new CmScanCallback() {
                 @Override

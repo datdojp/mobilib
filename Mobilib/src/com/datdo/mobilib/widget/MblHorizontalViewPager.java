@@ -14,6 +14,7 @@ import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 
+@Deprecated
 public class MblHorizontalViewPager extends HorizontalScrollView {
     private static final float SCROLL_X_PER_Y_RATE_THRESHHOLD = 1.5f;
 

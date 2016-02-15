@@ -1,5 +1,40 @@
 package com.datdo.mobilib.api;
 
+import android.net.Uri;
+import android.os.Handler;
+import android.util.Log;
+
+import com.datdo.mobilib.api.MblRequest.MblStatusCodeValidator;
+import com.datdo.mobilib.cache.MblDatabaseCache;
+import com.datdo.mobilib.util.MblUtils;
+
+import junit.framework.Assert;
+
+import org.apache.http.Header;
+import org.apache.http.HeaderElement;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.params.ClientPNames;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.InputStreamBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,40 +46,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.Assert;
-
-import org.apache.http.Header;
-import org.apache.http.HeaderElement;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.InputStreamBody;
-import org.apache.http.entity.mime.content.StringBody;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.util.EntityUtils;
-
-import com.datdo.mobilib.util.MblUtils;
-
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.util.Log;
-
 /**
  * <pre>
- * Util class for communicating with server via HTTP/HTTPS.
- * Support 2 most basic methods GET and PUT. PUT method allows file uploading.
- * Subclasses must specify cache duration for a URL by overriding {@link #getCacheDuration(String, boolean)}
+ * Util class for communicating with server via HTTP/HTTPS
+ *
+ * Sample code:
+ * {@code
+ * MblApi.run(new MblRequest()
+ *      .setMethod(MblApi.Method.GET)
+ *      .setUrl("http://your.website.com/img/logo.png")
+ *      .setParams(
+ *          "user-name", username,
+ *          "avatar", new File(uploadedFilePath)
+ *      )
+ *      .setHeaderParams("access-token", accessToken)
+ *      .setVerifySSL(true)
+ *      .setCacheDuration(1000l * 60l * 60l * 24l)
+ *      .setCallback(new MblApi.MblApiCallback() {
+ *
+ *          @Override
+ *          public void onSuccess(int statusCode, byte[] data) {
+ *              // ...
+ *          };
+ *
+ *          @Override
+ *          public void onFailure(int error, String errorMessage) {
+ *              // ...
+ *          }
+ *      }));
+ * }
  * </pre>
  */
 @SuppressWarnings("deprecation")
@@ -57,29 +87,120 @@ public class MblApi {
 
     /**
      * <pre>
-     * Send GET request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters (combined with "url" to generate full URL). Value accepts String, Long, Integer, Double, Float
-     * @param headerParams {key,value} containing request headers
-     * @param isCacheEnabled should use cache for this request?
-     * @param cacheDuration how long cache data will valid (ignore this param if isCacheEnabled is FALSE
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data (text or binary)
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
+     * Common callback for all methods.
+     * </pre> 
      */
+    public static interface MblApiCallback {
+        /**
+         * <pre>
+         * Invoked on request success.
+         * </pre>
+         */
+        public void onSuccess(MblResponse response);
+        /**
+         * <pre>
+         * Invoked on request failure.
+         * </pre>
+         */
+        public abstract void onFailure(MblResponse response);
+    }
+
+    /**
+     * <pre>
+     * General method to run an arbitrary request.
+     * </pre>
+     */
+    public static void run(final MblRequest request) {
+        if (request == null) {
+            throw new RuntimeException("request must not be NULL");
+        }
+        if (request.getUrl() == null || request.getMethod() == null) {
+            throw new RuntimeException("request.url and request.method must not be NULL");
+        }
+
+        final MblApiCallback callback;
+        if (request.getCallback() != null && request.getTimeout() > 0) {
+            final long requestedAt = System.currentTimeMillis();
+            final Runnable timeout = new Runnable() {
+                @Override
+                public void run() {
+                    MblResponse response = new MblResponse();
+                    response.setRequest(request);
+                    response.setStatusCode(-1);
+                    response.setStatusCodeReason("Time out");
+                    request.getCallback().onFailure(response);
+                }
+            };
+            MblUtils.getMainThreadHandler().postDelayed(timeout, request.getTimeout());
+            callback = new MblApiCallback() {
+
+                boolean isExpired() {
+                    return System.currentTimeMillis() - requestedAt > request.getTimeout();
+                }
+
+                @Override
+                public void onSuccess(MblResponse response) {
+                    MblUtils.getMainThreadHandler().removeCallbacks(timeout);
+                    if (isExpired()) {
+                        return;
+                    }
+                    request.getCallback().onSuccess(response);
+                }
+
+                @Override
+                public void onFailure(MblResponse response) {
+                    MblUtils.getMainThreadHandler().removeCallbacks(timeout);
+                    if (isExpired()) {
+                        return;
+                    }
+                    request.getCallback().onFailure(response);
+                }
+            };
+        } else {
+            callback = request.getCallback();
+        }
+
+        if (request.getMethod() == Method.GET) {
+            get(    request.getUrl(),
+                    request.getParams(),
+                    request.getHeaderParams(),
+                    request.getCacheDuration(),
+                    !request.isVerifySSL(),
+                    callback,
+                    request.getCallbackHandler(),
+                    request.getStatusCodeValidator(),
+                    request.isRedirectEnabled(),
+                    request);
+        } else {
+            sendRequestWithBody(
+                    request.getMethod(),
+                    request.getUrl(),
+                    request.getParams(),
+                    request.getHeaderParams(),
+                    !request.isVerifySSL(),
+                    callback,
+                    request.getCallbackHandler(),
+                    request.getStatusCodeValidator(),
+                    request.getData(),
+                    request.isRedirectEnabled(),
+                    request);
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    public static void get(
+    private static void get(
             final String url,
             Map<String, ? extends Object> params,
             final Map<String, String> headerParams,
-            final boolean isCacheEnabled,
             final long cacheDuration,
             final boolean isIgnoreSSLCertificate,
-            final MblApiGetCallback callback,
-            Handler callbackHandler) {
+            final MblApiCallback callback,
+            Handler callbackHandler,
+            final MblStatusCodeValidator statusCodeValidator,
+            final boolean redirectEnabled,
+            final MblRequest request) {
+
+        final boolean isCacheEnabled = cacheDuration > 0;
 
         Map<String, ? extends Object> paramsNoEmptyVal = getParamsIgnoreEmptyValues(params);
 
@@ -112,10 +233,13 @@ public class MblApi {
                 final String message = "params " + key + " must be String, Long, Integer, Double, Float, current value is " + val.getClass().getSimpleName();
                 Log.e(TAG, "GET '" + url + "': " + message);
                 if (callback != null) {
-                    fCallbackHandler.post(new Runnable() {
+                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                         @Override
                         public void run() {
-                            callback.onFailure(-1, message);
+                            callback.onFailure(new MblResponse()
+                                    .setRequest(request)
+                                    .setStatusCode(-1)
+                                    .setStatusCodeReason(message));
                         }
                     });
                 }
@@ -129,22 +253,25 @@ public class MblApi {
             @Override
             public void run() {
 
-                MblCache existingCache = null;
+                MblDatabaseCache existingCache = null;
                 if (isCacheEnabled) {
-                    existingCache = MblCache.get(fullUrl);
+                    existingCache = MblDatabaseCache.get(fullUrl);
                     boolean shouldReadFromCache =
                             existingCache != null &&
                             (   !MblUtils.isNetworkConnected() ||
                                     System.currentTimeMillis() - existingCache.getDate() <= cacheDuration    );
                     if (shouldReadFromCache) {
                         try {
-                            final byte[] data = MblUtils.readCacheFile(existingCache.getFileName());
+                            final byte[] data = MblUtils.readCacheFile(getCacheFileName(existingCache));
                             if (data != null) {
                                 if (callback != null) {
-                                    fCallbackHandler.post(new Runnable() {
+                                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                         @Override
                                         public void run() {
-                                            callback.onSuccess(-1, data);
+                                            callback.onSuccess(new MblResponse()
+                                                    .setRequest(request)
+                                                    .setStatusCode(-1)
+                                                    .setData(data));
                                         }
                                     });
                                 }
@@ -162,18 +289,33 @@ public class MblApi {
                     HttpClient httpClient = getHttpClient(fullUrl, isIgnoreSSLCertificate);
                     HttpContext httpContext = new BasicHttpContext();
                     HttpGet httpGet = new HttpGet(fullUrl);
+                    if (!redirectEnabled) {
+                        disableRedirect(httpGet);
+                    }
 
                     httpGet.setHeaders(getHeaderArray(headerParams));
 
                     final HttpResponse response = httpClient.execute(httpGet, httpContext);
 
                     final int statusCode = response.getStatusLine().getStatusCode();
-                    if (statusCode < 200 || statusCode > 299) {
+                    final String statusCodeReason = response.getStatusLine().getReasonPhrase();
+                    final Map<String, String> headers = new HashMap<String, String>();
+                    for (Header h : response.getAllHeaders()) {
+                        headers.put(h.getName(), h.getValue());
+                    }
+                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
+
+                    if (!statusCodeValidator.isSuccess(statusCode)) {
                         if (callback != null) {
-                            fCallbackHandler.post(new Runnable() {
+                            MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                 @Override
                                 public void run() {
-                                    callback.onFailure(statusCode, response.getStatusLine().getReasonPhrase());
+                                    callback.onFailure(new MblResponse()
+                                            .setRequest(request)
+                                            .setStatusCode(statusCode)
+                                            .setStatusCodeReason(statusCodeReason)
+                                            .setHeaders(headers)
+                                            .setData(data));
                                 }
                             });
                         }
@@ -181,59 +323,39 @@ public class MblApi {
                         return;
                     }
 
-                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
-
                     if (isCacheEnabled) {
-                        saveCache(existingCache, fullUrl, data);
+                        saveCache(fullUrl, data);
                     }
 
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onSuccess(statusCode, data);
+                                callback.onSuccess(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(statusCode)
+                                        .setStatusCodeReason(statusCodeReason)
+                                        .setHeaders(headers)
+                                        .setData(data));
                             }
                         });
                     }
                 } catch (final Exception e) {
                     Log.e(TAG, "GET request failed due to unexpected exception", e);
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onFailure(-1, "Unexpected exception: " + e.getMessage());
+                                callback.onFailure(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(-1)
+                                        .setStatusCodeReason("Unexpected exception: " + e.getMessage()));
                             }
                         });
                     }
                 }
             }
         });
-    }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#get(String, Map, Map, boolean, boolean, boolean, MblApiGetCallback)}.
-     * Implement {@link MblApiGetCallback#onSuccessBinary(byte[])} for binary result.
-     * Implement {@link MblApiGetCallback#onSuccessText(String)} for text result (JSON, XML, etc...)
-     * </pre> 
-     */
-    public static interface MblApiGetCallback {
-        /**
-         * <pre>
-         * Invoked on request success.
-         * </pre>
-         * @param statusCode HTTP status code or -1 (in case of fetching data from cache)
-         * @param data result data in byte array
-         */
-        public void onSuccess(int statusCode, byte[] data);
-        /**
-         * <pre>
-         * Invoked on request failure.
-         * </pre>
-         * @param error HTTP status code (in case status code != 2xx) or -1 (in case of unknown error)
-         * @param errorMessage error message returned from server
-         */
-        public abstract void onFailure(int error, String errorMessage);
     }
 
     /**
@@ -245,59 +367,24 @@ public class MblApi {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static String getCacheFilePath(String url, Map<String, String> params) {
+    public static String getCacheFilePath(String url, Map<String, ? extends Object> params) {
         String fullUrl = generateGetMethodFullUrl(url, getParamsIgnoreEmptyValues(params));
-        MblCache existingCache = MblCache.get(fullUrl);
-        if (existingCache == null || existingCache.getFileName() == null) {
-            return null;
+        MblDatabaseCache existingCache = MblDatabaseCache.get(fullUrl);
+        if (existingCache != null) {
+            String cacheFileName = getCacheFileName(existingCache);
+            if (!MblUtils.isEmpty(cacheFileName)) {
+                String path = MblUtils.getCacheAsbPath(cacheFileName);
+                File file = new File(path);
+                if (file.exists() && file.length() > 0) {
+                    return path;
+                }
+            }
         }
-        String path = MblUtils.getCacheAsbPath(existingCache.getFileName());
-        File file = new File(path);
-        if (!file.exists() || file.length() == 0) {
-            return null;
-        }
-        return path;
+        return null;
     }
 
-    /**
-     * <pre>
-     * Send POST request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters. Value accepts String, Long, Integer, Double, Float, InputStream or File
-     * @param headerParams {key,value} containing request headers
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    public static void post(
-            String url,
-            Map<String, ? extends Object> params,
-            Map<String, String> headerParams,
-            boolean isIgnoreSSLCertificate,
-            MblApiPostCallback callback,
-            Handler callbackHandler) {
-
-        sendRequestWithBody(
-                Method.POST,
-                url,
-                params,
-                headerParams,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler);
-    }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#post(String, Map, Map, boolean, MblApiPostCallback)}
-     * </pre>
-     */
-    public static interface MblApiPostCallback extends MblSendRequestWithBodyCallback {}
-
-    private static enum Method {
+    public static enum Method {
+        GET,
         POST,
         PUT,
         DELETE;
@@ -323,8 +410,12 @@ public class MblApi {
             Map<String, ? extends Object> params,
             final Map<String, String> headerParams,
             final boolean isIgnoreSSLCertificate,
-            final MblSendRequestWithBodyCallback callback,
-            Handler callbackHandler) {
+            final MblApiCallback callback,
+            Handler callbackHandler,
+            final MblStatusCodeValidator statusCodeValidator,
+            final String data,
+            final boolean redirectEnabled,
+            final MblRequest request) {
 
         Assert.assertNotNull(method);
 
@@ -368,10 +459,13 @@ public class MblApi {
                 final String message = "params " + key + " must be String, Long, Integer, Double, Float, InputStream or File, current value is " + val.getClass().getSimpleName();
                 Log.e(TAG, method.name() + " '" + url + "': " + message);
                 if (callback != null) {
-                    fCallbackHandler.post(new Runnable() {
+                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                         @Override
                         public void run() {
-                            callback.onFailure(-1, message);
+                            callback.onFailure(new MblResponse()
+                                    .setRequest(request)
+                                    .setStatusCode(-1)
+                                    .setStatusCodeReason(message));
                         }
                     });
                 }
@@ -388,6 +482,9 @@ public class MblApi {
                     HttpClient httpClient = getHttpClient(url, isIgnoreSSLCertificate);
                     HttpContext httpContext = new BasicHttpContext();
                     HttpEntityEnclosingRequestBase httpRequest = method.getHttpRequest(url);
+                    if (!redirectEnabled) {
+                        disableRedirect(httpRequest);
+                    }
 
                     if (!MblUtils.isEmpty(paramsNoEmptyVal)) {
                         if (fIsMultipart) {
@@ -401,7 +498,9 @@ public class MblApi {
                                     FileInputStream fis = new FileInputStream(file);
                                     multipartContent.addPart(key, new InputStreamBody(fis, file.getName()));
                                 } else if (val instanceof String){
-                                    multipartContent.addPart(key, new StringBody(val.toString(), CHARSET_UTF8));
+                                    multipartContent.addPart(key, new StringBody((String)val, CHARSET_UTF8));
+                                } else {
+                                    multipartContent.addPart(key, new StringBody(String.valueOf(val), CHARSET_UTF8));
                                 }
                             }
                             httpRequest.setEntity(multipartContent);
@@ -412,6 +511,8 @@ public class MblApi {
                             }
                             httpRequest.setEntity(new UrlEncodedFormEntity(nameValuePairs, UTF8));
                         }
+                    } else if (!MblUtils.isEmpty(data)) {
+                        httpRequest.setEntity(new StringEntity(data, UTF8));
                     }
 
                     httpRequest.setHeaders(getHeaderArray(headerParams));
@@ -419,27 +520,41 @@ public class MblApi {
                     final HttpResponse response = httpClient.execute(httpRequest, httpContext);
 
                     final int statusCode = response.getStatusLine().getStatusCode();
-                    if (statusCode < 200 || statusCode > 299) {
+                    final String statusCodeReason = response.getStatusLine().getReasonPhrase();
+                    final Map<String, String> headers = new HashMap<String, String>();
+                    for (Header h : response.getAllHeaders()) {
+                        headers.put(h.getName(), h.getValue());
+                    }
+                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
+
+                    if (!statusCodeValidator.isSuccess(statusCode)) {
                         if (callback != null) {
-                            fCallbackHandler.post(new Runnable() {
+                            MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                                 @Override
                                 public void run() {
-                                    callback.onFailure(
-                                            statusCode,
-                                            response.getStatusLine().getReasonPhrase());
+                                    callback.onFailure(new MblResponse()
+                                            .setRequest(request)
+                                            .setStatusCode(statusCode)
+                                            .setStatusCodeReason(statusCodeReason)
+                                            .setHeaders(headers)
+                                            .setData(data));
                                 }
                             });
                         }
                         return;
                     }
 
-                    final String data = EntityUtils.toString(response.getEntity());
 
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onSuccess(statusCode, data);
+                                callback.onSuccess(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(statusCode)
+                                        .setStatusCodeReason(statusCodeReason)
+                                        .setHeaders(headers)
+                                        .setData(data));
                             }
                         });
                     }
@@ -447,10 +562,13 @@ public class MblApi {
                 } catch (final Exception e) {
                     Log.e(TAG, method.name() + " request failed due to unexpected exception", e);
                     if (callback != null) {
-                        fCallbackHandler.post(new Runnable() {
+                        MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
                             @Override
                             public void run() {
-                                callback.onFailure(-1, "Unexpected exception: " + e.getMessage());
+                                callback.onFailure(new MblResponse()
+                                        .setRequest(request)
+                                        .setStatusCode(-1)
+                                        .setStatusCodeReason("Unexpected exception: " + e.getMessage()));
                             }
                         });
                     }
@@ -458,103 +576,6 @@ public class MblApi {
             }
         });
     }
-
-    private static interface MblSendRequestWithBodyCallback {
-        /**
-         * <pre>
-         * Invoked on request success.
-         * </pre>
-         * @param statusCode HTTP status code
-         * @param data result data in text
-         */
-        public void onSuccess(int statusCode, String data);
-        /**
-         * <pre>
-         * Invoked on request failure.
-         * </pre>
-         * @param error HTTP status code (in case status code != 2xx) or -1 (in case of unknown error)
-         * @param errorMessage error message returned from server
-         */
-        public void onFailure(int error, String errorMessage);
-
-    }
-
-    /**
-     * <pre>
-     * Send DELETE request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters. Value accepts String, Long, Integer, Double, Float, InputStream or File
-     * @param headerParams {key,value} containing request headers
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    public static void delete(
-            String url,
-            Map<String, String> params,
-            Map<String, String> headerParams,
-            boolean isIgnoreSSLCertificate,
-            MblApiDeleteCallback callback,
-            Handler callbackHandler) {
-
-        sendRequestWithBody(
-                Method.DELETE,
-                url,
-                params,
-                headerParams,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler);
-    }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#delete(String, Map, Map, boolean, MblApiDeleteCallback)
-     * </pre>
-     */
-    public static interface MblApiDeleteCallback extends MblSendRequestWithBodyCallback {}
-
-
-    /**
-     * <pre>
-     * Send PUT request asynchronously.
-     * If calling thread is main thread, this method automatically creates {@link AsyncTask} and runs on that {@link AsyncTask},
-     * otherwise it runs on calling thread.
-     * </pre>
-     * @param url starts with "http://" or "https://"
-     * @param params {key,value} containing request parameters. Value accepts String, Long, Integer, Double, Float, InputStream or File
-     * @param headerParams {key,value} containing request headers
-     * @param isIgnoreSSLCertificate should ignore SSL Certificate? (in case "url" starts with "https://" only)
-     * @param callback callback to receive result data
-     * @param callbackHandler {@link Handler} links to thread on which callback 's method will be invoked
-     */
-    public static void put(
-            String url,
-            Map<String, ? extends Object> params,
-            Map<String, String> headerParams,
-            boolean isIgnoreSSLCertificate,
-            MblApiPutCallback callback,
-            Handler callbackHandler) {
-
-        sendRequestWithBody(
-                Method.PUT,
-                url,
-                params,
-                headerParams,
-                isIgnoreSSLCertificate,
-                callback,
-                callbackHandler);
-    }
-
-    /**
-     * <pre>
-     * Callback for {@link MblApi#put(String, Map, Map, boolean, MblApiPostCallback)
-     * </pre>
-     */
-    public static interface MblApiPutCallback extends MblSendRequestWithBodyCallback {}
 
     @SuppressWarnings("unused")
     private static class HttpDeleteWithBody extends HttpEntityEnclosingRequestBase {
@@ -586,20 +607,11 @@ public class MblApi {
         }
     }
 
-    private static void saveCache(MblCache existingCache, String fullUrl, byte[] data) {
+    private static void saveCache(String fullUrl, byte[] data) {
         try {
-            MblCache cacheToSave;
-            if (existingCache == null) {
-                cacheToSave = new MblCache();
-                cacheToSave.setKey(fullUrl);
-                cacheToSave.setDate(System.currentTimeMillis());
-                MblCache.insert(cacheToSave);
-            } else {
-                cacheToSave = existingCache;
-                cacheToSave.setDate(System.currentTimeMillis());
-                MblCache.update(cacheToSave);
-            }
-            MblUtils.saveCacheFile(data, cacheToSave.getFileName());
+            MblDatabaseCache c = new MblDatabaseCache(fullUrl, System.currentTimeMillis());
+            MblDatabaseCache.upsert(c);
+            MblUtils.saveCacheFile(data, getCacheFileName(c));
         } catch (Exception e) {
             Log.e(TAG, "Failed to cache url: " + fullUrl, e);
         }
@@ -670,5 +682,39 @@ public class MblApi {
             return true;
         }
         return false;
+    }
+
+    /**
+     * <pre>
+     * Clear cache of all GET requests.
+     * </pre>
+     */
+    public static void clearCache() {
+
+        // delete cache file
+        List<MblDatabaseCache> caches = MblDatabaseCache.getAll();
+        for (MblDatabaseCache c : caches) {
+            String path = MblUtils.getCacheAsbPath(getCacheFileName(c));
+            if (!MblUtils.isEmpty(path)) {
+                new File(path).delete();
+            }
+        }
+
+        // delete cache records
+        MblDatabaseCache.deleteAll();
+    }
+
+    private static String getCacheFileName(MblDatabaseCache c) {
+        if (c != null && !MblUtils.isEmpty(c.getKey())) {
+            return MblUtils.md5(c.getKey());
+        } else {
+            return null;
+        }
+    }
+
+    private static void disableRedirect(HttpRequest httpRequest) {
+        HttpParams params = new BasicHttpParams();
+        params.setParameter(ClientPNames.HANDLE_REDIRECTS, false);
+        httpRequest.setParams(params);
     }
 }

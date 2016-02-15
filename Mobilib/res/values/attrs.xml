@@ -1,0 +1,31 @@
+<resources>
+
+    <declare-styleable name="MblSwitch">
+        <attr name="onText" format="string" />
+        <attr name="offText" format="string" />
+        <attr name="onColor" format="color" />
+        <attr name="offColor" format="color" />
+        <attr name="isOn" format="boolean" />
+        <attr name="textSize" format="dimension" />
+        <attr name="textColor" format="color" />
+        <attr name="textStyle" format="enum">
+            <enum name="normal" value="0" />
+            <enum name="bold" value="1" />
+            <enum name="italic" value="2" />
+            <enum name="bold_italic" value="3" />
+        </attr>
+    </declare-styleable>
+
+    <declare-styleable name="MblFlexibleSizedImageView">
+        <attr name="flexibleSize" format="enum">
+            <enum name="width" value="0"/>
+            <enum name="height" value="1"/>
+        </attr>
+    </declare-styleable>
+
+    <declare-styleable name="MblYieldLayout">
+        <attr name="yieldId" format="reference"/>
+        <attr name="layoutId" format="reference"/>
+    </declare-styleable>
+
+</resources>

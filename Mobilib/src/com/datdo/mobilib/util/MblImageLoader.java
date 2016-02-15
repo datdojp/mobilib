@@ -1,13 +1,8 @@
 package com.datdo.mobilib.util;
 
-import java.util.Vector;
-
-import junit.framework.Assert;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
@@ -19,8 +14,16 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.ImageView;
 import android.widget.ListView;
 
+import com.nineoldandroids.animation.ObjectAnimator;
+
+import junit.framework.Assert;
+
+import java.util.Vector;
+
 /**
  * <pre>
+ * DEPRECATED. Should use {@link com.datdo.mobilib.util.MblSimpleImageLoader} instead.
+ *
  * Smart loader to display images for child views in a {@link ViewGroup}.
  * Features of this loader:
  *   1. Load images sequentially.
@@ -54,6 +57,7 @@ import android.widget.ListView;
  * </pre>
  * @param <T> class of object bound with an child views of {@link ViewGroup}
  */
+@Deprecated
 public abstract class MblImageLoader<T> {
 
     /**
@@ -124,7 +128,7 @@ public abstract class MblImageLoader<T> {
      * If loading image failed, call any method with NULL argument.
      * </pre>
      */
-    protected static interface MblRetrieveImageCallback {
+    public static interface MblRetrieveImageCallback {
         public void onRetrievedByteArray(byte[] bmData);
         public void onRetrievedBitmap(Bitmap bm);
         public void onRetrievedFile(String path);
@@ -154,14 +158,6 @@ public abstract class MblImageLoader<T> {
 
     private static LruCache<String, MblCachedImageData> sStringPictureLruCache;
     private static boolean sDoubleCacheSize = false;
-    private static HandlerThread sHandlerThread;
-    private static Handler sHandler;
-
-    static {
-        sHandlerThread = new HandlerThread(TAG);
-        sHandlerThread.start();
-        sHandler = new Handler(sHandlerThread.getLooper());
-    }
 
     private static void initCacheIfNeeded() {
         if (sStringPictureLruCache == null) {
@@ -318,7 +314,17 @@ public abstract class MblImageLoader<T> {
     }
 
     private boolean isItemBoundWithView(T item, View view) {
-        return item != null && item == getItemBoundWithView(view);
+
+        // if item and view 's item are same object, just return TRUE
+        T viewItem = getItemBoundWithView(view);
+        if (item != null && item == viewItem) {
+            return true;
+        }
+
+        // otherwise, compare id
+        String id1 = item != null ? getItemId(item) : null;
+        String id2 = viewItem != null ? getItemId(viewItem) : null;
+        return id1 != null && id2 != null && TextUtils.equals(id1, id2);
     }
 
     private void loadNextImage() {
@@ -392,7 +398,7 @@ public abstract class MblImageLoader<T> {
                 if (MblUtils.isEmpty(bmData)) {
                     handleBadReturnedBitmap(item, view, fullCacheKey, !isNetworkConnected);
                 } else {
-                    sHandler.post(new Runnable() {
+                    MblUtils.executeOnAsyncThread(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -420,7 +426,7 @@ public abstract class MblImageLoader<T> {
                 if (MblUtils.isEmpty(path)) {
                     handleBadReturnedBitmap(item, view, fullCacheKey, !isNetworkConnected);
                 } else {
-                    sHandler.post(new Runnable() {
+                    MblUtils.executeOnAsyncThread(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -506,6 +512,7 @@ public abstract class MblImageLoader<T> {
     private void postLoadImageForItem(final T item, final View view) {
         if (isItemBoundWithView(item, view)) {
             loadImage(view);
+            animateImageView(getImageViewFromView(view));
         }
 
         // run loadNextImage() using "post" to prevent deep recursion
@@ -540,8 +547,10 @@ public abstract class MblImageLoader<T> {
         LayoutParams lp = imageView.getLayoutParams();
         if (lp.width == LayoutParams.WRAP_CONTENT) {
             return -1; // do not care
+        } else if (lp.width == LayoutParams.MATCH_PARENT){
+            return imageView.getWidth(); // 0 or parent 's width
         } else {
-            return imageView.getWidth();
+            return lp.width; // specified width
         }
     }
 
@@ -549,8 +558,17 @@ public abstract class MblImageLoader<T> {
         LayoutParams lp = imageView.getLayoutParams();
         if (lp.height == LayoutParams.WRAP_CONTENT) {
             return -1; // do not care
+        } else if (lp.height == LayoutParams.MATCH_PARENT){
+            return imageView.getHeight(); // 0 or parent 's height
         } else {
-            return imageView.getHeight();
+            return lp.height; // specified height
         }
+    }
+
+    protected void animateImageView(ImageView imageView) {
+        // animation alpha 0 -> 1
+        ObjectAnimator.ofFloat(imageView, "alpha", 0, 1)
+        .setDuration(250)
+        .start();
     }
 }

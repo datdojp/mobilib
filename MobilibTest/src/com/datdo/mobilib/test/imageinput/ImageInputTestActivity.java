@@ -7,6 +7,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.datdo.mobilib.base.MblBaseActivity;
+import com.datdo.mobilib.imageinput.MblImageInput;
 import com.datdo.mobilib.imageinput.MblPickImageActivity;
 import com.datdo.mobilib.imageinput.MblPickImageActivity.MblPickImageCallback;
 import com.datdo.mobilib.imageinput.MblTakeImageActivity;
@@ -22,6 +23,8 @@ public class ImageInputTestActivity extends MblBaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_input_test);
+
+        MblImageInput.configure(null, null, null, 0.1f, 3f);
 
         findViewById(R.id.take_image_button).setOnClickListener(new OnClickListener() {
             @Override

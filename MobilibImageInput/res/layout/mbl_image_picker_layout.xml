@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <include
+        android:id="@+id/nav_bar"
+        layout="@layout/mbl_nav_bar_include" />
+
+    <GridView
+        android:id="@+id/image_gridview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottom_layout"
+        android:layout_below="@id/nav_bar"
+        android:background="#FFFFFF"
+        android:gravity="center"
+        android:horizontalSpacing="4dp"
+        android:numColumns="3"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="4dp" />
+
+    <FrameLayout
+        android:id="@+id/bottom_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#3E3E3E"
+        android:padding="5dp" >
+
+        <Button
+            android:id="@+id/image_picker_done_button"
+            android:layout_width="wrap_content"
+            android:layout_height="35dp"
+            android:layout_gravity="center"
+            android:background="@drawable/mbl_nav_bar_button"
+            android:gravity="center"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:text="@string/mbl_done"
+            android:textColor="@color/mbl_nav_bar_button_text"
+            android:textSize="12sp"
+            android:textStyle="normal" />
+    </FrameLayout>
+
+</RelativeLayout>

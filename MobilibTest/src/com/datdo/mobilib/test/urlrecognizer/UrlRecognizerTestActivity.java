@@ -14,7 +14,7 @@ import android.widget.Toast;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.util.MblLinkMovementMethod;
 import com.datdo.mobilib.util.MblLinkMovementMethod.MblLinkMovementMethodCallback;
-import com.datdo.mobilib.util.MblUrlRecognizer;
+import com.datdo.mobilib.util.MblLinkRecognizer;
 import com.datdo.mobilib.util.MblUtils;
 
 public class UrlRecognizerTestActivity extends MblBaseActivity {
@@ -77,7 +77,7 @@ public class UrlRecognizerTestActivity extends MblBaseActivity {
             linkTextView.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT));
-            String html = MblUrlRecognizer.getUrlRecognizedHtmlText(link);
+            String html = MblLinkRecognizer.getLinkRecognizedHtmlText(link, new MblLinkRecognizer.MblOptions());
             linkTextView.setText(Html.fromHtml(html));
             linkTextView.setTag(link);
             linkTextView.setMovementMethod(new MblLinkMovementMethod(new MblLinkMovementMethodCallback() {
@@ -88,7 +88,7 @@ public class UrlRecognizerTestActivity extends MblBaseActivity {
                     .setPositiveButton("YES", new OnClickListener() {
                         @Override
                         public void onClick(DialogInterface arg0, int arg1) {
-                            MblUtils.openLink(link);
+                            MblUtils.openWebUrl(link);
                         }
                     })
                     .setNegativeButton("Cancel", null)

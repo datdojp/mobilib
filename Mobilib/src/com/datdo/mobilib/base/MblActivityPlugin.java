@@ -1,17 +1,21 @@
 package com.datdo.mobilib.base;
 
-import com.datdo.mobilib.event.MblCommonEvents;
-import com.datdo.mobilib.event.MblEventCenter;
-import com.datdo.mobilib.event.MblEventListener;
-import com.datdo.mobilib.util.MblUtils;
-
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
-import android.view.WindowManager;
 import android.view.ViewGroup.LayoutParams;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
+
+import com.datdo.mobilib.event.MblCommonEvents;
+import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblEventListener;
+import com.datdo.mobilib.event.MblStrongEventListener;
+import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.util.MblViewUtil;
 
 /**
  * <pre>
@@ -51,6 +55,16 @@ public class MblActivityPlugin {
         activity.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
         mOrientation = activity.getResources().getConfiguration().orientation;
+
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_CREATED, activity, savedInstanceState);
+    }
+
+    /**
+     * Extends Activity#onStart()
+     * @param activity targeted activity
+     */
+    public void onStart(Activity activity) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_STARTED, activity);
     }
 
     /**
@@ -72,11 +86,21 @@ public class MblActivityPlugin {
     /**
      * Extends Activity#onPause()
      */
-    public void onPause() {
+    public void onPause(Activity activity) {
         MblUtils.hideKeyboard();
 
         sLastOnPause = getNow();
         MblUtils.getMainThreadHandler().postDelayed(sBackgroundStatusCheckTask, mMaxAllowedTrasitionBetweenActivity);
+
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_PAUSED, activity);
+    }
+
+    /**
+     * Extends Activity#onStop()
+     * @param activity targeted activity
+     */
+    public void onStop(Activity activity) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_STOPPED, activity);
     }
 
     /**
@@ -128,7 +152,7 @@ public class MblActivityPlugin {
     }
 
     private View createDecorViewAndAddContent(Activity activity, int layoutResId, LayoutParams params) {
-        View content = activity.getLayoutInflater().inflate(layoutResId, null);
+        View content = MblUtils.getLayoutInflater().inflate(layoutResId, null);
         return createDecorViewAndAddContent(activity, content, params);
     }
 
@@ -139,11 +163,58 @@ public class MblActivityPlugin {
         layout.setLayoutParams(params);
         MblDecorView decorView = new MblDecorView(activity);
         decorView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        decorView.setBackgroundColor(0x0);
         decorView.addView(layout);
 
         mDecorView = decorView;
 
+        setViewProcessor(activity);
+
         return decorView;
+    }
+
+    private void setViewProcessor(final Activity activity) {
+        if (MblViewUtil.getGlobalViewProcessor() == null) {
+            return;
+        }
+
+        final boolean[] scrollDirty = new boolean[] { false };
+
+        final Runnable stopper = MblUtils.repeatDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (scrollDirty[0]) {
+                    MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
+                    scrollDirty[0] = false;
+                }
+            }
+        }, 100);
+
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                if (args[0] == activity) {
+                    stopper.run();
+                    terminate();
+                }
+            }
+        }, MblCommonEvents.ACTIVITY_DESTROYED);
+
+        mDecorView.getViewTreeObserver().addOnScrollChangedListener(new ViewTreeObserver.OnScrollChangedListener() {
+            @Override
+            public void onScrollChanged() {
+                scrollDirty[0] = true;
+            }
+        });
+        mDecorView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
+            }
+        });
+
+        // run view processing right after inflating
+        MblViewUtil.iterateView(mDecorView, MblViewUtil.getGlobalViewProcessor());
     }
 
     /**
@@ -185,6 +256,13 @@ public class MblActivityPlugin {
         if (activity instanceof MblEventListener) {
             MblEventCenter.removeListenerFromAllEvents((MblEventListener) activity);
         }
+        MblUtils.cleanupView(mDecorView);
+
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_DESTROYED, activity);
+    }
+
+    public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+        MblEventCenter.postEvent(this, MblCommonEvents.ACTIVITY_RESULT, activity, requestCode, resultCode, data);
     }
 
     /**

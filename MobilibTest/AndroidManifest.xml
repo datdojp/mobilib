@@ -6,13 +6,13 @@
 
     <uses-sdk
         android:minSdkVersion="8"
-        android:targetSdkVersion="21" />
+        android:targetSdkVersion="22" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
 
     <application
         android:name="com.datdo.mobilib.test.MobilibTestApplication"
@@ -49,6 +49,12 @@
             android:name=".utils.UtilsTestActivity"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".utils.BgNoShrinkingTestActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity
+            android:name=".utils.EditTextAutoscrollTestActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity
             android:name=".imageinput.ImageInputTestActivity"
             android:screenOrientation="portrait" />
         <activity
@@ -57,6 +63,12 @@
             android:screenOrientation="portrait" />
         <activity
             android:name="com.datdo.mobilib.imageinput.MblPickImageActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".carrier.CarrierTestActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize" />
+        <activity
+            android:name=".cache.CacheMasterTestActivity"
             android:screenOrientation="portrait" />
     </application>
 

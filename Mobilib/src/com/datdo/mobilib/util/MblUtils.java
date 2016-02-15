@@ -6,9 +6,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -22,17 +27,16 @@ import java.util.concurrent.RejectedExecutionException;
 import junit.framework.Assert;
 
 import org.json.JSONArray;
-
-import com.datdo.mobilib.base.MblDecorView;
-import com.datdo.mobilib.event.MblCommonEvents;
-import com.datdo.mobilib.event.MblEventCenter;
-import com.datdo.mobilib.event.MblStrongEventListener;
+import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Context;
@@ -46,11 +50,16 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.Signature;
 import android.content.res.Configuration;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -61,8 +70,10 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore.Images;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.text.Spanned;
@@ -73,18 +84,27 @@ import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.datdo.mobilib.base.MblDecorView;
+import com.datdo.mobilib.event.MblCommonEvents;
+import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblStrongEventListener;
+
 public class MblUtils {
     private static final String TAG = getTag(MblUtils.class);
+    private static final String UTF8 = "UTF-8";
     private static float density = 0;
+    private static float scaledDensity = 0;
     private static final String EMAIL_TYPE = "message/rfc822";
 
     private static Handler sMainThread = new Handler(Looper.getMainLooper());
@@ -92,7 +112,6 @@ public class MblUtils {
 
     private static SharedPreferences sPrefs;
     private static Context sCurrentContext;
-    private static LayoutInflater sLayoutInflater;
 
     public static void init(Context context) {
         sCurrentContext = context;
@@ -153,10 +172,7 @@ public class MblUtils {
      * </pre>
      */
     public static LayoutInflater getLayoutInflater() {
-        if (sLayoutInflater == null) {
-            sLayoutInflater = LayoutInflater.from(getCurrentContext());
-        }
-        return sLayoutInflater;
+        return LayoutInflater.from(getCurrentContext());
     }
 
     /**
@@ -199,6 +215,20 @@ public class MblUtils {
     }
 
     /**
+     * Execute the action on a {@link HandlerThread}
+     * @param handler {@link Handler} object bound with {@link HandlerThread} on which action will be executed
+     */
+    public static void executeOnHandlerThread(Handler handler, Runnable action) {
+        Assert.assertNotNull(action);
+        Assert.assertNotNull(handler);
+        if (Looper.myLooper() == handler.getLooper()) {
+            action.run();
+        } else {
+            handler.post(action);
+        }
+    }
+
+    /**
      * <pre>
      * Execute the action in main thread.
      * If current thread is main thread, action is executed immediately.
@@ -206,17 +236,42 @@ public class MblUtils {
      * </pre>
      */
     public static void executeOnMainThread(Runnable action) {
-        Assert.assertNotNull(action);
-        if (MblUtils.isMainThread()) {
-            action.run();
-            return;
+        executeOnHandlerThread(getMainThreadHandler(), action);
+    }
+
+    /**
+     * <pre>
+     * Repeat an action every specified milliseconds.
+     * </pre>
+     * @param action action to run
+     * @param delayMillis delay interval in milliseconds
+     * @return {@link Runnable} object to stop the repeating. Just call its run() method
+     */
+    public static Runnable repeatDelayed(final Runnable action, final long delayMillis) {
+
+        if (action == null || delayMillis <= 0) {
+            return new Runnable() {
+                @Override
+                public void run() {}
+            };
         }
-        Context context = getCurrentContext();
-        if (context != null && context instanceof Activity) {
-            ((Activity)context).runOnUiThread(action);
-        } else {
-            sMainThread.post(action);
-        }
+
+        final Runnable hookedAction = new Runnable() {
+            @Override
+            public void run() {
+                getMainThreadHandler().postDelayed(this, delayMillis);
+                action.run();
+            }
+        };
+
+        getMainThreadHandler().postDelayed(hookedAction, delayMillis);
+
+        return new Runnable() {
+            @Override
+            public void run() {
+                getMainThreadHandler().removeCallbacks(hookedAction);
+            }
+        };
     }
 
     /**
@@ -320,6 +375,18 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Convert from SP to Pixel.
+     * </pre>
+     */
+    public static int pxFromSp(int sp) {
+        if (scaledDensity == 0) {
+            scaledDensity = getCurrentContext().getResources().getDisplayMetrics().scaledDensity;
+        }
+        return (int) (sp * scaledDensity);
+    }
+
+    /**
+     * <pre>
      * Determine whether current thread is main thread.
      * </pre>
      */
@@ -345,6 +412,31 @@ public class MblUtils {
         ConnectivityManager conMan = (ConnectivityManager) getCurrentContext().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = conMan.getActiveNetworkInfo();
         return activeNetwork != null && activeNetwork.isConnected();
+    }
+
+    /**
+     * <pre>
+     * Determine whether Bluetooth is currently turned on.
+     * </pre>
+     */
+    public static boolean isBluetoothOn() {
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled();
+    }
+
+    /**
+     * <pre>Check if current device has phone feature.</pre>
+     */
+    public static boolean hasPhone() {
+        Context context = MblUtils.getCurrentContext();
+        TelephonyManager tm = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
+        if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_NONE) {
+            return false;
+        }
+        if (tm.getLine1Number() == null) {
+            return false;
+        }
+        return true;
     }
 
     static {
@@ -461,25 +553,18 @@ public class MblUtils {
         public abstract Bitmap decodeBitmap(T input, BitmapFactory.Options options);
 
         public Bitmap load(final int targetW, final int targetH, T input) {
-            int scaleFactor = 1;
 
-            // get image view sizes
+            int scaleFactor = 1;
             int photoW = 0;
             int photoH = 0;
+            int[] photoSizes = getBitmapSizes(input);
+            photoW = photoSizes[0];
+            photoH = photoSizes[1];
             if (targetW > 0 || targetH > 0) {
-                // get bitmap sizes
-                int[] photoSizes = getBitmapSizes(input);
-                photoW = photoSizes[0];
-                photoH = photoSizes[1];
-
                 // figure out which way needs to be reduced less
                 if (photoW > 0 && photoH > 0) {
                     if (targetW > 0 && targetH > 0) {
-                        if ((targetW > targetH && photoW < photoH) || (targetW < targetH && photoW > photoH)) {
-                            scaleFactor = Math.max(photoW / targetW, photoH / targetH);
-                        } else {
-                            scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-                        }
+                        scaleFactor = Math.min(photoW / targetW, photoH / targetH);
                     } else if (targetW > 0) {
                         scaleFactor = photoW / targetW;
                     } else if (targetH > 0) {
@@ -488,15 +573,53 @@ public class MblUtils {
                 }
             }
 
+            // ensure sizes not exceed 4096
+            final int MAX_SIZE = 4096;
+            while (true) {
+                int resultWidth     = scaleFactor <= 1 ? photoW : (photoW / scaleFactor);
+                int resultHeight    = scaleFactor <= 1 ? photoH : (photoH / scaleFactor);
+                if (resultWidth > MAX_SIZE || resultHeight > MAX_SIZE) {
+                    scaleFactor++;
+                } else {
+                    break;
+                }
+            }
+
             // set bitmap options to scale the image decode target
             BitmapFactory.Options bmOptions = new BitmapFactory.Options();
             bmOptions.inSampleSize = scaleFactor;
             bmOptions.inPurgeable = true;
-            bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-            bmOptions.inDither = true;
+            bmOptions.inPreferredConfig = Bitmap.Config.ARGB_8888;
 
             // decode the bitmap
             Bitmap bm = decodeBitmap(input, bmOptions);
+
+            // ensure bitmap match exact size
+            if (bm != null && bm.getWidth() > 0 && bm.getHeight() > 0) {
+                float s = -1;
+                if (targetW > 0 && targetH > 0) {
+                    if (bm.getWidth() > targetW || bm.getHeight() > targetH) {
+                        s = Math.min(1.0f * targetW / bm.getWidth(), 1.0f * targetH / bm.getHeight());
+                    }
+                } else if (targetW > 0) {
+                    if (bm.getWidth() > targetW) {
+                        s = 1.0f * targetW / bm.getWidth();
+                    }
+                } else if (targetH > 0) {
+                    if (bm.getHeight() > targetH) {
+                        s = 1.0f * targetH / bm.getHeight();
+                    }
+                }
+
+                if (s > 0) {
+                    Matrix matrix = new Matrix();
+                    matrix.postScale(s, s);
+                    Bitmap scaledBm = Bitmap.createBitmap(bm, 0, 0, bm.getWidth(), bm.getHeight(), matrix, true);
+                    bm.recycle();
+                    bm = scaledBm;
+                }
+            }
+
             return bm;
         }
     }
@@ -547,6 +670,21 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Get width and height of bitmap from InputStream.
+     * </pre>
+     * @param is the stream
+     * @return integer array with 2 elements: width and height
+     */
+    public static int[] getBitmapSizes(InputStream is) throws IOException {
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(is, null, bmOptions);
+        is.close();
+        return new int[] { bmOptions.outWidth, bmOptions.outHeight };
+    }
+
+    /**
+     * <pre>
      * Recycle a {@link Bitmap} object
      * </pre>
      * @return true if bitmap was recycled successfully
@@ -569,6 +707,36 @@ public class MblUtils {
         Bitmap bm = extractBitmap(imageView);
         imageView.setImageBitmap(null);
         return recycleBitmap(bm);
+    }
+
+    /**
+     * <pre>
+     * Clean up view and its children.
+     * For ImageView, ImageButton: set image to null.
+     * For all views: set background to null.
+     * This method is used when an activity/fragment is no longer used.
+     * </pre>
+     */
+    public static void cleanupView(View view) {
+        if (view != null) {
+            if (view instanceof ImageButton) {
+                ImageButton ib = (ImageButton) view;
+                ib.setImageDrawable(null);
+            } else if (view instanceof ImageView) {
+                ImageView iv = (ImageView) view;
+                iv.setImageDrawable(null);
+            }
+
+            MblUtils.setBackgroundDrawable(view, null);
+
+            if (view instanceof ViewGroup) {
+                ViewGroup vg = (ViewGroup) view;
+                int size = vg.getChildCount();
+                for (int i = 0; i < size; i++) {
+                    cleanupView(vg.getChildAt(i));
+                }
+            }
+        }
     }
 
     /**
@@ -812,6 +980,45 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Clear all files and sub-folder of an directory by traversing.
+     * Note that the top directory will not be deleted.
+     * </pre>
+     */
+    public static void clearDir(final File dir) {
+        traverseFile(dir, new TraverseFileCallback() {
+            @Override
+            public void onTraverse(File file) {
+                if (file != dir) {
+                    file.delete();
+                }
+            }
+        });
+    }
+
+    private static void traverseFile(
+            final File file,
+            final TraverseFileCallback callback) {
+
+        if (file != null && file.exists()) {
+            if (file.isDirectory()) {
+                final File[] children = file.listFiles();
+                for (File c : children) {
+                    traverseFile(c, callback);
+                }
+            }
+
+            if (callback != null) {
+                callback.onTraverse(file);
+            }
+        }
+    }
+
+    private static interface TraverseFileCallback {
+        public void onTraverse(File file);
+    }
+
+    /**
+     * <pre>
      * Save byte array to arbitrary file.
      * </pre>
      * @param in byte array
@@ -841,6 +1048,17 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Read binary data from file stored in "assets" folder.
+     * </pre>
+     * @param relativePath relative path to asset file
+     * @return binary data
+     */
+    public static byte[] readAssetFile(String relativePath) throws IOException {
+        return readStream(getCurrentContext().getAssets().open(relativePath));
+    }
+
+    /**
+     * <pre>
      * Read binary data from arbitrary file.
      * </pre>
      * @param absolutePath absolute path to source file
@@ -851,12 +1069,13 @@ public class MblUtils {
         if (!file.exists()) {
             return null;
         }
+        return readStream(new FileInputStream(file));
+    }
 
-        FileInputStream in = new FileInputStream(file);
+    private static byte[] readStream(InputStream in) throws IOException {
         byte[] b = new byte[in.available()];
         in.read(b);
         in.close();
-
         return b;
     }
 
@@ -942,7 +1161,11 @@ public class MblUtils {
             @Override
             public void run() {
                 if (sProgressDialog != null && sProgressDialog.isShowing()) {
-                    sProgressDialog.dismiss();
+                    try {
+                        sProgressDialog.dismiss();
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
                 }
                 sProgressDialog = new ProgressDialog(getCurrentContext());
                 sProgressDialog.setMessage(message);
@@ -1000,6 +1223,56 @@ public class MblUtils {
      */
     public static void showToast(int messageResId, int duration) {
         showToast(getCurrentContext().getString(messageResId), duration);
+    }
+
+    /**
+     * <pre>
+     * Convenient method to show confirmation dialog with message, positive button, negative button.
+     * </pre>
+     * @param message
+     * @param positiveButtonText
+     * @param negativeButtonText
+     * @param action action to be executed when user press positive button
+     */
+    public static void showConfirm(
+            final String message,
+            final String positiveButtonText,
+            final String negativeButtonText,
+            final Runnable action) {
+
+        executeOnMainThread(new Runnable() {
+            @Override
+            public void run() {
+                new AlertDialog.Builder(getCurrentContext())
+                .setMessage(message)
+                .setPositiveButton(positiveButtonText, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        action.run();
+                    }
+                })
+                .setNegativeButton(negativeButtonText, null)
+                .show();
+            }
+        });
+    }
+
+    /**
+     * <pre>
+     * Like {@link #showConfirm(String, String, String, Runnable)
+     * </pre>
+     */
+    public static void showConfirm(
+            final int messageResId,
+            final int positiveButtonResId,
+            final int negativeButtonResId,
+            final Runnable action) {
+
+        showConfirm(
+                getCurrentContext().getString(messageResId),
+                getCurrentContext().getString(positiveButtonResId),
+                getCurrentContext().getString(negativeButtonResId),
+                action);
     }
 
     /**
@@ -1198,7 +1471,7 @@ public class MblUtils {
             clipboard.setText(text);
         } else {
             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getCurrentContext().getSystemService(Context.CLIPBOARD_SERVICE);
-            clipboard.setPrimaryClip(ClipData.newPlainText("PoketChat Copy To Clipboard", text));
+            clipboard.setPrimaryClip(ClipData.newPlainText("", text));
         }
     }
 
@@ -1465,46 +1738,82 @@ public class MblUtils {
     }
      */
 
-    // ref: http://stackoverflow.com/questions/3105673/android-how-to-kill-an-application-with-all-its-activities
     /**
      * <pre>
      * Kill app.
+     * Reference: http://stackoverflow.com/questions/6330200/how-to-quit-android-application-programmatically
      * </pre>
      * @param mainActivityClass {@link Class} object of app 's main activity
      */
     public static void closeApp(final Class<? extends Activity> mainActivityClass) {
+        closeApp(mainActivityClass, null);
+    }
 
-        final Runnable closeAppAction = new Runnable() {
+    /**
+     * <pre>
+     * Same like {@link #closeApp(Class)}. Allow to run custom action before app being closed.
+     * </pre>
+     */
+    public static void closeApp(
+            final Class<? extends Activity> mainActivityClass,
+            final Runnable beforeCloseAction) {
+
+        // start main activity
+        Context context = getCurrentContext();
+        Intent intent = new Intent(context, mainActivityClass);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(intent);
+
+        // wait until main activity is resumed
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                Activity activity = (Activity) MblEventCenter.getArgAt(0, args);
+                if (activity == null) {
+                    return;
+                }
+                if (mainActivityClass.isInstance(activity)) {
+                    terminate();
+                    activity.finish();
+                    if (beforeCloseAction != null) {
+                        beforeCloseAction.run();
+                    }
+                    System.exit(0);
+                }
+            }
+        }, MblCommonEvents.ACTIVITY_CREATED);
+    }
+
+    /**
+     * Move app to background without killing it.
+     */
+    public static void moveAppToBackground() {
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        getCurrentContext().startActivity(intent);
+    }
+
+    /**
+     * <pre>
+     * Kill app and restart app after 500ms
+     * </pre>
+     * @param mainActivityClass {@link Class} object of app 's main activity
+     */
+    public static void restartApp(final Class<? extends Activity> mainActivityClass) {
+        closeApp(mainActivityClass, new Runnable() {
             @Override
             public void run() {
-                android.os.Process.killProcess(android.os.Process.myPid());
+                Context context = MblUtils.getCurrentContext();
+                PendingIntent pendingIntent = PendingIntent.getActivity(
+                        context,
+                        1424287352,
+                        new Intent(context, mainActivityClass),
+                        PendingIntent.FLAG_CANCEL_CURRENT);
+                AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+                alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 500, pendingIntent);
             }
-        };
-
-        Context context = getCurrentContext();
-        if (mainActivityClass.isInstance(context)) {
-            closeAppAction.run();
-        } else {
-            // start main activity
-            Intent intent = new Intent(context, mainActivityClass);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            context.startActivity(intent);
-
-            // wait until main activity is resumed
-            MblEventCenter.addListener(new MblStrongEventListener() {
-                @Override
-                public void onEvent(Object sender, String name, Object... args) {
-                    Activity activity = (Activity) MblEventCenter.getArgAt(0, args);
-                    if (activity == null) {
-                        return;
-                    }
-                    if (mainActivityClass.isInstance(activity)) {
-                        terminate();
-                        closeAppAction.run();
-                    }
-                }
-            }, MblCommonEvents.ACTIVITY_RESUMED);
-        }
+        });
     }
 
     /**
@@ -1529,7 +1838,34 @@ public class MblUtils {
      * </pre>
      */
     public static boolean isLink(String s) {
-        return MblUrlRecognizer.isLink(s);
+        return MblLinkRecognizer.isLink(s);
+    }
+
+    /**
+     * <pre>
+     * Determine whether a {@link String} object is an email address.
+     * </pre>
+     */
+    public static boolean isEmail(String s) {
+        return MblLinkRecognizer.isEmail(s);
+    }
+
+    /**
+     * <pre>
+     * Determine whether a {@link String} object is a web url.
+     * </pre>
+     */
+    public static boolean isWebUrl(String s) {
+        return MblLinkRecognizer.isWebUrl(s);
+    }
+
+    /**
+     * <pre>
+     * Determine whether a {@link String} object is a phone number.
+     * </pre>
+     */
+    public static boolean isPhone(String s) {
+        return MblLinkRecognizer.isPhone(s);
     }
 
     /**
@@ -1539,21 +1875,90 @@ public class MblUtils {
      * </pre>
      */
     public static String lowerCaseHttpxPrefix(String link) {
-        return MblUrlRecognizer.lowerCaseHttpxPrefix(link);
+        return MblLinkRecognizer.lowerCaseHttpxPrefix(link);
     }
 
     /**
      * <pre>
-     * Open other app to view a link.
+     * Open other app to view a web url.
      * </pre>
      */
-    public static void openLink(String link) {
-        if (isEmpty(link) || !isLink(link)) {
+    public static void openWebUrl(String link) {
+        if (isEmpty(link) || !isWebUrl(link)) {
             return;
         }
         link = lowerCaseHttpxPrefix(link);
+        if (!link.startsWith("http")) {
+            link = "http://" + link;
+            if (!isWebUrl(link)) {
+                return;
+            }
+        }
         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
         getCurrentContext().startActivity(browserIntent);
+    }
+
+    private static final String URI_FILE_PREFIX             = "file://";
+    private static final String URI_CONTENT_PREFIX          = "content://";
+
+    /**
+     * <pre>
+     * Extract file path or URL from URI
+     * </pre>
+     * @param uri {@link Uri} object to extract
+     * @return {@link File} object if URI contains file path, {@link URL} object if URI contains URL, otherwise return NULL
+     */
+    public static Object extractUri(Uri uri) {
+        String uriString = uri.toString();
+        if (uriString != null && uriString.startsWith(URI_FILE_PREFIX)) {
+            try {
+                String filePath = URLDecoder.decode(uriString.substring(URI_FILE_PREFIX.length()), UTF8);
+                return new File(filePath);
+            } catch (UnsupportedEncodingException e) {
+                Log.e(TAG, "Failed to extract file path from Uri", e);
+                return null;
+            }
+        }
+        if (uriString != null && uriString.startsWith(URI_CONTENT_PREFIX)) {
+            Cursor cursor = getCurrentContext().getContentResolver().query(uri, new String[] { Images.Media.DATA }, null, null, null);
+            String filePath = null;
+            if (cursor != null && cursor.moveToFirst()) {
+                int colIndex = cursor.getColumnIndex(Images.Media.DATA);
+                if (colIndex >= 0) {
+                    filePath = cursor.getString(colIndex);
+                }
+            }
+
+            // file
+            if (!MblUtils.isEmpty(filePath)) {
+                return new File(filePath);
+            }
+
+            // url
+            String encodedPath = uri.getEncodedPath();
+            if (!MblUtils.isEmpty(encodedPath)) {
+                String[] splitted = encodedPath.split("/");
+                for (String token : splitted) {
+                    if (MblUtils.isEmpty(token)) {
+                        continue;
+                    }
+                    String url;
+                    try {
+                        url = URLDecoder.decode(token, UTF8);
+                    } catch (UnsupportedEncodingException e1) {
+                        continue;
+                    }
+                    if (isWebUrl(url)) {
+                        try {
+                            return new URL(url);
+                        } catch (MalformedURLException e) {}
+                    }
+                }
+            }
+        }
+
+        Log.d(TAG, "Invalid Uri: " + uriString);
+        return null; // invalid URI
     }
 
     /**
@@ -1610,34 +2015,16 @@ public class MblUtils {
                 String scaledImagePath = null;
 
                 try {
-                    // check size
-                    int[] sizes = MblUtils.getBitmapSizes(path);
-                    int w = sizes[0];
-                    int h = sizes[1];
-                    int maxSize = Math.max(w, h);
+                    // load
+                    Bitmap bm = loadBitmapMatchSpecifiedSize(maxSizeLimit, maxSizeLimit, path);
 
-                    // check if we need to process the bitmap
-                    if (maxSize <= maxSizeLimit) {
-                        scaledImagePath = path;
-                    } else {
-
-                        String filename = new File(path).getName();
-                        scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString()) + "-" + filename;
-
-                        // load bitmap with scale factor so that it is closest to maxSizeLimit
-                        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-                        bmOptions.inSampleSize = (int) Math.ceil(1.0f * maxSize / maxSizeLimit);
-                        bmOptions.inPreferredConfig = Bitmap.Config.RGB_565;
-                        bmOptions.inDither = true;
-                        Bitmap bm = BitmapFactory.decodeFile(path, bmOptions);
-
-                        // write bitmap to file
-                        FileOutputStream os = new FileOutputStream(scaledImagePath);
-                        bm.compress(CompressFormat.JPEG, 100, os);
-                        os.flush();
-                        os.close();
-                        bm.recycle();
-                    }
+                    // write bitmap to file
+                    scaledImagePath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
+                    FileOutputStream os = new FileOutputStream(scaledImagePath);
+                    bm.compress(CompressFormat.JPEG, 100, os);
+                    os.flush();
+                    os.close();
+                    bm.recycle();
 
                     // return path to generated file
                     if (callback != null) {
@@ -1709,8 +2096,61 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Load bitmap from byte array in async thread, then set bitmap data to {@link ImageView} object in main thread.
+     * Also support scaling to specific sizes.
+     * </pre>
+     * @param bmData bitmap byte array data
+     * @param imageView {@link ImageView} object to display image
+     * @param width specific width to scale. -1 to ignore
+     * @param height specific height to scale. -1 to ignore
+     * @param callback callback to receive result
+     */
+    public static void loadBitmapForImageView(
+            final byte[] bmData,
+            final ImageView imageView,
+            final int width,
+            final int height,
+            final MblLoadBitmapForImageViewCallback callback) {
+
+        MblUtils.executeOnAsyncThread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+
+                    final Bitmap bm = MblUtils.loadBitmapMatchSpecifiedSize(width, height, bmData);
+
+                    MblUtils.executeOnMainThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            imageView.setImageBitmap(bm);
+                            if (callback != null) {
+                                if (bm != null) {
+                                    callback.onSuccess();
+                                } else {
+                                    callback.onError();
+                                }
+                            }
+                        }
+                    });
+                } catch (Throwable e) {
+                    Log.e(TAG, "Error occurred when loading bitmap for image view", e);
+                    if (callback != null) {
+                        MblUtils.executeOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                callback.onError();
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * <pre>
      * Load bitmap from file in async thread, then set bitmap data to {@link ImageView} object in main thread.
-     * If OutOfMemoryError occurs, it will retry 2 times more (after 2 seconds)
      * Also support scaling to specific sizes.
      * </pre>
      * @param path path to image file
@@ -1726,15 +2166,9 @@ public class MblUtils {
             final int height,
             final MblLoadBitmapForImageViewCallback callback) {
 
-        final int   N_RETRIES   = 3;
-        final int[] nRetries    = new int[] { 0 };
-        final long  RETRY_AFTER = 2000l;
-
         MblUtils.executeOnAsyncThread(new Runnable() {
             @Override
             public void run() {
-
-                nRetries[0]++;
 
                 try {
 
@@ -1753,7 +2187,7 @@ public class MblUtils {
                             }
                         }
                     });
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     Log.e(TAG, "Error occurred when loading bitmap for image view: path=" + path, e);
                     if (callback != null) {
                         MblUtils.executeOnMainThread(new Runnable() {
@@ -1762,28 +2196,6 @@ public class MblUtils {
                                 callback.onError();
                             }
                         });
-                    }
-                } catch (OutOfMemoryError e) {
-                    Log.e(TAG, "Out of memory when loading bitmap for image view: path=" + path, e);
-                    if (nRetries[0] < N_RETRIES) {
-                        Log.d(TAG, "Retry after " + RETRY_AFTER + " ms");
-                        System.gc();
-                        final Runnable fThis = this;
-                        MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                MblUtils.executeOnAsyncThread(fThis);
-                            }
-                        }, RETRY_AFTER);
-                    } else {
-                        if (callback != null) {
-                            MblUtils.executeOnMainThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    callback.onError();
-                                }
-                            });
-                        }
                     }
                 }
             }
@@ -1798,5 +2210,211 @@ public class MblUtils {
     public static interface MblLoadBitmapForImageViewCallback {
         public void onSuccess();
         public void onError();
+    }
+
+    /**
+     * <pre>
+     * Asynchronously create a scaled bitmap file from an existing bitmap file.
+     * </pre>
+     * @param path path to existing bitmap file
+     * @param toWidth scale to width
+     * @param toHeight scale to height
+     * @param compressFormat output format
+     * @param callback callback to received path to output file
+     */
+    public static void createScaledBitmapFile(
+            final String path,
+            final int toWidth,
+            final int toHeight,
+            final CompressFormat compressFormat,
+            final MblCreateScaledBitmapFileCallback callback) {
+
+        if (callback == null) {
+            return;
+        }
+
+        MblUtils.executeOnAsyncThread(new Runnable() {
+            @Override
+            public void run() {
+
+                try {
+                    // if size is already matched, just return current path
+                    int[] sizes = MblUtils.getBitmapSizes(path);
+                    if (sizes[0] == toWidth && sizes[1] == toHeight) {
+                        callback.onSuccess(path);
+                        return;
+                    }
+
+                    // load bitmap with specific size and save to file
+                    Bitmap bm = MblUtils.loadBitmapMatchSpecifiedSize(toWidth, toHeight, path);
+                    if (bm != null) {
+                        String newPath = MblUtils.getCacheAsbPath(UUID.randomUUID().toString() + ".jpg");
+                        OutputStream os = new FileOutputStream(newPath);
+                        bm.compress(compressFormat, 100, os);
+                        os.flush();
+                        os.close();
+                        bm.recycle();
+                        new File(path).delete();
+                        callback.onSuccess(newPath);
+                    } else {
+                        callback.onError();
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to create scaled bitmap", e);
+                    callback.onError();
+                }
+            }
+        });
+    }
+
+    public static interface MblCreateScaledBitmapFileCallback {
+        public void onSuccess(String path);
+        public void onError();
+    }
+
+    /**
+     * <pre>Create {@link Calendar} from milliseconds since 1970</pre>
+     */
+    public static Calendar msToCalendar(long ms) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(ms);
+        return cal;
+    }
+
+    /**
+     * <pre>Get index of an object in an array.</pre>
+     */
+    public static int indexOf(Object[] arr, Object o) {
+        if (MblUtils.isEmpty(arr) || o == null) {
+            return -1;
+        }
+        for (int i = 0; i < arr.length; i++) {
+            if (o.equals(arr[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static final Character HANKAKU_SPACE    = ' ';
+    private static final Character ZENKAKU_SPACE    = '　';
+    private static final Character NEW_LINE         = '\n';
+
+    private static boolean isTrimmable(Character c) {
+        return HANKAKU_SPACE.equals(c) || ZENKAKU_SPACE.equals(c) || NEW_LINE.equals(c);
+    }
+
+    /**
+     * <pre>Method {@link String#trim()} doesn't care Japanese full-width space. Therefore, I added this method to solve that problem.</pre>
+     */
+    public static String trim(String text) {
+        if (MblUtils.isEmpty(text)) {
+            return "";
+        }
+
+        int charCount = text.length();
+
+        // trim left
+        int start = 0;
+        for (int i = 0; i < charCount; i++) {
+            Character c = text.charAt(i);
+            if (isTrimmable(c)) {
+                start++;
+            } else {
+                break;
+            }
+        }
+
+        // trim right
+        int end = charCount;
+        for (int i = charCount-1; i >= 0; i--) {
+            Character c = text.charAt(i);
+            if (isTrimmable(c)) {
+                end--;
+            } else {
+                break;
+            }
+        }
+
+        if (start == 0 && end == charCount) {
+            return text;
+        } else {
+            if (start >= end) {
+                return "";
+            } else {
+                return text.substring(start, end);
+            }
+        }
+    }
+
+    /**
+     * <pre>Get {@link String} field from {@link JSONObject} instance, return <code>null</code> instead of "null" when field is null</pre>
+     * @param jo {@link JSONObject} instance
+     * @param field field name
+     * @return {@link String} value
+     */
+    public static String getJSONObjectString(JSONObject jo, String field) {
+        if (jo.isNull(field)) {
+            return null;
+        } else {
+            return jo.optString(field, null);
+        }
+    }
+
+    /**
+     * <pre>
+     * Crop bitmap from rectangle to square. If bitmap is already a square, just return original bitmap
+     * </pre>
+     */
+    public static Bitmap createSquareCroppedBitmap(Bitmap bitmap) {
+
+        if (bitmap.getWidth() == bitmap.getHeight()) {
+            return bitmap;
+        }
+
+        int minSize = Math.min(bitmap.getWidth(), bitmap.getHeight());
+        return Bitmap.createBitmap(
+                bitmap,
+                (bitmap.getWidth() - minSize) / 2,
+                (bitmap.getHeight() - minSize) / 2,
+                minSize,
+                minSize);
+    }
+
+    /**
+     * <pre>
+     * Crop bitmap from rectangle to circle.
+     * The cropping is done via 2 croppings: rectangle -> square -> circle.
+     * </pre>
+     */
+    public static Bitmap createCircleCroppedBitmap(Bitmap bitmap) {
+
+        Bitmap squareBitmap = createSquareCroppedBitmap(bitmap);
+
+        Bitmap output = Bitmap.createBitmap(
+                squareBitmap.getWidth(),
+                squareBitmap.getHeight(),
+                Bitmap.Config.ARGB_8888);
+
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+
+        Canvas canvas = new Canvas(output);
+        canvas.drawARGB(0, 0, 0, 0);
+        canvas.drawCircle(
+                squareBitmap.getWidth() / 2,
+                squareBitmap.getHeight() / 2,
+                squareBitmap.getWidth() / 2,
+                paint);
+
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        Rect rect = new Rect(0, 0, squareBitmap.getWidth(), squareBitmap.getHeight());
+        canvas.drawBitmap(squareBitmap, rect, rect, paint);
+
+        if (squareBitmap != bitmap) {
+            squareBitmap.recycle();
+        }
+
+        return output;
     }
 }

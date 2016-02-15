@@ -14,7 +14,7 @@ public class MblImageInput {
         Environment.DIRECTORY_DCIM,
         Environment.DIRECTORY_PICTURES
     };
-    static float sCropMinZoom = 1;
+    static float sCropMinZoom = 0.1f;
     static float sCropMaxZoom = 2;
 
     /**

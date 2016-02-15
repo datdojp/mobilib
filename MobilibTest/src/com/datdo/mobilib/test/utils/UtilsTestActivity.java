@@ -1,5 +1,8 @@
 package com.datdo.mobilib.test.utils;
 
+import java.util.Date;
+
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -11,6 +14,8 @@ import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
 
 public class UtilsTestActivity extends MblBaseActivity {
+
+    private Runnable mStopRepeatAction;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,5 +68,42 @@ public class UtilsTestActivity extends MblBaseActivity {
                 MblUtils.showToast(hashKey, Toast.LENGTH_SHORT);
             }
         });
+
+        findViewById(R.id.bt_start_repeat).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                mStopRepeatAction = MblUtils.repeatDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        MblUtils.showToast("Current time: " + new Date(), Toast.LENGTH_SHORT);
+                    }
+                }, 3000l);
+            }
+        });
+
+        findViewById(R.id.bt_stop_repeat).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                if (mStopRepeatAction != null) {
+                    mStopRepeatAction.run();
+                    mStopRepeatAction = null;
+                }
+            }
+        });
+
+        findViewById(R.id.bt_set_activity_bg_no_shrinking).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                startActivity(new Intent(UtilsTestActivity.this, BgNoShrinkingTestActivity.class));
+            }
+        });
+        
+        findViewById(R.id.bt_make_EditText_auto_scroll_on_focused).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View arg0) {
+                startActivity(new Intent(UtilsTestActivity.this, EditTextAutoscrollTestActivity.class));
+            }
+        });
+        
     }
 }

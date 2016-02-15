@@ -1,7 +1,16 @@
-bin
-gen
-local.properties
+# Gradle
+.gradle
+build
 out
-android-api-reference
-.settings
-build.xml
+
+# IntelliJ IDEA
+.idea
+*.iml
+*.ipr
+*.iws
+classes
+gen-external-apklibs
+
+# Other
+.DS_Store
+local.properties
