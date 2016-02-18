@@ -28,4 +28,11 @@
         <attr name="layoutId" format="reference"/>
     </declare-styleable>
 
+    <declare-styleable name="MblPagerIndicator">
+        <attr name="numberOfDots" format="integer"/>
+        <attr name="dotSize" format="dimension"/>
+        <attr name="dotSpacing" format="dimension"/>
+        <attr name="defaultIndex" format="integer"/>
+    </declare-styleable>
+
 </resources>
