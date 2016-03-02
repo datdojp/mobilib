@@ -110,7 +110,7 @@ public class MblSlidingCarrier extends MblCarrier {
             }
         });
         AnimatorSet set = new AnimatorSet();
-        final long DURATION = 750;
+        final long DURATION = 600;
         set.playTogether(Glider.glide(Skill.ExpoEaseOut, DURATION, anim));
         set.setDuration(DURATION);
         set.start();
