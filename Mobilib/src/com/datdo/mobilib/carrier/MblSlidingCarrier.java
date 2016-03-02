@@ -1,18 +1,21 @@
 package com.datdo.mobilib.carrier;
 
-import junit.framework.Assert;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.daimajia.easing.Glider;
+import com.daimajia.easing.Skill;
 import com.datdo.mobilib.util.MblUtils;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.Animator.AnimatorListener;
+import com.nineoldandroids.animation.AnimatorSet;
 import com.nineoldandroids.animation.ValueAnimator;
 import com.nineoldandroids.animation.ValueAnimator.AnimatorUpdateListener;
+
+import junit.framework.Assert;
 
 /**
  * <pre>
@@ -64,7 +67,7 @@ public class MblSlidingCarrier extends MblCarrier {
             final int               from,
             final int               to,
             final Runnable          onAnimationEnd) {
-        
+
         ValueAnimator anim = ValueAnimator.ofInt(from, to);
         anim.addUpdateListener(new AnimatorUpdateListener() {
             @Override
@@ -106,10 +109,13 @@ public class MblSlidingCarrier extends MblCarrier {
                 onAnimationEnd.run();
             }
         });
-        anim.setDuration(300);
-        anim.start();
+        AnimatorSet set = new AnimatorSet();
+        final long DURATION = 750;
+        set.playTogether(Glider.glide(Skill.ExpoEaseOut, DURATION, anim));
+        set.setDuration(DURATION);
+        set.start();
     }
-    
+
     @Override
     protected void animateForStarting(
             final MblInterceptor    currentInterceptor,
@@ -119,20 +125,20 @@ public class MblSlidingCarrier extends MblCarrier {
         final int from = 0;
         final int to;
         switch (mSlidingDirection) {
-        case LEFT_RIGHT:
-            to = mInterceptorContainerView.getWidth();
-            break;
-        case RIGHT_LEFT:
-            to = -mInterceptorContainerView.getWidth();
-            break;
-        case TOP_BOTTOM:
-            to = mInterceptorContainerView.getHeight();
-            break;
-        case BOTTOM_TOP:
-            to = -mInterceptorContainerView.getHeight();
-            break;
-        default:
-            return; // never happen
+            case LEFT_RIGHT:
+                to = mInterceptorContainerView.getWidth();
+                break;
+            case RIGHT_LEFT:
+                to = -mInterceptorContainerView.getWidth();
+                break;
+            case TOP_BOTTOM:
+                to = mInterceptorContainerView.getHeight();
+                break;
+            case BOTTOM_TOP:
+                to = -mInterceptorContainerView.getHeight();
+                break;
+            default:
+                return; // never happen
         }
 
         animate(currentInterceptor, nextInterceptor, from, to, onAnimationEnd);
@@ -147,20 +153,20 @@ public class MblSlidingCarrier extends MblCarrier {
         final int from = 0;
         final int to;
         switch (mSlidingDirection) {
-        case LEFT_RIGHT:
-            to = -mInterceptorContainerView.getWidth();
-            break;
-        case RIGHT_LEFT:
-            to = mInterceptorContainerView.getWidth();
-            break;
-        case TOP_BOTTOM:
-            to = -mInterceptorContainerView.getHeight();
-            break;
-        case BOTTOM_TOP:
-            to = mInterceptorContainerView.getHeight();
-            break;
-        default:
-            return; // never happen
+            case LEFT_RIGHT:
+                to = -mInterceptorContainerView.getWidth();
+                break;
+            case RIGHT_LEFT:
+                to = mInterceptorContainerView.getWidth();
+                break;
+            case TOP_BOTTOM:
+                to = -mInterceptorContainerView.getHeight();
+                break;
+            case BOTTOM_TOP:
+                to = mInterceptorContainerView.getHeight();
+                break;
+            default:
+                return; // never happen
         }
 
         animate(currentInterceptor, previousInterceptor, from, to, onAnimationEnd);
@@ -168,27 +174,19 @@ public class MblSlidingCarrier extends MblCarrier {
 
     @SuppressLint("NewApi")
     private void setX(View view, int x) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            view.setLeft(x);
-        } else {
-            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
-            lp.leftMargin = x;
-            lp.rightMargin = -x;
-            lp.gravity = Gravity.TOP | Gravity.LEFT;
-            view.setLayoutParams(lp);
-        }
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
+        lp.leftMargin = x;
+        lp.rightMargin = -x;
+        lp.gravity = Gravity.TOP | Gravity.LEFT;
+        view.setLayoutParams(lp);
     }
 
     @SuppressLint("NewApi")
     private void setY(View view, int y) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            view.setTop(y);
-        } else {
-            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
-            lp.topMargin = y;
-            lp.bottomMargin = -y;
-            lp.gravity = Gravity.TOP | Gravity.LEFT;
-            view.setLayoutParams(lp);
-        }
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) view.getLayoutParams();
+        lp.topMargin = y;
+        lp.bottomMargin = -y;
+        lp.gravity = Gravity.TOP | Gravity.LEFT;
+        view.setLayoutParams(lp);
     }
 }
