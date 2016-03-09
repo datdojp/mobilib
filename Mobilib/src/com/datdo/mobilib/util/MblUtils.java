@@ -1898,6 +1898,17 @@ public class MblUtils {
         getCurrentContext().startActivity(browserIntent);
     }
 
+    /**
+     * <pre>
+     * Open phone app to dial a number
+     * </pre>
+     */
+    public static void openPhone(String number) {
+        getCurrentContext().startActivity(new Intent(
+                Intent.ACTION_DIAL,
+                Uri.parse("tel:" + number)));
+    }
+
     private static final String URI_FILE_PREFIX             = "file://";
     private static final String URI_CONTENT_PREFIX          = "content://";
 
