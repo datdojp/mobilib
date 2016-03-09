@@ -1303,6 +1303,73 @@ public class MblUtils {
 
     /**
      * <pre>
+     * Option class for {@link #sendEmail(SendEmailOptions)}
+     * </pre>
+     */
+    public static class SendEmailOptions {
+
+        private String subject;
+        private String[] emails;
+        private String[] cc;
+        private String[] bcc;
+        private Object text;
+        private String title;
+        private List<String> attachmentFilenames;
+
+        public SendEmailOptions setSubject(String subject) {
+            this.subject = subject;
+            return this;
+        }
+
+        public SendEmailOptions setEmails(String[] emails) {
+            this.emails = emails;
+            return this;
+        }
+
+        public SendEmailOptions setCc(String[] cc) {
+            this.cc = cc;
+            return this;
+        }
+
+        public SendEmailOptions setBcc(String[] bcc) {
+            this.bcc = bcc;
+            return this;
+        }
+
+        public SendEmailOptions setText(Object text) {
+            this.text = text;
+            return this;
+        }
+
+        public SendEmailOptions setTitle(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public SendEmailOptions setAttachmentFilenames(List<String> attachmentFilenames) {
+            this.attachmentFilenames = attachmentFilenames;
+            return this;
+        }
+    }
+
+    /**
+     * <pre>
+     * Replica of {@link #sendEmail(String, String[], String[], String[], Object, String, List)} using {@link com.datdo.mobilib.util.MblUtils.SendEmailOptions}.
+     * </pre>
+     */
+    public static boolean sendEmail(SendEmailOptions options) {
+        return sendEmail(
+                options.subject,
+                options.emails,
+                options.cc,
+                options.bcc,
+                options.text,
+                options.title,
+                options.attachmentFilenames);
+    }
+
+    /**
+     * <pre>
      * Convenient method to send email.
      * </pre>
      * @param subject email 's subject
@@ -1810,7 +1877,7 @@ public class MblUtils {
                         1424287352,
                         new Intent(context, mainActivityClass),
                         PendingIntent.FLAG_CANCEL_CURRENT);
-                AlarmManager alarmManager = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+                AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
                 alarmManager.set(AlarmManager.RTC, System.currentTimeMillis() + 500, pendingIntent);
             }
         });
