@@ -24,6 +24,10 @@ public class MblFlexibleSizedImageView extends ImageView {
 
     private FlexibleSize    mFlexibleSize = FlexibleSize.HEIGHT;
     private Bitmap          mBitmap;
+    private int minWidth;
+    private int maxWidth;
+    private int minHeight;
+    private int maxHeight;
 
     public MblFlexibleSizedImageView(Context context) {
         super(context);
@@ -41,12 +45,24 @@ public class MblFlexibleSizedImageView extends ImageView {
 
     private void initAttr(Context context, AttributeSet attrs) {
 
-        TypedArray ta = context.getTheme().obtainStyledAttributes(attrs, R.styleable.MblFlexibleSizedImageView, 0, 0);
-
-        int flexibleIndex = ta.getInt(R.styleable.MblFlexibleSizedImageView_flexibleSize, -1);
+        // get custom attributes
+        TypedArray customAttrs = context.getTheme().obtainStyledAttributes(attrs, R.styleable.MblFlexibleSizedImageView, 0, 0);
+        int flexibleIndex = customAttrs.getInt(R.styleable.MblFlexibleSizedImageView_flexibleSize, -1);
         if (flexibleIndex >= 0) {
             mFlexibleSize = FlexibleSize.values()[flexibleIndex];
         }
+
+        // get android attributes
+        TypedArray androidAttrs = context.obtainStyledAttributes(attrs, new int[]{
+                android.R.attr.minWidth,
+                android.R.attr.maxWidth,
+                android.R.attr.minHeight,
+                android.R.attr.maxHeight
+        });
+        minWidth    = androidAttrs.getInt(0, -1);
+        maxWidth    = androidAttrs.getInt(1, -1);
+        minHeight   = androidAttrs.getInt(2, -1);
+        maxHeight   = androidAttrs.getInt(3, -1);
     }
 
     @Override
@@ -76,8 +92,20 @@ public class MblFlexibleSizedImageView extends ImageView {
         int h = getHeight();
         if (mFlexibleSize == FlexibleSize.WIDTH) {
             w = Math.round(h * bm.getWidth() / bm.getHeight());
+            if (minWidth >= 0) {
+                w = Math.max(minWidth, w);
+            }
+            if (maxWidth >= 0) {
+                w = Math.min(w, maxWidth);
+            }
         } else if (mFlexibleSize == FlexibleSize.HEIGHT) {
             h = Math.round(w * bm.getHeight() / bm.getWidth());
+            if (minHeight >= 0) {
+                h = Math.max(minHeight, h);
+            }
+            if (maxHeight >= 0) {
+                h = Math.min(h, maxHeight);
+            }
         }
         ViewGroup.LayoutParams lp = getLayoutParams();
         if (lp != null) {
