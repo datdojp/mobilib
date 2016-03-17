@@ -53,16 +53,19 @@ public class MblFlexibleSizedImageView extends ImageView {
         }
 
         // get android attributes
-        TypedArray androidAttrs = context.obtainStyledAttributes(attrs, new int[]{
-                android.R.attr.minWidth,
-                android.R.attr.maxWidth,
-                android.R.attr.minHeight,
-                android.R.attr.maxHeight
-        });
-        minWidth    = androidAttrs.getInt(0, -1);
-        maxWidth    = androidAttrs.getInt(1, -1);
-        minHeight   = androidAttrs.getInt(2, -1);
-        maxHeight   = androidAttrs.getInt(3, -1);
+        final String NAMESPACE = "http://schemas.android.com/apk/res/android";
+        minWidth    = dpStringToInt(attrs.getAttributeValue(NAMESPACE, "minWidth"),     -1);
+        maxWidth    = dpStringToInt(attrs.getAttributeValue(NAMESPACE, "maxWidth"),     -1);
+        minHeight   = dpStringToInt(attrs.getAttributeValue(NAMESPACE, "minHeight"),    -1);
+        maxHeight   = dpStringToInt(attrs.getAttributeValue(NAMESPACE, "maxHeight"),    -1);
+    }
+
+    private int dpStringToInt(String dpString, int defaultVal) {
+        if (dpString == null || !dpString.matches("^[0-9\\.]+dip$")) {
+            return defaultVal;
+        }
+        int intVal = (int) Float.parseFloat(dpString.substring(0, dpString.length() - 3));
+        return MblUtils.pxFromDp(intVal);
     }
 
     @Override
@@ -109,10 +112,16 @@ public class MblFlexibleSizedImageView extends ImageView {
         }
         ViewGroup.LayoutParams lp = getLayoutParams();
         if (lp != null) {
+            boolean changed = false;
             if (mFlexibleSize == FlexibleSize.WIDTH && w != lp.width) {
                 lp.width = w;
+                changed = true;
             } else if (mFlexibleSize == FlexibleSize.HEIGHT && h != lp.height) {
                 lp.height = h;
+                changed = true;
+            }
+            if (changed) {
+                setLayoutParams(lp);
             }
         }
         mBitmap = bm;
