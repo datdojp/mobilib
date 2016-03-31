@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="mbl_back">返回</string>
+    <string name="mbl_select_photo">選擇圖片</string>
+    <string name="mbl_wait">請稍等</string>
+    <string name="mbl_scanning">掃描中</string>
+    <string name="mbl_select_at_most_x_photos_at_once">一次最多選擇%1$d張圖片</string>
+    <string name="mbl_retake_photo">重新拍攝</string>
+    <string name="mbl_cancel">取消</string>
+    <string name="mbl_use_photo">使用</string>
+    <string name="mbl_done">完成</string>
+    <string name="mbl_preview_photo">預覽</string>
+
+</resources>
