@@ -2,8 +2,10 @@ package com.datdo.mobilib.base;
 
 import com.datdo.mobilib.event.MblCommonEvents;
 import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblStrongEventListener;
 import com.datdo.mobilib.util.MblUtils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
@@ -84,5 +86,19 @@ public class MblDecorView extends FrameLayout {
      */
     public static boolean isKeyboardOn() {
         return sKeyboardStatus == KB_SHOWN;
+    }
+
+    static {
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                Activity activity = (Activity) args[0];
+                boolean isTop = activity == MblUtils.getCurrentContext();
+                if (isTop && activity.isFinishing() && isKeyboardOn()) {
+                    sKeyboardStatus = KB_HIDDEN;
+                    MblEventCenter.postEvent(null, MblCommonEvents.KEYBOARD_HIDDEN);
+                }
+            }
+        }, MblCommonEvents.ACTIVITY_PAUSED);
     }
 }
