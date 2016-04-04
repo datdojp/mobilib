@@ -11,6 +11,7 @@ import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -46,6 +47,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore.Images;
+import android.provider.Settings;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.text.Spanned;
@@ -71,6 +73,7 @@ import com.datdo.mobilib.base.MblDecorView;
 import com.datdo.mobilib.event.MblCommonEvents;
 import com.datdo.mobilib.event.MblEventCenter;
 import com.datdo.mobilib.event.MblStrongEventListener;
+import com.datdo.mobilib.exception.CurrentSdkNotSupportedException;
 
 import junit.framework.Assert;
 
@@ -2505,15 +2508,18 @@ public class MblUtils {
      * Reference: http://stackoverflow.com/a/30108004
      * </pre>
      */
-    public static boolean isNotificationEnabled() {
-        Context context = getCurrentContext();
-        AppOpsManager mAppOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
-        ApplicationInfo appInfo = context.getApplicationInfo();
-        String pkg = context.getApplicationContext().getPackageName();
-        int uid = appInfo.uid;
-        Class appOpsClass = null;
+    public static boolean isNotificationEnabled() throws CurrentSdkNotSupportedException {
+        int minSdk = 19;
+        if (Build.VERSION.SDK_INT < minSdk) {
+            throw new CurrentSdkNotSupportedException(minSdk);
+        }
         try {
-            appOpsClass = Class.forName(AppOpsManager.class.getName());
+            Context context = getCurrentContext();
+            AppOpsManager mAppOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+            ApplicationInfo appInfo = context.getApplicationInfo();
+            String pkg = context.getApplicationContext().getPackageName();
+            int uid = appInfo.uid;
+            Class appOpsClass = Class.forName(AppOpsManager.class.getName());
             Method checkOpNoThrowMethod = appOpsClass.getMethod("checkOpNoThrow", Integer.TYPE, Integer.TYPE, String.class);
             Field opPostNotificationValue = appOpsClass.getDeclaredField("OP_POST_NOTIFICATION");
             int value = (int)opPostNotificationValue.get(Integer.class);
@@ -2523,4 +2529,6 @@ public class MblUtils {
         }
         return false;
     }
+
+
 }
