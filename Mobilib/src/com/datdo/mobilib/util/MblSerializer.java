@@ -134,6 +134,15 @@ public class MblSerializer {
     }
 
     /**
+     * <pre>
+     * Same as {@link #run(Task...)}
+     * </pre>
+     */
+    public void run(List<Task> subtasks) {
+        run(subtasks.toArray(new Task[subtasks.size()]));
+    }
+
+    /**
      * Cancel a specific task.
      * @return true if task exists in queue
      */
