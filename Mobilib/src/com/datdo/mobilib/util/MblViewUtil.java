@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.text.Html;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -404,5 +406,50 @@ public class MblViewUtil {
                 }
             }
         }));
+    }
+
+    /**
+     * Set view 's background without resetting its paddings.
+     */
+    public static void setBackground(@NonNull final View view, final Drawable background) {
+        preservePaddings(view, new Runnable() {
+            @Override
+            public void run() {
+                MblUtils.setBackgroundDrawable(view, background);
+            }
+        });
+    }
+
+    /**
+     * Set view 's background without resetting its paddings.
+     */
+    public static void setBackgroundColor(@NonNull final View view, @ColorInt final int color) {
+        preservePaddings(view, new Runnable() {
+            @Override
+            public void run() {
+                view.setBackgroundColor(color);
+            }
+        });
+    }
+
+    /**
+     * Set view 's background without resetting its paddings.
+     */
+    public static void setBackgroundResource(@NonNull final View view, final int bgResId) {
+        preservePaddings(view, new Runnable() {
+            @Override
+            public void run() {
+                view.setBackgroundResource(bgResId);
+            }
+        });
+    }
+
+    private static void preservePaddings(View view, Runnable action) {
+        int pLeft   = view.getPaddingLeft();
+        int pTop    = view.getPaddingTop();
+        int pRight  = view.getPaddingRight();
+        int pBottom = view.getPaddingBottom();
+        action.run();
+        view.setPadding(pLeft, pTop, pRight, pBottom);
     }
 }
