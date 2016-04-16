@@ -69,11 +69,16 @@ public class MblFlexibleSizedImageView extends ImageView {
     }
 
     @Override
-    public void setImageDrawable(Drawable drawable) {
-        if (drawable != null && drawable instanceof BitmapDrawable) {
-            expandSize(((BitmapDrawable) drawable).getBitmap());
-        }
+    public void setImageDrawable(final Drawable drawable) {
         super.setImageDrawable(drawable);
+        if (drawable != null && drawable instanceof BitmapDrawable) {
+            MblUtils.getMainThreadHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    expandSize(((BitmapDrawable) drawable).getBitmap());
+                }
+            });
+        }
     }
 
     private void expandSize(final Bitmap bm) {
