@@ -121,6 +121,13 @@ public abstract class MblSimpleImageLoader<T> {
 
     /**
      * <pre>
+     * Handle when bitmap loading succeeds.
+     * </pre>
+     */
+    protected void onSuccess(ImageView imageView, T item, Bitmap bm) {}
+
+    /**
+     * <pre>
      * Handle error when bitmap loading fails.
      * </pre>
      */
@@ -305,6 +312,7 @@ public abstract class MblSimpleImageLoader<T> {
             final Bitmap bm = sBitmapCache.get(cacheKey);
             if (isValidBitmap(bm)) {
                 imageView.setImageBitmap(bm);
+                onSuccess(imageView, item, bm);
                 hideProgressBar(imageView);
                 return;
             }
@@ -358,6 +366,7 @@ public abstract class MblSimpleImageLoader<T> {
                 Bitmap bm = sBitmapCache.get(cacheKey);
                 if (isValidBitmap(bm)) {
                     imageView.setImageBitmap(bm);
+                    onSuccess(imageView, item, bm);
                     hideProgressBar(imageView);
                     finishCallback.run();
                     return;
@@ -403,6 +412,7 @@ public abstract class MblSimpleImageLoader<T> {
                                             public void run() {
                                                 if (isStillBound(view, item)) {
                                                     imageView.setImageBitmap(bm);
+                                                    onSuccess(imageView, item, bm);
                                                     hideProgressBar(imageView);
                                                     animateImageView(imageView);
                                                 }
