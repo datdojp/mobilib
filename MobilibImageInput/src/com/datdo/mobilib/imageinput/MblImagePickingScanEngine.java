@@ -21,7 +21,7 @@ import com.datdo.mobilib.util.MblUtils;
 
 // reference: https://github.com/jerickson314/sdscanner
 // work in 4.4 kitkat
-class MblImagePickingScanEngine {
+public class MblImagePickingScanEngine {
 
     private static final String TAG = MblUtils.getTag(MblImagePickingScanEngine.class);
 

@@ -11,7 +11,7 @@ import android.util.Log;
 import com.datdo.mobilib.util.MblUtils;
 
 
-class MblImageFolderScanner {
+public class MblImageFolderScanner {
 
     private static final String TAG = MblUtils.getTag(MblImageFolderScanner.class);
 
