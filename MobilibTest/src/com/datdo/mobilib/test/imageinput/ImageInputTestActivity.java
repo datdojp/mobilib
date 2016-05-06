@@ -60,7 +60,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
     }
 
     private void takeImage() {
-        MblTakeImageActivity.start(null, -1, -1, new MblTakeImageCallback() {
+        MblTakeImageActivity.start(this, null, -1, -1, new MblTakeImageCallback() {
 
             @Override
             public void onFinish(String path) {
@@ -75,7 +75,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
     }
 
     private void pickImage() {
-        MblPickImageActivity.start(5, -1, -1, new MblPickImageCallback() {
+        MblPickImageActivity.start(this, 5, -1, -1, new MblPickImageCallback() {
 
             @Override
             public void onFinish(String[] paths) {
@@ -90,7 +90,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
     }
 
     private void takeAndCropImage() {
-        MblTakeImageActivity.start(null, 200, 200, new MblTakeImageCallback() {
+        MblTakeImageActivity.start(this, null, 200, 200, new MblTakeImageCallback() {
 
             @Override
             public void onFinish(String path) {
@@ -105,7 +105,7 @@ public class ImageInputTestActivity extends MblBaseActivity {
     }
 
     private void pickAndCropImage() {
-        MblPickImageActivity.start(1, 200, 200, new MblPickImageCallback() {
+        MblPickImageActivity.start(this, 1, 200, 200, new MblPickImageCallback() {
 
             @Override
             public void onFinish(String[] paths) {

@@ -2,6 +2,7 @@ package com.datdo.mobilib.imageinput;
 
 import java.util.List;
 
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -108,6 +109,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
 
     private void cropImage(String imagePath) {
         MblTakeImageActivity.start(
+                this,
                 imagePath,
                 mCropSizeWidthInPx,
                 mCropSizeHeightInPx,
@@ -155,6 +157,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
 
     private void takePhoto() {
         MblTakeImageActivity.start(
+                this,
                 null,
                 mCropSizeWidthInPx,
                 mCropSizeHeightInPx,
@@ -186,6 +189,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
      * @param callback callback to receive result
      */
     public static void start(
+            Context context,
             int maxNumberOfImages,
             int cropSizeWidthInPx,
             int cropSizeHeightInPx,
@@ -218,7 +222,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
         intent.putExtra(EXTRA_PHOTO_NUMBER_LIMIT,       maxNumberOfImages);
         intent.putExtra(EXTRA_CROP_SIZE_WIDTH_IN_PX,    cropSizeWidthInPx);
         intent.putExtra(EXTRA_CROP_SIZE_HEIGHT_IN_PX,   cropSizeHeightInPx);
-        MblUtils.getCurrentContext().startActivity(intent);
+        context.startActivity(intent);
     }
 
     public static interface MblPickImageCallback {

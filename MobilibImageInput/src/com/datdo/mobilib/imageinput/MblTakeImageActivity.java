@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.util.UUID;
 
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
@@ -376,6 +377,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
      * @param callback callback to receive result
      */
     public static void start(
+            Context context,
             String inputImagePath,
             int cropSizeWidthInPx,
             int cropSizeHeightInPx,
@@ -399,7 +401,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         intent.putExtra(EXTRA_INPUT_IMAGE_PATH,         inputImagePath);
         intent.putExtra(EXTRA_CROP_SIZE_WIDTH_IN_PX,    cropSizeWidthInPx);
         intent.putExtra(EXTRA_CROP_SIZE_HEIGHT_IN_PX,   cropSizeHeightInPx);
-        MblUtils.getCurrentContext().startActivity(intent);
+        context.startActivity(intent);
     }
 
     public static interface MblTakeImageCallback {
