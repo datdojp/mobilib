@@ -20,6 +20,7 @@ import android.widget.TextView;
 import com.datdo.mobilib.imageinput.MblImagePickingScanEngine.CmScanCallback;
 import com.datdo.mobilib.imageinput.MblTakeImageActivity.MblTakeImageCallback;
 import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.v2.image.AdapterImageLoader;
 
 /**
  * Activity to pick images. Also support cropping.
@@ -40,6 +41,8 @@ public class MblPickImageActivity extends MblDataInputActivity {
     private boolean mShouldRescanMediaFilesOnResume = true;
 
     private Button mSelectBtn;
+
+    private AdapterImageLoader mImageLoader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +87,9 @@ public class MblPickImageActivity extends MblDataInputActivity {
         textView.setText(R.string.mbl_select_photo);
 
         // init grid view
+        mImageLoader = new AdapterImageLoader(this);
         GridView imageGrid = (GridView) findViewById(R.id.image_gridview);
-        mAdapter = new MblPickImageGridViewAdapter(this, photoNumberLimit, imageGrid);
+        mAdapter = new MblPickImageGridViewAdapter(this, mImageLoader, photoNumberLimit, imageGrid);
         imageGrid.setAdapter(mAdapter);
 
         // button to select
@@ -135,12 +139,6 @@ public class MblPickImageActivity extends MblDataInputActivity {
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
-        mAdapter.clearCache();
-    }
-
-    @Override
     protected void onDestroy() {
         try {
             getSupportLoaderManager().destroyLoader(IMAGE_LOADER_ID);
@@ -151,6 +149,8 @@ public class MblPickImageActivity extends MblDataInputActivity {
         } catch (Exception e) {
             Log.e(TAG, "Failed to release loader", e);
         }
+
+        mImageLoader.clearMemmoryCache();
 
         super.onDestroy();
     }

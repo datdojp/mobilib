@@ -23,6 +23,8 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
 
 import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.v2.image.FittingType;
+import com.datdo.mobilib.v2.image.ImageTool;
 import com.datdo.mobilib.widget.MblTouchImageView;
 
 /**
@@ -293,14 +295,24 @@ public class MblTakeImageActivity extends MblDataInputActivity {
             public void run() {
                 Bitmap temp = null;
                 try {
-                    temp = MblUtils.loadBitmapMatchSpecifiedSize(-1, -1, imagePath);
+                    temp = ImageTool.with(MblTakeImageActivity.this)
+                            .load(new File(imagePath))
+                            .toWidth(mPreviewImageView.getWidth())
+                            .toHeight(mPreviewImageView.getHeight())
+                            .fittingType(FittingType.GTE)
+                            .now();
                 } catch (OutOfMemoryError e) {
+
+                    System.gc();
+
                     try {
                         Log.e(TAG, "Image too big -> scale to match ImageView size", e);
-                        temp = MblUtils.loadBitmapMatchSpecifiedSize(
-                                Math.round(mPreviewImageView.getWidth() * 1.5f),
-                                Math.round(mPreviewImageView.getHeight() * 1.5f),
-                                imagePath);
+                        temp = ImageTool.with(MblTakeImageActivity.this)
+                                .load(new File(imagePath))
+                                .toWidth(mPreviewImageView.getWidth())
+                                .toHeight(mPreviewImageView.getHeight())
+                                .fittingType(FittingType.LTE)
+                                .now();
                     } catch (OutOfMemoryError e2) {
                         Log.e(TAG, "Still too big --> cancel", e);
                     }

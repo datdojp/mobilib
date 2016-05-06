@@ -1,17 +1,14 @@
 package com.datdo.mobilib.test.imageloader;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
-import com.datdo.mobilib.api.MblApi;
-import com.datdo.mobilib.api.MblApi.MblApiCallback;
-import com.datdo.mobilib.api.MblRequest;
-import com.datdo.mobilib.api.MblResponse;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.v2.image.ImageTool;
 import com.datdo.mobilib.widget.MblTouchImageView;
 
 public class ViewImageActivity extends MblBaseActivity {
@@ -36,28 +33,19 @@ public class ViewImageActivity extends MblBaseActivity {
         super.onResume();
         String link = getIntent().getStringExtra("link");
         if (link != null) {
-            MblApi.run(new MblRequest()
-                    .setMethod(MblApi.Method.GET)
-                    .setUrl(link)
-                    .setCacheDuration(Long.MAX_VALUE)
-                    .setCallback(new MblApiCallback() {
-
+            ImageTool.with(this)
+                    .load(link)
+                    .placeHolder(R.drawable._default)
+                    .error(R.drawable.error)
+                    .later(mImageView, new ImageTool.IntoImageCallback() {
                         @Override
-                        public void onSuccess(MblResponse response) {
-                            final Bitmap bm = BitmapFactory.decodeByteArray(response.getData(), 0, response.getData().length);
-                            if (bm != null) {
-                                mImageView.setImageBitmap(bm);
-                                mLoaded = true;
-                            } else {
-                                onFailure(null);
-                            }
+                        public void onSuccess(ImageView imageView, Bitmap bitmap) {
+                            mLoaded = true;
                         }
 
                         @Override
-                        public void onFailure(MblResponse response) {
-                            mImageView.setImageResource(R.drawable.error);
-                        }
-                    }));
+                        public void onError(Throwable t, ImageView imageView) {}
+                    });
         }
     }
 

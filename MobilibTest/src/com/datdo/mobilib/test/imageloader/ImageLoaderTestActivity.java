@@ -6,24 +6,14 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.ImageView;
-import android.widget.ImageView.ScaleType;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.datdo.mobilib.api.MblApi;
-import com.datdo.mobilib.api.MblApi.MblApiCallback;
-import com.datdo.mobilib.api.MblRequest;
-import com.datdo.mobilib.api.MblResponse;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.base.MblBaseAdapter;
 import com.datdo.mobilib.test.R;
-import com.datdo.mobilib.util.MblImageLoader;
-import com.datdo.mobilib.util.MblSimpleImageLoader;
-import com.datdo.mobilib.util.MblUtils;
-
-import java.util.Map;
+import com.datdo.mobilib.v2.image.AdapterImageLoader;
 
 public class ImageLoaderTestActivity extends MblBaseActivity {
 
@@ -58,6 +48,7 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
     };
 
     private ListView mListView;
+    private AdapterImageLoader mImageLoader;
 
     private class Adapter extends MblBaseAdapter<String> {
 
@@ -66,49 +57,6 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
                 getData().add(l);
             }
         }
-
-        private MblSimpleImageLoader<String> mImageLoader = new MblSimpleImageLoader<String>() {
-
-            @Override
-            protected String getItemId(String item) {
-                return item;
-            }
-
-            @Override
-            protected ImageView getImageViewBoundWithView(View view) {
-                return (ImageView) view.findViewById(R.id.image);
-            }
-
-            @Override
-            protected String getItemBoundWithView(View view) {
-                return (String) view.getTag();
-            }
-
-            @Override
-            protected void retrieveImage(String item, final MblRetrieveImageCallback cb) {
-                MblApi.run(new MblRequest()
-                        .setMethod(MblApi.Method.GET)
-                        .setUrl(item)
-                        .setCacheDuration(Long.MAX_VALUE)
-                        .setCallback(new MblApiCallback() {
-
-                            @Override
-                            public void onSuccess(MblResponse response) {
-                                cb.onRetrievedByteArray(response.getData());
-                            };
-
-                            @Override
-                            public void onFailure(MblResponse response) {
-                                cb.onRetrievedError();
-                            }
-                        }));
-            }
-
-            @Override
-            protected void onError(ImageView imageView, String item) {
-                imageView.setImageResource(R.drawable._default);
-            }
-        };
 
         @Override
         public View getView(int pos, View view, ViewGroup parent) {
@@ -127,7 +75,12 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
             }
 
             view.setTag(link);
-            mImageLoader.loadImage(view);
+            mImageLoader.with(ImageLoaderTestActivity.this)
+                    .load(link)
+                    .placeholder(R.drawable._default)
+                    .error(R.drawable.error)
+                    .into((ImageView) view.findViewById(R.id.image));
+
             ((TextView) view.findViewById(R.id.url)).setText(link);
 
             return view;
@@ -144,12 +97,13 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT));
         mListView.setBackgroundColor(0xff000000);
         mListView.setAdapter(new Adapter(LINKS));
+        mImageLoader = new AdapterImageLoader(this);
         setContentView(mListView);
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        ((Adapter) mListView.getAdapter()).notifyDataSetChanged();
+    protected void onDestroy() {
+        mImageLoader.clearMemmoryCache();
+        super.onDestroy();
     }
 }

@@ -4,19 +4,17 @@ package com.datdo.mobilib.imageinput;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.provider.MediaStore;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
 import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.datdo.mobilib.util.MblSimpleImageLoader;
-import com.datdo.mobilib.util.MblSimpleImageLoader.*;
 import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.v2.image.AdapterImageLoader;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -30,69 +28,16 @@ import java.util.Set;
 
 class MblPickImageGridViewAdapter extends CursorAdapter {
 
-    private MblSimpleImageLoader<ImageMetaData> mImageLoader = new MblSimpleImageLoader<ImageMetaData>() {
-        @Override
-        protected ImageMetaData getItemBoundWithView(View view) {
-            return ((Holder)view.getTag()).mImageData;
-        }
-
-        @Override
-        protected ImageView getImageViewBoundWithView(View view) {
-            return ((Holder)view.getTag()).mThumbnailImageView;
-        }
-
-        @Override
-        protected String getItemId(ImageMetaData item) {
-            return String.valueOf(item.mImageId);
-        }
-
-        @Override
-        protected void retrieveImage(final ImageMetaData item, final MblRetrieveImageCallback cb) {
-            MblUtils.executeOnAsyncThread(new Runnable() {
-                @Override
-                public void run() {
-                    Bitmap bm = null;
-                    File file = new File(item.mImagePath);
-                    if (file.exists() && file.length() > 0) {
-                        bm = MediaStore.Images.Thumbnails.getThumbnail(
-                                MblUtils.getCurrentContext().getContentResolver(),
-                                item.mImageId,
-                                MediaStore.Images.Thumbnails.MICRO_KIND,
-                                null);
-                    }
-                    if (bm != null) {
-                        bm = MblUtils.correctBitmapOrientation(item.mImagePath, bm);
-                    }
-                    cb.onRetrievedBitmap(bm);
-
-                    MblUtils.getMainThreadHandler().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            cb.onRetrievedFile(item.mImagePath);
-                        }
-                    });
-                }
-            });
-        }
-
-        @Override
-        protected void onError(ImageView imageView, ImageMetaData item) {
-            imageView.setImageBitmap(null);
-        }
-    }.setOptions(new MblOptions()
-            .setSerializeImageLoading(false)
-            .setDelayedDurationInParallelMode(0)
-            .setEnableProgressView(false)
-            .setEnableFadingAnimation(false));
-
     private final Set<Integer>  mThumbnailsSelection = new HashSet<Integer>();
     private int                 mPhotoNumberLimit;
     private GridView            mGridView;
+    private AdapterImageLoader  mImageLoader;
 
-    public MblPickImageGridViewAdapter(Context context, int photoNumberLimit, GridView gridView) {
+    public MblPickImageGridViewAdapter(Context context, AdapterImageLoader imageLoader, int photoNumberLimit, GridView gridView) {
         super(context, null, false);
         mPhotoNumberLimit   = photoNumberLimit;
         mGridView           = gridView;
+        mImageLoader        = imageLoader;
     }
 
     @Override
@@ -104,7 +49,10 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
         int imageId = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.Media._ID));
         String imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
         holder.mImageData = new ImageMetaData(imageId, imagePath);
-        mImageLoader.loadImage(view);
+        mImageLoader.with(context)
+                .load(new File(imagePath))
+                .enableProgressView(false)
+                .into(holder.mThumbnailImageView);
 
         boolean checkOn = mThumbnailsSelection.contains(holderId);
         setItemCheckedStatus(holder, checkOn);
@@ -113,7 +61,7 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
     @SuppressLint("InflateParams")
     @Override
     public View newView(Context context, Cursor cursor, ViewGroup viewGroup) {
-        View view = MblUtils.getLayoutInflater().inflate(R.layout.mbl_image_picker_item, null);
+        View view = LayoutInflater.from(context).inflate(R.layout.mbl_image_picker_item, null);
 
         final Holder holder = new Holder();
         holder.mThumbnailImageView = (MblAutoResizeSquareImageView) view.findViewById(R.id.image_picker_imageview);
@@ -131,7 +79,7 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
 
         holder.mThumbnailImageView.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                toggleItemSelect(holder);
+                toggleItemSelect(v.getContext(), holder);
             }
         });
 
@@ -143,7 +91,7 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
         holder.mHiddenLayer.setVisibility(checkOn ? View.VISIBLE : View.GONE);
     }
 
-    private void toggleItemSelect(Holder holder) {
+    private void toggleItemSelect(Context context, Holder holder) {
         int holderId = holder.mId;
         boolean isChecked = mThumbnailsSelection.contains(holderId);
 
@@ -165,7 +113,7 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
                     setItemCheckedStatus(holder, true);
                 } else {
                     MblUtils.showToast(
-                            MblUtils.getCurrentContext().getString(R.string.mbl_select_at_most_x_photos_at_once, mPhotoNumberLimit),
+                            context.getString(R.string.mbl_select_at_most_x_photos_at_once, mPhotoNumberLimit),
                             Toast.LENGTH_SHORT);
                 }
             }
@@ -226,9 +174,5 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
             mImageId = imageId;
             mImagePath = imagePath;
         }
-    }
-
-    public void clearCache() {
-        mImageLoader.invalidate(ImageMetaData.class);
     }
 }
