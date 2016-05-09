@@ -12,6 +12,7 @@ import junit.framework.Assert;
 
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -37,6 +38,7 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -170,6 +172,7 @@ public class MblApi {
                     request.getCallbackHandler(),
                     request.getStatusCodeValidator(),
                     request.isRedirectEnabled(),
+                    request.isNotReturnByteArrayData(),
                     request);
         } else {
             sendRequestWithBody(
@@ -198,6 +201,7 @@ public class MblApi {
             Handler callbackHandler,
             final MblStatusCodeValidator statusCodeValidator,
             final boolean redirectEnabled,
+            final boolean notReturnByteArrayData,
             final MblRequest request) {
 
         final boolean isCacheEnabled = cacheDuration > 0;
@@ -258,26 +262,30 @@ public class MblApi {
                     existingCache = MblDatabaseCache.get(fullUrl);
                     boolean shouldReadFromCache =
                             existingCache != null &&
+                            MblUtils.isValidFile(MblUtils.getCacheAsbPath(getCacheFileName(existingCache))) &&
                             (   !MblUtils.isNetworkConnected() ||
                                     System.currentTimeMillis() - existingCache.getDate() <= cacheDuration    );
                     if (shouldReadFromCache) {
                         try {
-                            final byte[] data = MblUtils.readCacheFile(getCacheFileName(existingCache));
-                            if (data != null) {
-                                if (callback != null) {
-                                    MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            callback.onSuccess(new MblResponse()
-                                                    .setRequest(request)
-                                                    .setStatusCode(-1)
-                                                    .setData(data));
-                                        }
-                                    });
-                                }
-
-                                return;
+                            final byte[] data;
+                            if (!notReturnByteArrayData) {
+                                data = MblUtils.readCacheFile(getCacheFileName(existingCache));
+                            } else {
+                                data = null;
                             }
+                            if (callback != null) {
+                                MblUtils.executeOnHandlerThread(fCallbackHandler, new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        callback.onSuccess(new MblResponse()
+                                                .setRequest(request)
+                                                .setStatusCode(-1)
+                                                .setData(data));
+                                    }
+                                });
+                            }
+
+                            return;
                         } catch (IOException e) {
                             Log.e(TAG, "Cache not exist", e);
                         }
@@ -303,7 +311,12 @@ public class MblApi {
                     for (Header h : response.getAllHeaders()) {
                         headers.put(h.getName(), h.getValue());
                     }
-                    final byte[] data = EntityUtils.toByteArray(response.getEntity());
+                    final byte[] data;
+                    if (!notReturnByteArrayData) {
+                        data = EntityUtils.toByteArray(response.getEntity());
+                    } else {
+                        data = null;
+                    }
 
                     if (!statusCodeValidator.isSuccess(statusCode)) {
                         if (callback != null) {
@@ -324,7 +337,11 @@ public class MblApi {
                     }
 
                     if (isCacheEnabled) {
-                        saveCache(fullUrl, data);
+                        if (!notReturnByteArrayData) {
+                            saveCache(fullUrl, data);
+                        } else {
+                            saveCache(fullUrl, response.getEntity());
+                        }
                     }
 
                     if (callback != null) {
@@ -612,6 +629,17 @@ public class MblApi {
             MblDatabaseCache c = new MblDatabaseCache(fullUrl, System.currentTimeMillis());
             MblDatabaseCache.upsert(c);
             MblUtils.saveCacheFile(data, getCacheFileName(c));
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to cache url: " + fullUrl, e);
+        }
+    }
+
+    private static void saveCache(String fullUrl, HttpEntity entity) {
+        try {
+            MblDatabaseCache c = new MblDatabaseCache(fullUrl, System.currentTimeMillis());
+            MblDatabaseCache.upsert(c);
+            String cachePath = MblUtils.getCacheAsbPath(getCacheFileName(c));
+            entity.writeTo(new FileOutputStream(cachePath));
         } catch (Exception e) {
             Log.e(TAG, "Failed to cache url: " + fullUrl, e);
         }

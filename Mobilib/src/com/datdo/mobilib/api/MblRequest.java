@@ -55,6 +55,7 @@ public class MblRequest {
     private String                          mData;
     private boolean                         mRedirectEnabled        = false;
     private long                            mTimeout                = -1;
+    private boolean                         mNotReturnByteArrayData = false;
 
     public MblRequest() {}
 
@@ -193,6 +194,11 @@ public class MblRequest {
         return this;
     }
 
+    public MblRequest setNotReturnByteArrayData(boolean notReturnByteArrayData) {
+        this.mNotReturnByteArrayData = notReturnByteArrayData;
+        return this;
+    }
+
     public String getUrl() {
         return mUrl;
     }
@@ -239,5 +245,9 @@ public class MblRequest {
 
     public long getTimeout() {
         return mTimeout;
+    }
+
+    public boolean isNotReturnByteArrayData() {
+        return mNotReturnByteArrayData;
     }
 }
