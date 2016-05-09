@@ -72,9 +72,6 @@ public class AdapterImageLoader {
             else if (bytes != null) {
                 tokens.add("src=" + Arrays.hashCode(bytes));
             }
-            else {
-                return null;
-            }
             if (customLoad != null) {
                 tokens.add("customLoad=" + customLoad.key());
             }
