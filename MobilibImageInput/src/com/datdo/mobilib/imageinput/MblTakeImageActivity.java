@@ -1,11 +1,5 @@
 package com.datdo.mobilib.imageinput;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.UUID;
-
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -21,11 +15,18 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.widget.Button;
+import android.widget.ImageView;
 
 import com.datdo.mobilib.util.MblUtils;
 import com.datdo.mobilib.v2.image.FittingType;
-import com.datdo.mobilib.v2.image.ImageTool;
+import com.datdo.mobilib.v2.image.ImageLoader;
 import com.datdo.mobilib.widget.MblTouchImageView;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.UUID;
 
 /**
  * Activity to take image by camera. Also support cropping.
@@ -50,6 +51,8 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     private View    mCropFrameMid;
     private boolean mStartTakePhotoOnResume;
     private boolean mIsPortrait;
+
+    private ImageLoader imageLoader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,6 +136,9 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
         // store orientation
         mIsPortrait = MblUtils.isPortraitDisplay();
+
+        // create image loader
+        imageLoader = new ImageLoader(this);
     }
 
     @Override
@@ -290,46 +296,13 @@ public class MblTakeImageActivity extends MblDataInputActivity {
             return;
         }
 
-        MblUtils.executeOnAsyncThread(new Runnable() {
-            @Override
-            public void run() {
-                Bitmap temp = null;
-                try {
-                    temp = ImageTool.with(MblTakeImageActivity.this)
-                            .load(new File(imagePath))
-                            .toWidth(mPreviewImageView.getWidth())
-                            .toHeight(mPreviewImageView.getHeight())
-                            .fittingType(FittingType.GTE)
-                            .now();
-                } catch (OutOfMemoryError e) {
 
-                    System.gc();
-
-                    try {
-                        Log.e(TAG, "Image too big -> scale to match ImageView size", e);
-                        temp = ImageTool.with(MblTakeImageActivity.this)
-                                .load(new File(imagePath))
-                                .toWidth(mPreviewImageView.getWidth())
-                                .toHeight(mPreviewImageView.getHeight())
-                                .fittingType(FittingType.LTE)
-                                .now();
-                    } catch (OutOfMemoryError e2) {
-                        Log.e(TAG, "Still too big --> cancel", e);
-                    }
-                }
-
-                final Bitmap bm = temp;
-                if (bm == null) {
-                    cancelInput();
-                    return;
-                }
-
-                MblUtils.executeOnMainThread(new Runnable() {
+        imageLoader.forOneImageView(this)
+                .load(new File(imagePath))
+                .fittingType(FittingType.GTE)
+                .callback(new ImageLoader.Callback() {
                     @Override
-                    public void run() {
-                        // display bitmap
-                        mPreviewImageView.setImageBitmap(bm);
-
+                    public void onSuccess(ImageView image, Bitmap bm, ImageLoader.LoadRequest request) {
                         // set min and max for zoom
                         float minZoom = MblImageInput.sCropMinZoom;
                         float maxZoom = MblImageInput.sCropMaxZoom;
@@ -366,9 +339,13 @@ public class MblTakeImageActivity extends MblDataInputActivity {
                                     0, 0, 0, 0);
                         }
                     }
-                });
-            }
-        });
+
+                    @Override
+                    public void onError(Throwable t, ImageView image, ImageLoader.LoadRequest request) {
+                        cancelInput();
+                    }
+                })
+                .into(mPreviewImageView);
     }
 
     @Override

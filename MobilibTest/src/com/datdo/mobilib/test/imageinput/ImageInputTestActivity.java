@@ -14,12 +14,12 @@ import com.datdo.mobilib.imageinput.MblTakeImageActivity;
 import com.datdo.mobilib.imageinput.MblTakeImageActivity.MblTakeImageCallback;
 import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
-import com.datdo.mobilib.v2.image.AdapterImageLoader;
+import com.datdo.mobilib.v2.image.ImageLoader;
 
 public class ImageInputTestActivity extends MblBaseActivity {
 
     private ThumbnailAdapter mAdapter;
-    private AdapterImageLoader imageLoader;
+    private ImageLoader imageLoader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,15 +57,9 @@ public class ImageInputTestActivity extends MblBaseActivity {
         });
         
         ListView listview = (ListView) findViewById(R.id.thumbnail_list);
-        imageLoader = new AdapterImageLoader(this);
+        imageLoader = new ImageLoader(this);
         mAdapter = new ThumbnailAdapter(this, imageLoader);
         listview.setAdapter(mAdapter);
-    }
-
-    @Override
-    protected void onDestroy() {
-        imageLoader.clearMemmoryCache();
-        super.onDestroy();
     }
 
     private void takeImage() {

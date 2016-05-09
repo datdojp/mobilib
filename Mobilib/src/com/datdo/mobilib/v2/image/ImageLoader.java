@@ -31,9 +31,21 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-public class AdapterImageLoader {
+public class ImageLoader {
 
-    private static final String TAG = AdapterImageLoader.class.getSimpleName();
+    private static final String TAG = ImageLoader.class.getSimpleName();
+
+    public LoadRequest forOneImageView(Context context) {
+        return with(context)
+                .enableProgressView(false)
+                .enableFadingAnimation(true)
+                .scaleToImageViewSizes(true)
+                .cropBitmapToImageViewSizes(false)
+                .serialized(false)
+                .loadDelayed(0)
+                .enableProgressView(false)
+                .enableFadingAnimation(true);
+    }
 
     public LoadRequest with(Context context) {
         LoadRequest info = new LoadRequest();
@@ -44,7 +56,7 @@ public class AdapterImageLoader {
 
     public static class LoadRequest {
         private Context context;
-        private AdapterImageLoader imageLoader;
+        private ImageLoader imageLoader;
         private String url;
         private File file;
         private byte[] bytes;
@@ -180,7 +192,7 @@ public class AdapterImageLoader {
         public void into(ImageView imageView) {
             if (imageView.getTag() != null && !(imageView.getTag() instanceof LoadRequest)) {
                 throw new IllegalStateException("ImageView 's tag is used by "
-                        + AdapterImageLoader.class.getSimpleName()
+                        + ImageLoader.class.getSimpleName()
                         + ", you should not set any value for it.");
             }
             imageView.setTag(this);
@@ -250,7 +262,7 @@ public class AdapterImageLoader {
     private Set<String> invalidUrls;
     private MblSerializer serializer;
 
-    public AdapterImageLoader(Context context) {
+    public ImageLoader(Context context) {
 
         // initialize memory cache
         ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -432,7 +444,7 @@ public class AdapterImageLoader {
                                                 if (isStillBound(imageView, request)) {
                                                     hideProgressBar(imageView, request);
                                                     imageView.setImageBitmap(bm[0]);
-                                                    AdapterImageLoader.this.onSuccess(imageView, request, bm[0]);
+                                                    ImageLoader.this.onSuccess(imageView, request, bm[0]);
                                                     animateImageView(imageView, request);
                                                 }
                                                 finishCallback.run();
@@ -487,7 +499,7 @@ public class AdapterImageLoader {
                             public void run() {
                                 if (isStillBound(imageView, request)) {
                                     hideProgressBar(imageView, request);
-                                    AdapterImageLoader.this.onError(t, imageView, request);
+                                    ImageLoader.this.onError(t, imageView, request);
                                 }
                                 finishCallback.run();
                             }
@@ -743,6 +755,6 @@ public class AdapterImageLoader {
 
     private File getDiskCachedFile(String key) {
         return new File(MblUtils.getCacheAsbPath(
-                AdapterImageLoader.class.getSimpleName() + "_" + MblUtils.md5(key) + ".jpg"));
+                ImageLoader.class.getSimpleName() + "_" + MblUtils.md5(key) + ".jpg"));
     }
 }

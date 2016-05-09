@@ -14,7 +14,7 @@ import android.widget.GridView;
 import android.widget.Toast;
 
 import com.datdo.mobilib.util.MblUtils;
-import com.datdo.mobilib.v2.image.AdapterImageLoader;
+import com.datdo.mobilib.v2.image.ImageLoader;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -31,9 +31,9 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
     private final Set<Integer>  mThumbnailsSelection = new HashSet<Integer>();
     private int                 mPhotoNumberLimit;
     private GridView            mGridView;
-    private AdapterImageLoader  mImageLoader;
+    private ImageLoader mImageLoader;
 
-    public MblPickImageGridViewAdapter(Context context, AdapterImageLoader imageLoader, int photoNumberLimit, GridView gridView) {
+    public MblPickImageGridViewAdapter(Context context, ImageLoader imageLoader, int photoNumberLimit, GridView gridView) {
         super(context, null, false);
         mPhotoNumberLimit   = photoNumberLimit;
         mGridView           = gridView;

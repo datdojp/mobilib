@@ -13,7 +13,7 @@ import android.widget.TextView;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.base.MblBaseAdapter;
 import com.datdo.mobilib.test.R;
-import com.datdo.mobilib.v2.image.AdapterImageLoader;
+import com.datdo.mobilib.v2.image.ImageLoader;
 
 public class ImageLoaderTestActivity extends MblBaseActivity {
 
@@ -48,7 +48,7 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
     };
 
     private ListView mListView;
-    private AdapterImageLoader mImageLoader;
+    private ImageLoader mImageLoader;
 
     private class Adapter extends MblBaseAdapter<String> {
 
@@ -97,13 +97,7 @@ public class ImageLoaderTestActivity extends MblBaseActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT));
         mListView.setBackgroundColor(0xff000000);
         mListView.setAdapter(new Adapter(LINKS));
-        mImageLoader = new AdapterImageLoader(this);
+        mImageLoader = new ImageLoader(this);
         setContentView(mListView);
-    }
-
-    @Override
-    protected void onDestroy() {
-        mImageLoader.clearMemmoryCache();
-        super.onDestroy();
     }
 }

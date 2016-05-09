@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import com.datdo.mobilib.base.MblBaseActivity;
 import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
+import com.datdo.mobilib.v2.image.ImageLoader;
 import com.datdo.mobilib.v2.image.ImageTool;
 import com.datdo.mobilib.widget.MblTouchImageView;
 
@@ -15,6 +16,7 @@ public class ViewImageActivity extends MblBaseActivity {
 
     private MblTouchImageView mImageView;
     private boolean mLoaded;
+    private ImageLoader imageLoader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,6 +28,8 @@ public class ViewImageActivity extends MblBaseActivity {
         mImageView.setOptions(0.5f, 3f, 1f, 0, 0, 0, 0);
 
         setContentView(mImageView);
+
+        imageLoader = new ImageLoader(this);
     }
 
     @Override
@@ -33,19 +37,20 @@ public class ViewImageActivity extends MblBaseActivity {
         super.onResume();
         String link = getIntent().getStringExtra("link");
         if (link != null) {
-            ImageTool.with(this)
+            imageLoader.forOneImageView(this)
                     .load(link)
-                    .placeHolder(R.drawable._default)
                     .error(R.drawable.error)
-                    .later(mImageView, new ImageTool.IntoImageCallback() {
+                    .enableProgressView(true)
+                    .callback(new ImageLoader.Callback() {
                         @Override
-                        public void onSuccess(ImageView imageView, Bitmap bitmap) {
+                        public void onSuccess(ImageView image, Bitmap bm, ImageLoader.LoadRequest request) {
                             mLoaded = true;
                         }
 
                         @Override
-                        public void onError(Throwable t, ImageView imageView) {}
-                    });
+                        public void onError(Throwable t, ImageView image, ImageLoader.LoadRequest request) {}
+                    })
+                    .into(mImageView);
         }
     }
 

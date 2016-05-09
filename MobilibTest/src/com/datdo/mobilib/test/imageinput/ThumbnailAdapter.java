@@ -10,7 +10,7 @@ import android.widget.TextView;
 import com.datdo.mobilib.base.MblBaseAdapter;
 import com.datdo.mobilib.test.R;
 import com.datdo.mobilib.util.MblUtils;
-import com.datdo.mobilib.v2.image.AdapterImageLoader;
+import com.datdo.mobilib.v2.image.ImageLoader;
 
 import java.io.File;
 
@@ -18,9 +18,9 @@ import java.io.File;
 public class ThumbnailAdapter extends MblBaseAdapter<String> {
 
     private Context context;
-    private AdapterImageLoader imageLoader;
+    private ImageLoader imageLoader;
 
-    public ThumbnailAdapter(Context context, AdapterImageLoader imageLoader) {
+    public ThumbnailAdapter(Context context, ImageLoader imageLoader) {
         this.context = context;
         this.imageLoader = imageLoader;
     }
