@@ -304,9 +304,9 @@ public class AdapterImageLoader {
             // check memory cache
             final Bitmap bm = memoryCache.get(key);
             if (isValidBitmap(bm)) {
+                hideProgressBar(imageView, request);
                 imageView.setImageBitmap(bm);
                 onSuccess(imageView, request, bm);
-                hideProgressBar(imageView, request);
                 return;
             }
 
@@ -372,9 +372,9 @@ public class AdapterImageLoader {
                 final String key = request.key(w, h);
                 Bitmap bm = memoryCache.get(key);
                 if (isValidBitmap(bm)) {
+                    hideProgressBar(imageView, request);
                     imageView.setImageBitmap(bm);
                     onSuccess(imageView, request, bm);
-                    hideProgressBar(imageView, request);
                     finishCallback.run();
                     return;
                 }
@@ -433,9 +433,9 @@ public class AdapterImageLoader {
                                             @Override
                                             public void run() {
                                                 if (isStillBound(imageView, request)) {
+                                                    hideProgressBar(imageView, request);
                                                     imageView.setImageBitmap(bm[0]);
                                                     AdapterImageLoader.this.onSuccess(imageView, request, bm[0]);
-                                                    hideProgressBar(imageView, request);
                                                     animateImageView(imageView, request);
                                                 }
                                                 finishCallback.run();
