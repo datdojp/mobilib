@@ -85,11 +85,11 @@ public class ImageTool {
                 }
             }
             try {
-            if (file != null) {
-                bm = ImageTool.loadBitmap(toWidth, toHeight, file, fittingType);
-            } else if (bytes != null) {
-                bm = ImageTool.loadBitmap(toWidth, toHeight, file, fittingType);
-            }
+                if (file != null) {
+                    bm = ImageTool.loadBitmap(toWidth, toHeight, file, fittingType);
+                } else if (bytes != null) {
+                    bm = ImageTool.loadBitmap(toWidth, toHeight, file, fittingType);
+                }
             } catch (OutOfMemoryError e) {
                 Log.e(TAG, null, e);
                 // try to reload in LTE mode
@@ -302,8 +302,8 @@ public class ImageTool {
             }
 
             return bitmap;
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to load bitmap: targetW=" + targetWidth + ", targetW=" + targetWidth + ", path=" + file.getAbsolutePath());
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to load bitmap: targetW=" + targetWidth + ", targetW=" + targetWidth + ", path=" + file.getAbsolutePath(), e);
             return null;
         }
     }
