@@ -52,6 +52,7 @@ public class AdapterImageLoader {
         private int placeHolderResId;
         private int errorResId;
         private FittingType fittingType = FittingType.GTE;
+        private boolean scaleToImageViewSizes = true;
         private boolean cropBitmapToImageViewSizes = true;
         private Transformation transformation;
         private boolean serialized;
@@ -75,8 +76,11 @@ public class AdapterImageLoader {
             if (customLoad != null) {
                 tokens.add("customLoad=" + customLoad.key());
             }
-            tokens.add("toWidth=" + toWidth);
-            tokens.add("toHeight=" + toHeight);
+            tokens.add("scaleToImageViewSizes=" + scaleToImageViewSizes);
+            if (scaleToImageViewSizes) {
+                tokens.add("toWidth=" + toWidth);
+                tokens.add("toHeight=" + toHeight);
+            }
             tokens.add("fittingType=" + fittingType.name());
             tokens.add("cropBitmapToImageViewSizes=" + cropBitmapToImageViewSizes);
             if (transformation != null) {
@@ -122,6 +126,11 @@ public class AdapterImageLoader {
 
         public LoadRequest fittingType(FittingType fittingType) {
             this.fittingType = fittingType;
+            return this;
+        }
+
+        public LoadRequest scaleToImageViewSizes(boolean scaleToImageViewSizes) {
+            this.scaleToImageViewSizes = scaleToImageViewSizes;
             return this;
         }
 
@@ -289,7 +298,7 @@ public class AdapterImageLoader {
         int w = getImageViewWidth(imageView);
         int h = getImageViewHeight(imageView);
         boolean hasValidDiskCache = false;
-        if (isValidSizes(w, h)) {
+        if (isValidSizes(request, w, h)) {
             String key = request.key(w, h);
 
             // check memory cache
@@ -331,7 +340,7 @@ public class AdapterImageLoader {
                 // check if we need to wait until ImageView is fully displayed
                 int w = getImageViewWidth(imageView);
                 int h = getImageViewHeight(imageView);
-                if (!isValidSizes(w, h)) {
+                if (!isValidSizes(request, w, h)) {
                     final Runnable[] timeoutAction = new Runnable[]{null};
                     final OnGlobalLayoutListener globalLayoutListener = new OnGlobalLayoutListener() {
                         @Override
@@ -658,7 +667,7 @@ public class AdapterImageLoader {
         // check if ImageView has valid sizes
         int w = getImageViewWidth(imageView);
         int h = getImageViewHeight(imageView);
-        if (!isValidSizes(w, h)) {
+        if (!isValidSizes(request, w, h)) {
             return;
         }
 
@@ -702,8 +711,12 @@ public class AdapterImageLoader {
         return bm != null && !bm.isRecycled() && bm.getWidth() != 0 && bm.getHeight() != 0;
     }
 
-    private boolean isValidSizes(int w, int h) {
-        return w > 0 && h > 0;
+    private boolean isValidSizes(LoadRequest request, int w, int h) {
+        if (request.scaleToImageViewSizes) {
+            return w > 0 && h > 0;
+        } else {
+            return true;
+        }
     }
 
     private boolean isValidDiskCacheFile(File diskCacheFile) {
