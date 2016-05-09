@@ -135,6 +135,7 @@ public class ImageTool {
                             .setUrl(url)
                             .setCacheDuration(Long.MAX_VALUE)
                             .setRedirectEnabled(true)
+                            .setNotReturnByteArrayData(true)
                             .setCallback(new MblApi.MblApiCallback() {
                                 @Override
                                 public void onSuccess(MblResponse response) {

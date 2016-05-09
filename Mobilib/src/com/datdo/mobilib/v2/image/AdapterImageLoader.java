@@ -562,6 +562,7 @@ public class AdapterImageLoader {
                         .setUrl(request.url)
                         .setCacheDuration(Long.MAX_VALUE)
                         .setRedirectEnabled(true)
+                        .setNotReturnByteArrayData(true)
                         .setCallback(new MblApi.MblApiCallback() {
                             @Override
                             public void onSuccess(MblResponse response) {
