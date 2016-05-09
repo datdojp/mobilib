@@ -53,12 +53,13 @@ public class AdapterImageLoader {
         private int errorResId;
         private FittingType fittingType = FittingType.GTE;
         private boolean scaleToImageViewSizes = true;
+        private int scaleToWidth;
+        private int scaleToHeight;
         private boolean cropBitmapToImageViewSizes = true;
         private Transformation transformation;
         private boolean serialized;
         private long loadDelayed = 500;
         private boolean enableProgressView = true;
-        private int progressViewSize = MblUtils.pxFromDp(50);
         private boolean enableFadingAnimation = true;
         private Callback callback;
 
@@ -77,10 +78,8 @@ public class AdapterImageLoader {
                 tokens.add("customLoad=" + customLoad.key());
             }
             tokens.add("scaleToImageViewSizes=" + scaleToImageViewSizes);
-            if (scaleToImageViewSizes) {
-                tokens.add("toWidth=" + toWidth);
-                tokens.add("toHeight=" + toHeight);
-            }
+            tokens.add("toWidth=" + toWidth);
+            tokens.add("toHeight=" + toHeight);
             tokens.add("fittingType=" + fittingType.name());
             tokens.add("cropBitmapToImageViewSizes=" + cropBitmapToImageViewSizes);
             if (transformation != null) {
@@ -129,9 +128,18 @@ public class AdapterImageLoader {
             return this;
         }
 
-        public LoadRequest scaleToImageViewSizes(boolean scaleToImageViewSizes) {
+        public LoadRequest scaleToImageViewSizes(boolean scaleToImageViewSizes, int scaleToWidth, int scaleToHeight) {
+            if (!scaleToImageViewSizes && (scaleToWidth == 0 || scaleToHeight == 0)) {
+                throw new IllegalStateException("If you don't want to scale bitmap to ImageView 's sizes, please specify scaleToWidth and scaleToWidth. Specify -1 if you don't care about the size");
+            }
             this.scaleToImageViewSizes = scaleToImageViewSizes;
+            this.scaleToWidth = scaleToWidth;
+            this.scaleToHeight = scaleToHeight;
             return this;
+        }
+
+        public LoadRequest scaleToImageViewSizes(boolean scaleToImageViewSizes) {
+            return scaleToImageViewSizes(scaleToImageViewSizes, scaleToWidth, scaleToHeight);
         }
 
         public LoadRequest cropBitmapToImageViewSizes(boolean cropBitmapToImageViewSizes) {
@@ -154,14 +162,9 @@ public class AdapterImageLoader {
             return this;
         }
 
-        public LoadRequest enableProgressView(boolean enableProgressView, int progressViewSize) {
-            this.enableProgressView = enableProgressView;
-            this.progressViewSize = progressViewSize;
-            return this;
-        }
-
         public LoadRequest enableProgressView(boolean enableProgressView) {
-            return enableProgressView(enableProgressView, this.progressViewSize);
+            this.enableProgressView = enableProgressView;
+            return this;
         }
 
         public LoadRequest enableFadingAnimation(boolean enableFadingAnimation) {
@@ -294,28 +297,51 @@ public class AdapterImageLoader {
             return;
         }
 
-        // check if bitmap is in caches
-        int w = getImageViewWidth(imageView);
-        int h = getImageViewHeight(imageView);
-        boolean hasValidDiskCache = false;
-        if (isValidSizes(request, w, h)) {
-            String key = request.key(w, h);
-
-            // check memory cache
-            final Bitmap bm = memoryCache.get(key);
-            if (isValidBitmap(bm)) {
-                hideProgressBar(imageView, request);
-                imageView.setImageBitmap(bm);
-                onSuccess(imageView, request, bm);
-                return;
-            }
-
-            // check disk cache
-            File diskCacheFile = getDiskCachedFile(key);
-            if (isValidDiskCacheFile(diskCacheFile)) {
-                hasValidDiskCache = true;
-            }
+        // check if we have sizes. If we don't have, wait until ImageView is fully displayed
+        final int w = request.scaleToImageViewSizes ? getImageViewWidth(imageView) : request.scaleToWidth;
+        final int h = request.scaleToImageViewSizes ? getImageViewHeight(imageView) : request.scaleToHeight;
+        if (!isValidSizes(w, h)) {
+            final Runnable[] timeoutAction = new Runnable[]{null};
+            final OnGlobalLayoutListener globalLayoutListener = new OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    MblUtils.removeOnGlobalLayoutListener(imageView, this);
+                    MblUtils.getMainThreadHandler().removeCallbacks(timeoutAction[0]);
+                    if (isStillBound(imageView, request)) {
+                        load(imageView, request);
+                    }
+                }
+            };
+            timeoutAction[0] = new Runnable() {
+                @Override
+                public void run() {
+                    MblUtils.removeOnGlobalLayoutListener(imageView, globalLayoutListener);
+                    if (isStillBound(imageView, request)) {
+                        load(imageView, request);
+                    }
+                }
+            };
+            imageView.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
+            MblUtils.getMainThreadHandler().postDelayed(timeoutAction[0], 500l);
+            return;
         }
+
+
+        // get key for this request
+        final String key = request.key(w, h);
+
+        // check memory cache
+        final Bitmap bm = memoryCache.get(key);
+        if (isValidBitmap(bm)) {
+            hideProgressBar(imageView, request);
+            imageView.setImageBitmap(bm);
+            onSuccess(imageView, request, bm);
+            return;
+        }
+
+        // check disk cache
+        File diskCacheFile = getDiskCachedFile(key);
+        boolean hasValidDiskCache = MblUtils.isValidFile(diskCacheFile);
 
         // check if loading from an invalid url
         if (request.url != null && invalidUrls.contains(request.url)) {
@@ -325,8 +351,9 @@ public class AdapterImageLoader {
             return;
         }
 
+        // task to load bitmap. task may be executed serially or parallel
         onBeforeLoad(imageView, request);
-        showProgressBar(imageView, request);
+        showProgressBar(imageView, request, w, h);
         final MblSerializer.Task task = new MblSerializer.Task() {
             @Override
             public void run(final Runnable finishCallback) {
@@ -337,39 +364,7 @@ public class AdapterImageLoader {
                     return;
                 }
 
-                // check if we need to wait until ImageView is fully displayed
-                int w = getImageViewWidth(imageView);
-                int h = getImageViewHeight(imageView);
-                if (!isValidSizes(request, w, h)) {
-                    final Runnable[] timeoutAction = new Runnable[]{null};
-                    final OnGlobalLayoutListener globalLayoutListener = new OnGlobalLayoutListener() {
-                        @Override
-                        public void onGlobalLayout() {
-                            MblUtils.removeOnGlobalLayoutListener(imageView, this);
-                            MblUtils.getMainThreadHandler().removeCallbacks(timeoutAction[0]);
-                            if (isStillBound(imageView, request)) {
-                                load(imageView, request);
-                            }
-                        }
-                    };
-                    timeoutAction[0] = new Runnable() {
-                        @Override
-                        public void run() {
-                            MblUtils.removeOnGlobalLayoutListener(imageView, globalLayoutListener);
-                            if (isStillBound(imageView, request)) {
-                                load(imageView, request);
-                            }
-                        }
-                    };
-                    imageView.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
-                    MblUtils.getMainThreadHandler().postDelayed(timeoutAction[0], 500l);
-
-                    finishCallback.run();
-                    return;
-                }
-
                 // check if bitmap is in memory cache
-                final String key = request.key(w, h);
                 Bitmap bm = memoryCache.get(key);
                 if (isValidBitmap(bm)) {
                     hideProgressBar(imageView, request);
@@ -400,11 +395,13 @@ public class AdapterImageLoader {
                                 }
 
                                 try {
-                                    int w = getImageViewWidth(imageView);
-                                    int h = getImageViewHeight(imageView);
                                     final Bitmap[] bm = new Bitmap[] { null };
                                     if (data instanceof File) {
-                                        bm[0] = ImageTool.loadBitmap(w, h, (File) data, request.fittingType);
+                                        if (!fromDiskCache) {
+                                            bm[0] = ImageTool.loadBitmap(w, h, (File) data, request.fittingType);
+                                        } else {
+                                            bm[0] = ImageTool.loadBitmap(-1, -1, (File) data, request.fittingType);
+                                        }
                                     } else if (data instanceof byte[]) {
                                         bm[0] = ImageTool.loadBitmap(w, h, (byte[]) data, request.fittingType);
                                     } else {
@@ -529,7 +526,7 @@ public class AdapterImageLoader {
     private void loadBitmapFromSource(final ImageView imageView, final LoadRequest request, String key, final LoadBitmapFromSourceCallback cb) {
         // check if we have disk cache
         File diskCacheFile = getDiskCachedFile(key);
-        if (isValidDiskCacheFile(diskCacheFile)) {
+        if (MblUtils.isValidFile(diskCacheFile)) {
             cb.onSuccess(diskCacheFile, true);
             return;
         }
@@ -610,7 +607,7 @@ public class AdapterImageLoader {
     }
 
     @SuppressWarnings("ResourceType")
-    private void showProgressBar(ImageView imageView, LoadRequest request) {
+    private void showProgressBar(ImageView imageView, LoadRequest request, int w, int h) {
 
         if (!request.enableProgressView) {
             return;
@@ -643,7 +640,11 @@ public class AdapterImageLoader {
 
         // create ProgressBar and add it to frame
         View progressView = getProgressView(request);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(request.progressViewSize, request.progressViewSize);
+        final int MIN_SIZE = MblUtils.pxFromDp(30);
+        int lpW = w > 0 ? Math.min(w / 3, MIN_SIZE) : MIN_SIZE;
+        int lpH = h > 0 ? Math.min(h / 3, MIN_SIZE) : MIN_SIZE;
+        int lpWH = Math.min(lpW, lpH);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(lpWH, lpWH);
         lp.gravity = Gravity.CENTER;
         progressView.setLayoutParams(lp);
         frame.addView(progressView);
@@ -661,13 +662,6 @@ public class AdapterImageLoader {
 
         // check if we need to hide progress bar
         if (temp == null || temp.getId() != FRAME_ID) {
-            return;
-        }
-
-        // check if ImageView has valid sizes
-        int w = getImageViewWidth(imageView);
-        int h = getImageViewHeight(imageView);
-        if (!isValidSizes(request, w, h)) {
             return;
         }
 
@@ -711,16 +705,8 @@ public class AdapterImageLoader {
         return bm != null && !bm.isRecycled() && bm.getWidth() != 0 && bm.getHeight() != 0;
     }
 
-    private boolean isValidSizes(LoadRequest request, int w, int h) {
-        if (request.scaleToImageViewSizes) {
-            return w > 0 && h > 0;
-        } else {
-            return true;
-        }
-    }
-
-    private boolean isValidDiskCacheFile(File diskCacheFile) {
-        return diskCacheFile.exists() && diskCacheFile.isFile() && diskCacheFile.length() > 0;
+    private boolean isValidSizes(int w, int h) {
+        return w != 0 && h != 0;
     }
 
     private boolean isStillBound(ImageView imageView, LoadRequest request) {

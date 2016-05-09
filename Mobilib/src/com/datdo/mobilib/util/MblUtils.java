@@ -1019,16 +1019,19 @@ public class MblUtils {
         }
     }
 
+    private static interface TraverseFileCallback {
+        public void onTraverse(File file);
+    }
+
     public static boolean isValidFile(String path) {
         if (isEmpty(path)) {
             return false;
         }
-        File file = new File(path);
-        return file.exists() && file.isFile() && file.length() > 0;
+        return isValidFile(new File(path));
     }
 
-    private static interface TraverseFileCallback {
-        public void onTraverse(File file);
+    public static boolean isValidFile(File file) {
+        return file != null && file.exists() && file.isFile() && file.length() > 0;
     }
 
     /**

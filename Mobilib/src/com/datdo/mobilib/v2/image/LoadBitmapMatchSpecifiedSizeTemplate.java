@@ -68,11 +68,23 @@ abstract class LoadBitmapMatchSpecifiedSizeTemplate<T> {
                 }
             } else if (targetW > 0) {
                 if (bm.getWidth() > targetW) {
-                    s = 1.0f * targetW / bm.getWidth();
+                    if (fittingType == FittingType.LTE) {
+                        s = (float) Math.floor(1.0f * targetW / bm.getWidth());
+                    } else if (fittingType == FittingType.GTE) {
+                        s = (float) Math.ceil(1.0f * targetW / bm.getWidth());
+                    } else if (fittingType == FittingType.MED) {
+                        s = 1.0f * targetW / bm.getWidth();
+                    }
                 }
             } else if (targetH > 0) {
                 if (bm.getHeight() > targetH) {
-                    s = 1.0f * targetH / bm.getHeight();
+                    if (fittingType == FittingType.LTE) {
+                        s = (float) Math.floor(1.0f * targetH / bm.getHeight());
+                    } else if (fittingType == FittingType.GTE) {
+                        s = (float) Math.ceil(1.0f * targetH / bm.getHeight());
+                    } else if (fittingType == FittingType.MED) {
+                        s = 1.0f * targetH / bm.getHeight();
+                    }
                 }
             }
 
