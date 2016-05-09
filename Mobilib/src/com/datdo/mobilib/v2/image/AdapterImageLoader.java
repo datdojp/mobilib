@@ -443,15 +443,8 @@ public class AdapterImageLoader {
                                     System.gc();
 
                                     // try to load bitmap in lower fitting type
-                                    boolean retry = false;
-                                    if (request.fittingType == FittingType.GTE) {
-                                        request.fittingType = FittingType.MED;
-                                        retry = true;
-                                    } else if (request.fittingType == FittingType.MED) {
+                                    if (request.fittingType != FittingType.LTE) {
                                         request.fittingType = FittingType.LTE;
-                                        retry = true;
-                                    }
-                                    if (retry) {
                                         MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
                                             @Override
                                             public void run() {

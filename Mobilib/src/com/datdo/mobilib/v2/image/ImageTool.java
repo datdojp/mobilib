@@ -84,10 +84,20 @@ public class ImageTool {
                     throw new IllegalStateException("Loading bitmap from url requires callback. Consider using later(...) method");
                 }
             }
+            try {
             if (file != null) {
                 bm = ImageTool.loadBitmap(toWidth, toHeight, file, fittingType);
             } else if (bytes != null) {
                 bm = ImageTool.loadBitmap(toWidth, toHeight, file, fittingType);
+            }
+            } catch (OutOfMemoryError e) {
+                Log.e(TAG, null, e);
+                // try to reload in LTE mode
+                if (fittingType != FittingType.LTE) {
+                    Log.d(TAG, "Try to load in lower fitting type");
+                    fittingType = FittingType.LTE;
+                    return now();
+                }
             }
             return bm;
         }
