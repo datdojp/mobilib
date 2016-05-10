@@ -26,8 +26,10 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -259,6 +261,7 @@ public class ImageLoader {
     private Set<String> memoryCacheKeySet;
     private Set<String> invalidUrls;
     private MblSerializer serializer;
+    private Map<String, Set<Runnable>> pendingLoads;
 
     public ImageLoader(Context context) {
 
@@ -280,11 +283,10 @@ public class ImageLoader {
         };
         memoryCacheKeySet = Collections.synchronizedSet(new HashSet<String>());
 
-        // initialize serializer
+        // ...others
         serializer = new MblSerializer();
-
-        // initialize invalid urls set
         invalidUrls = Collections.synchronizedSet(new HashSet<String>());
+        pendingLoads = Collections.synchronizedMap(new HashMap<String, Set<Runnable>>());
     }
 
     private void load(final ImageView imageView, final LoadRequest request) {
@@ -385,12 +387,46 @@ public class ImageLoader {
                 }
 
                 // load bitmap from server/file
+                // prevent duplicated loads by putting requests having the same key into pending
+                if (pendingLoads.containsKey(key)) {
+                    Set<Runnable> loads = pendingLoads.get(key);
+                    if (loads != null) {
+                        loads.add(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (isStillBound(imageView, request)) {
+                                    load(imageView, request);
+                                }
+                            }
+                        });
+                        finishCallback.run();
+                        return;
+                    }
+                }
+                pendingLoads.put(key, new HashSet<Runnable>());
+                final Runnable extendedFinishCallback = new Runnable() {
+                    @Override
+                    public void run() {
+                        finishCallback.run();
+                        MblUtils.executeOnMainThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Set<Runnable> loads = pendingLoads.remove(key);
+                                if (loads != null) {
+                                    for (Runnable r : loads) {
+                                        r.run();
+                                    }
+                                }
+                            }
+                        });
+                    }
+                };
                 loadBitmapFromSource(imageView, request, key, new LoadBitmapFromSourceCallback() {
 
                     private void handleSuccess(final Object data, final boolean fromDiskCache) {
 
                         if (!isStillBound(imageView, request)) {
-                            finishCallback.run();
+                            extendedFinishCallback.run();
                             return;
                         }
 
@@ -400,7 +436,7 @@ public class ImageLoader {
                             public void run() {
 
                                 if (!isStillBound(imageView, request)) {
-                                    finishCallback.run();
+                                    extendedFinishCallback.run();
                                     return;
                                 }
 
@@ -445,7 +481,7 @@ public class ImageLoader {
                                                     ImageLoader.this.onSuccess(imageView, request, bm[0]);
                                                     animateImageView(imageView, request);
                                                 }
-                                                finishCallback.run();
+                                                extendedFinishCallback.run();
                                             }
                                         });
                                     } else {
@@ -499,7 +535,7 @@ public class ImageLoader {
                                     hideProgressBar(imageView, request);
                                     ImageLoader.this.onError(t, imageView, request);
                                 }
-                                finishCallback.run();
+                                extendedFinishCallback.run();
                             }
                         });
                     }
