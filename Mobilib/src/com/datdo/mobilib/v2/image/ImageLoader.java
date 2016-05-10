@@ -55,6 +55,15 @@ public class ImageLoader {
     }
 
     public static class LoadRequest {
+
+        private static final FittingType    DEFAULT_FITTING_TYPE                    = FittingType.GTE;
+        private static final boolean        DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES       = true;
+        private static final boolean        DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES = true;
+        private static final boolean        DEFAULT_SERIALIZED                      = false;
+        private static final long           DEFAULT_LOAD_DELAYED                    = 500;
+        private static final boolean        DEFAULT_ENABLE_PROGRESS_VIEW            = true;
+        private static final boolean        DEFAULT_ENABLE_FADING_ANIMATION         = true;
+
         private Context context;
         private ImageLoader imageLoader;
         private String url;
@@ -63,16 +72,16 @@ public class ImageLoader {
         private CustomLoad customLoad;
         private int placeHolderResId;
         private int errorResId;
-        private FittingType fittingType = FittingType.GTE;
-        private boolean scaleToImageViewSizes = true;
+        private FittingType fittingType             = DEFAULT_FITTING_TYPE;
+        private boolean scaleToImageViewSizes       = DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES;
         private int scaleToWidth;
         private int scaleToHeight;
-        private boolean cropBitmapToImageViewSizes = true;
+        private boolean cropBitmapToImageViewSizes  = DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES;
         private Transformation transformation;
-        private boolean serialized;
-        private long loadDelayed = 500;
-        private boolean enableProgressView = true;
-        private boolean enableFadingAnimation = true;
+        private boolean serialized                  = DEFAULT_SERIALIZED;
+        private long loadDelayed                    = DEFAULT_LOAD_DELAYED;
+        private boolean enableProgressView          = DEFAULT_ENABLE_PROGRESS_VIEW;
+        private boolean enableFadingAnimation       = DEFAULT_ENABLE_FADING_ANIMATION;
         private Callback callback;
 
         String key(int toWidth, int toHeight) {
