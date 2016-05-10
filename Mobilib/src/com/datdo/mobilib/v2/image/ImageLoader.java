@@ -37,8 +37,6 @@ public class ImageLoader {
 
     public LoadRequest forOneImageView(Context context) {
         return with(context)
-                .enableProgressView(false)
-                .enableFadingAnimation(true)
                 .scaleToImageViewSizes(true)
                 .cropBitmapToImageViewSizes(false)
                 .serialized(false)
