@@ -39,12 +39,24 @@ public class ImageLoader {
 
     public LoadRequest forOneImageView(Context context) {
         return with(context)
-                .scaleToImageViewSizes(true)
+                .fittingType(LoadRequest.DEFAULT_FITTING_TYPE)
+                .scaleToImageViewSizes(LoadRequest.DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES)
                 .cropBitmapToImageViewSizes(false)
-                .serialized(false)
+                .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(0)
                 .enableProgressView(false)
-                .enableFadingAnimation(true);
+                .enableFadingAnimation(LoadRequest.DEFAULT_ENABLE_FADING_ANIMATION);
+    }
+
+    public LoadRequest forAdapterImageView(Context context) {
+        return with(context)
+                .fittingType(LoadRequest.DEFAULT_FITTING_TYPE)
+                .scaleToImageViewSizes(LoadRequest.DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES)
+                .cropBitmapToImageViewSizes(LoadRequest.DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES)
+                .serialized(LoadRequest.DEFAULT_SERIALIZED)
+                .loadDelayed(LoadRequest.DEFAULT_LOAD_DELAYED)
+                .enableProgressView(LoadRequest.DEFAULT_ENABLE_PROGRESS_VIEW)
+                .enableFadingAnimation(LoadRequest.DEFAULT_ENABLE_FADING_ANIMATION);
     }
 
     public LoadRequest with(Context context) {
