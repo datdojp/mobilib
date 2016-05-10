@@ -195,9 +195,22 @@ public class ImageLoader {
                         + ImageLoader.class.getSimpleName()
                         + ", you should not set any value for it.");
             }
+            if (!oneObjectNotNull(url, file, bytes, customLoad)) {
+                throw new IllegalStateException("You must specify one and only one of these options: url, file, bytes, customeLoad");
+            }
             imageView.setTag(this);
             imageLoader.load(imageView, this);
             imageLoader = null;
+        }
+
+        private boolean oneObjectNotNull(Object... objects) {
+            int count = 0;
+            for (Object o : objects) {
+                if (o != null) {
+                    count++;
+                }
+            }
+            return count == 1;
         }
     }
 
