@@ -48,7 +48,8 @@ public class ImageLoader {
                 .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(0)
                 .showProgressView(false)
-                .showFadingAnimation(LoadRequest.DEFAULT_SHOW_FADING_ANIMATION);
+                .showFadingAnimation(LoadRequest.DEFAULT_SHOW_FADING_ANIMATION)
+                .cacheToDisk(LoadRequest.DEFAULT_CACHE_TO_DISK);
     }
 
     public LoadRequest forAdapterImageView(Context context) {
@@ -60,7 +61,8 @@ public class ImageLoader {
                 .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(LoadRequest.DEFAULT_LOAD_DELAYED)
                 .showProgressView(LoadRequest.DEFAULT_SHOW_PROGRESS_VIEW)
-                .showFadingAnimation(LoadRequest.DEFAULT_SHOW_FADING_ANIMATION);
+                .showFadingAnimation(LoadRequest.DEFAULT_SHOW_FADING_ANIMATION)
+                .cacheToDisk(LoadRequest.DEFAULT_CACHE_TO_DISK);
     }
 
     public LoadRequest with(Context context) {
@@ -80,6 +82,7 @@ public class ImageLoader {
         private static final long           DEFAULT_LOAD_DELAYED                    = 500;
         private static final boolean        DEFAULT_SHOW_PROGRESS_VIEW              = true;
         private static final boolean        DEFAULT_SHOW_FADING_ANIMATION           = true;
+        private static final boolean        DEFAULT_CACHE_TO_DISK                   = true;
 
         private Context context;
         private ImageLoader imageLoader;
@@ -100,6 +103,7 @@ public class ImageLoader {
         private long loadDelayed                    = DEFAULT_LOAD_DELAYED;
         private boolean showProgressView            = DEFAULT_SHOW_PROGRESS_VIEW;
         private boolean showFadingAnimation         = DEFAULT_SHOW_FADING_ANIMATION;
+        private boolean cacheToDisk                 = DEFAULT_CACHE_TO_DISK;
         private Callback callback;
 
         String key(int toWidth, int toHeight) {
@@ -214,6 +218,11 @@ public class ImageLoader {
 
         public LoadRequest showFadingAnimation(boolean showFadingAnimation) {
             this.showFadingAnimation = showFadingAnimation;
+            return this;
+        }
+
+        public LoadRequest cacheToDisk(boolean cacheToDisk) {
+            this.cacheToDisk = cacheToDisk;
             return this;
         }
 
@@ -397,8 +406,11 @@ public class ImageLoader {
         }
 
         // check disk cache
-        File diskCacheFile = getDiskCachedFile(key);
-        boolean hasValidDiskCache = MblUtils.isValidFile(diskCacheFile);
+        boolean hasValidDiskCache = false;
+        if (request.cacheToDisk) {
+            File diskCacheFile = getDiskCachedFile(key);
+            hasValidDiskCache = MblUtils.isValidFile(diskCacheFile);
+        }
 
         // check if loading from an invalid url
         if (request.url != null && invalidUrls.contains(request.url)) {
@@ -512,7 +524,9 @@ public class ImageLoader {
                                             }
 
                                             // save to disk cache
-                                            bm[0].compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(getDiskCachedFile(key)));
+                                            if (request.cacheToDisk) {
+                                                bm[0].compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(getDiskCachedFile(key)));
+                                            }
                                         }
                                         memoryCache.put(key, bm[0]);
                                         memoryCacheKeySet.add(key);
@@ -616,10 +630,12 @@ public class ImageLoader {
 
     private void loadBitmapFromSource(final ImageView imageView, final LoadRequest request, String key, final LoadBitmapFromSourceCallback cb) {
         // check if we have disk cache
-        File diskCacheFile = getDiskCachedFile(key);
-        if (MblUtils.isValidFile(diskCacheFile)) {
-            cb.onSuccess(diskCacheFile, true);
-            return;
+        if (request.cacheToDisk) {
+            File diskCacheFile = getDiskCachedFile(key);
+            if (MblUtils.isValidFile(diskCacheFile)) {
+                cb.onSuccess(diskCacheFile, true);
+                return;
+            }
         }
 
         // check if use wants to use custom load
