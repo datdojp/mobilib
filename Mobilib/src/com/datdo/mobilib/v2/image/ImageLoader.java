@@ -801,7 +801,7 @@ public class ImageLoader {
     }
 
     private boolean isStillBound(ImageView imageView, LoadRequest request) {
-        if (imageView.getContext() instanceof Activity) {
+        if (imageView.getContext() != null && imageView.getContext() instanceof Activity) {
             Activity activity = (Activity) imageView.getContext();
             if (activity.isFinishing()) {
                 return false;
