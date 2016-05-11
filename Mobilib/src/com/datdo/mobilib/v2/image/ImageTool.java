@@ -37,14 +37,20 @@ public class ImageTool {
         }.load(targetW, targetH, bytes, fittingType);
     }
 
-    static Bitmap loadBitmap(int targetWidth, int targetHeight, File file, FittingType fittingType) {
-
+    static Bitmap loadBitmap(int targetWidth,
+                             int targetHeight,
+                             File file,
+                             FittingType fittingType,
+                             boolean autoCorrectOrientation) {
         try {
-            int angle = getImageRotateAngle(file);
-            if (angle == 90 || angle == 270) {
-                int temp = targetWidth;
-                targetWidth = targetHeight;
-                targetHeight = temp;
+            int angle = 0;
+            if (autoCorrectOrientation) {
+                angle = getImageRotateAngle(file);
+                if (angle == 90 || angle == 270) {
+                    int temp = targetWidth;
+                    targetWidth = targetHeight;
+                    targetHeight = temp;
+                }
             }
 
             Bitmap bitmap = new LoadBitmapMatchSpecifiedSizeTemplate<File>() {
@@ -65,8 +71,10 @@ public class ImageTool {
 
             }.load(targetWidth, targetHeight, file, fittingType);
 
-            if (angle != 0) {
-                bitmap = correctBitmapOrientation(file, bitmap);
+            if (autoCorrectOrientation) {
+                if (angle != 0) {
+                    bitmap = correctBitmapOrientation(file, bitmap);
+                }
             }
 
             return bitmap;

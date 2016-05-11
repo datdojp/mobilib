@@ -44,6 +44,7 @@ public class ImageLoader {
                 .fittingType(LoadRequest.DEFAULT_FITTING_TYPE)
                 .scaleToImageViewSizes(LoadRequest.DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES)
                 .cropBitmapToImageViewSizes(false)
+                .autoCorrectOrientation(LoadRequest.DEFAULT_AUTO_CORRECT_ORIENTATION)
                 .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(0)
                 .showProgressView(false)
@@ -55,6 +56,7 @@ public class ImageLoader {
                 .fittingType(LoadRequest.DEFAULT_FITTING_TYPE)
                 .scaleToImageViewSizes(LoadRequest.DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES)
                 .cropBitmapToImageViewSizes(LoadRequest.DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES)
+                .autoCorrectOrientation(LoadRequest.DEFAULT_AUTO_CORRECT_ORIENTATION)
                 .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(LoadRequest.DEFAULT_LOAD_DELAYED)
                 .showProgressView(LoadRequest.DEFAULT_SHOW_PROGRESS_VIEW)
@@ -73,6 +75,7 @@ public class ImageLoader {
         private static final FittingType    DEFAULT_FITTING_TYPE                    = FittingType.GTE;
         private static final boolean        DEFAULT_SCALE_TO_IMAGE_VIEW_SIZES       = true;
         private static final boolean        DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES = true;
+        private static final boolean        DEFAULT_AUTO_CORRECT_ORIENTATION        = true;
         private static final boolean        DEFAULT_SERIALIZED                      = false;
         private static final long           DEFAULT_LOAD_DELAYED                    = 500;
         private static final boolean        DEFAULT_SHOW_PROGRESS_VIEW              = true;
@@ -91,6 +94,7 @@ public class ImageLoader {
         private int scaleToWidth;
         private int scaleToHeight;
         private boolean cropBitmapToImageViewSizes  = DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES;
+        private boolean autoCorrectOrientation      = DEFAULT_AUTO_CORRECT_ORIENTATION;
         private Transformation transformation;
         private boolean serialized                  = DEFAULT_SERIALIZED;
         private long loadDelayed                    = DEFAULT_LOAD_DELAYED;
@@ -117,6 +121,7 @@ public class ImageLoader {
             tokens.add("toHeight=" + toHeight);
             tokens.add("fittingType=" + fittingType.name());
             tokens.add("cropBitmapToImageViewSizes=" + cropBitmapToImageViewSizes);
+            tokens.add("autoCorrectOrientation=" + autoCorrectOrientation);
             if (transformation != null) {
                 tokens.add("transformation=" + transformation.key());
             }
@@ -179,6 +184,11 @@ public class ImageLoader {
 
         public LoadRequest cropBitmapToImageViewSizes(boolean cropBitmapToImageViewSizes) {
             this.cropBitmapToImageViewSizes = cropBitmapToImageViewSizes;
+            return this;
+        }
+
+        public LoadRequest autoCorrectOrientation(boolean autoCorrectOrientation) {
+            this.autoCorrectOrientation = autoCorrectOrientation;
             return this;
         }
 
@@ -479,9 +489,9 @@ public class ImageLoader {
                                     final Bitmap[] bm = new Bitmap[] { null };
                                     if (data instanceof File) {
                                         if (!fromDiskCache) {
-                                            bm[0] = ImageTool.loadBitmap(w, h, (File) data, request.fittingType);
+                                            bm[0] = ImageTool.loadBitmap(w, h, (File) data, request.fittingType, request.autoCorrectOrientation);
                                         } else {
-                                            bm[0] = ImageTool.loadBitmap(-1, -1, (File) data, request.fittingType);
+                                            bm[0] = ImageTool.loadBitmap(-1, -1, (File) data, request.fittingType, request.autoCorrectOrientation);
                                         }
                                     } else if (data instanceof byte[]) {
                                         bm[0] = ImageTool.loadBitmap(w, h, (byte[]) data, request.fittingType);
