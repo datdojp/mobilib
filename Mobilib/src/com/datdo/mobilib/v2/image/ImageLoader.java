@@ -790,6 +790,17 @@ public class ImageLoader {
     }
 
     private boolean isStillBound(ImageView imageView, LoadRequest request) {
+        if (imageView.getContext() instanceof Activity) {
+            Activity activity = (Activity) imageView.getContext();
+            if (activity.isFinishing()) {
+                return false;
+            }
+            if (Build.VERSION.SDK_INT >= 17) {
+                if (activity.isDestroyed()) {
+                    return false;
+                }
+            }
+        }
         return request == imageView.getTag();
     }
 
