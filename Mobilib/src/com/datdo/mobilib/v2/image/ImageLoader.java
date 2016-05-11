@@ -1,8 +1,10 @@
 package com.datdo.mobilib.v2.image;
 
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
@@ -371,7 +373,6 @@ public class ImageLoader {
             MblUtils.getMainThreadHandler().postDelayed(timeoutAction[0], 500l);
             return;
         }
-
 
         // get key for this request
         final String key = request.key(w, h);
@@ -805,27 +806,22 @@ public class ImageLoader {
     }
 
     private Bitmap cropBitmapToImageViewSizes(Bitmap bm, int w, int h) {
-        if (bm.getWidth() <= w && bm.getHeight() <= h) {
+        if (bm.getWidth() < w || bm.getHeight() < h) {
             return bm;
         }
-        Bitmap result;
-        if (bm.getWidth() >= bm.getHeight()){
-            result = Bitmap.createBitmap(
-                    bm,
-                    bm.getWidth()/2 - bm.getHeight()/2,
-                    0,
-                    bm.getHeight(),
-                    bm.getHeight()
-            );
-        } else {
-            result = Bitmap.createBitmap(
-                    bm,
-                    0,
-                    bm.getHeight()/2 - bm.getWidth()/2,
-                    bm.getWidth(),
-                    bm.getWidth()
-            );
+        if (bm.getWidth() == w && bm.getHeight() == h) {
+            return bm;
         }
+        if (w < 0 || h < 0) {
+            return bm;
+        }
+        Bitmap result = Bitmap.createBitmap(
+                bm,
+                (bm.getWidth() - w) / 2,
+                (bm.getHeight() - h) / 2,
+                w,
+                h
+        );
         if (result != bm) {
             bm.recycle();
         }
