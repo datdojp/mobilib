@@ -46,8 +46,8 @@ public class ImageLoader {
                 .cropBitmapToImageViewSizes(false)
                 .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(0)
-                .enableProgressView(false)
-                .enableFadingAnimation(LoadRequest.DEFAULT_ENABLE_FADING_ANIMATION);
+                .showProgressView(false)
+                .showFadingAnimation(LoadRequest.DEFAULT_SHOW_FADING_ANIMATION);
     }
 
     public LoadRequest forAdapterImageView(Context context) {
@@ -57,8 +57,8 @@ public class ImageLoader {
                 .cropBitmapToImageViewSizes(LoadRequest.DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES)
                 .serialized(LoadRequest.DEFAULT_SERIALIZED)
                 .loadDelayed(LoadRequest.DEFAULT_LOAD_DELAYED)
-                .enableProgressView(LoadRequest.DEFAULT_ENABLE_PROGRESS_VIEW)
-                .enableFadingAnimation(LoadRequest.DEFAULT_ENABLE_FADING_ANIMATION);
+                .showProgressView(LoadRequest.DEFAULT_SHOW_PROGRESS_VIEW)
+                .showFadingAnimation(LoadRequest.DEFAULT_SHOW_FADING_ANIMATION);
     }
 
     public LoadRequest with(Context context) {
@@ -75,8 +75,8 @@ public class ImageLoader {
         private static final boolean        DEFAULT_CROP_BITMAP_TO_IMAGE_VIEW_SIZES = true;
         private static final boolean        DEFAULT_SERIALIZED                      = false;
         private static final long           DEFAULT_LOAD_DELAYED                    = 500;
-        private static final boolean        DEFAULT_ENABLE_PROGRESS_VIEW            = true;
-        private static final boolean        DEFAULT_ENABLE_FADING_ANIMATION         = true;
+        private static final boolean        DEFAULT_SHOW_PROGRESS_VIEW              = true;
+        private static final boolean        DEFAULT_SHOW_FADING_ANIMATION           = true;
 
         private Context context;
         private ImageLoader imageLoader;
@@ -94,8 +94,8 @@ public class ImageLoader {
         private Transformation transformation;
         private boolean serialized                  = DEFAULT_SERIALIZED;
         private long loadDelayed                    = DEFAULT_LOAD_DELAYED;
-        private boolean enableProgressView          = DEFAULT_ENABLE_PROGRESS_VIEW;
-        private boolean enableFadingAnimation       = DEFAULT_ENABLE_FADING_ANIMATION;
+        private boolean showProgressView            = DEFAULT_SHOW_PROGRESS_VIEW;
+        private boolean showFadingAnimation         = DEFAULT_SHOW_FADING_ANIMATION;
         private Callback callback;
 
         String key(int toWidth, int toHeight) {
@@ -197,13 +197,13 @@ public class ImageLoader {
             return this;
         }
 
-        public LoadRequest enableProgressView(boolean enableProgressView) {
-            this.enableProgressView = enableProgressView;
+        public LoadRequest showProgressView(boolean showProgressView) {
+            this.showProgressView = showProgressView;
             return this;
         }
 
-        public LoadRequest enableFadingAnimation(boolean enableFadingAnimation) {
-            this.enableFadingAnimation = enableFadingAnimation;
+        public LoadRequest showFadingAnimation(boolean showFadingAnimation) {
+            this.showFadingAnimation = showFadingAnimation;
             return this;
         }
 
@@ -690,7 +690,7 @@ public class ImageLoader {
     @SuppressWarnings("ResourceType")
     private void showProgressBar(ImageView imageView, LoadRequest request, int w, int h) {
 
-        if (!request.enableProgressView) {
+        if (!request.showProgressView) {
             return;
         }
 
@@ -734,7 +734,7 @@ public class ImageLoader {
     @SuppressWarnings("ResourceType")
     private void hideProgressBar(ImageView imageView, LoadRequest request) {
 
-        if (!request.enableProgressView) {
+        if (!request.showProgressView) {
             return;
         }
 
@@ -766,7 +766,7 @@ public class ImageLoader {
     }
 
     private void animateImageView(ImageView imageView, LoadRequest request) {
-        if (!request.enableFadingAnimation) {
+        if (!request.showFadingAnimation) {
             return;
         }
         ObjectAnimator.ofFloat(imageView, "alpha", 0, 1)

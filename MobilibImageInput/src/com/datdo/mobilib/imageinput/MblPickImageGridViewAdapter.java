@@ -49,9 +49,8 @@ class MblPickImageGridViewAdapter extends CursorAdapter {
         int imageId = cursor.getInt(cursor.getColumnIndex(MediaStore.Images.Media._ID));
         String imagePath = cursor.getString(cursor.getColumnIndex(MediaStore.Images.Media.DATA));
         holder.mImageData = new ImageMetaData(imageId, imagePath);
-        mImageLoader.with(context)
+        mImageLoader.forAdapterImageView(context)
                 .load(new File(imagePath))
-                .enableProgressView(false)
                 .into(holder.mThumbnailImageView);
 
         boolean checkOn = mThumbnailsSelection.contains(holderId);
