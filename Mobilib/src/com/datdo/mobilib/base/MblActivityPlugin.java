@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
 import android.view.ViewTreeObserver;
@@ -152,7 +153,7 @@ public class MblActivityPlugin {
     }
 
     private View createDecorViewAndAddContent(Activity activity, int layoutResId, LayoutParams params) {
-        View content = MblUtils.getLayoutInflater().inflate(layoutResId, null);
+        View content = LayoutInflater.from(activity).inflate(layoutResId, null);
         return createDecorViewAndAddContent(activity, content, params);
     }
 

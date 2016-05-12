@@ -77,20 +77,6 @@ public abstract class MblBaseAdapter<T> extends BaseAdapter {
         }
     };
 
-    private LayoutInflater mLayoutInflater;
-
-    /**
-     * <pre>
-     * Get LayoutInflater instance which is mandatory for most Adapter.
-     * </pre>
-     */
-    protected LayoutInflater getLayoutInflater() {
-        if (mLayoutInflater == null) {
-            mLayoutInflater = LayoutInflater.from(MblUtils.getCurrentContext());
-        }
-        return mLayoutInflater;
-    }
-
     /**
      * <pre>
      * Subclasses use this method to get internal data objects.

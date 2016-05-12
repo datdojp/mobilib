@@ -3,6 +3,7 @@ package com.datdo.mobilib.carrier;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -67,7 +68,7 @@ public abstract class MblInterceptor extends FrameLayout {
      * @see android.app.Activity#setContentView(int)
      */
     public void setContentView(int layoutResId) {
-        View contentView = (ViewGroup) MblUtils.getLayoutInflater().inflate(layoutResId, null);
+        View contentView = LayoutInflater.from(getContext()).inflate(layoutResId, null);
         setContentView(contentView);
     }
 
@@ -84,7 +85,7 @@ public abstract class MblInterceptor extends FrameLayout {
      * Create a View from its layout ID.
      */
     public View inflate(int layoutResId) {
-        return MblUtils.getLayoutInflater().inflate(layoutResId, null);
+        return LayoutInflater.from(getContext()).inflate(layoutResId, null);
     }
 
     /**

@@ -175,15 +175,6 @@ public class MblUtils {
 
     /**
      * <pre>
-     * Get {@link LayoutInflater} instance which is essential for adapters.
-     * </pre>
-     */
-    public static LayoutInflater getLayoutInflater() {
-        return LayoutInflater.from(getCurrentContext());
-    }
-
-    /**
-     * <pre>
      * Execute the action in a thread which is not main thread.
      * If current thread is not main thread, execute the action immediately.
      * Otherwise, create new {@link AsyncTask} to execute the action. {@link AsyncTask} is created using {@link AsyncTask#THREAD_POOL_EXECUTOR}.

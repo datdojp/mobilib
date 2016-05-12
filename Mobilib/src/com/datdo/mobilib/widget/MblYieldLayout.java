@@ -94,7 +94,7 @@ public class MblYieldLayout extends LinearLayout {
         for (int i = 0; i < getChildCount(); i++) {
             children[i] = getChildAt(i);
         }
-        View layout = MblUtils.getLayoutInflater().inflate(mLayoutId, null);
+        View layout = LayoutInflater.from(getContext()).inflate(mLayoutId, null);
         if (layout == null) {
             throw new RuntimeException(MblYieldLayout.class + ": layoutId not found");
         }
