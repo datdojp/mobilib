@@ -299,7 +299,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
         imageLoader.forOneImageView(this)
                 .load(new File(imagePath))
-                .fittingType(FittingType.GTE)
+                .fittingType(FittingType.LTE)
                 .callback(new ImageLoader.Callback() {
                     @Override
                     public void onSuccess(ImageView image, Bitmap bm, ImageLoader.LoadRequest request) {
