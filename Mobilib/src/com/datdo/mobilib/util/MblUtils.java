@@ -63,6 +63,7 @@ import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -725,12 +726,13 @@ public class MblUtils {
      */
     public static void cleanupView(View view) {
         if (view != null) {
-            if (view instanceof ImageButton) {
-                ImageButton ib = (ImageButton) view;
-                ib.setImageDrawable(null);
-            } else if (view instanceof ImageView) {
+            if (view instanceof ImageView) {
                 ImageView iv = (ImageView) view;
                 iv.setImageDrawable(null);
+            }
+            else if (view instanceof AdapterView) {
+                AdapterView adapterView = (AdapterView) view;
+                adapterView.setAdapter(null);
             }
 
             MblUtils.setBackgroundDrawable(view, null);
