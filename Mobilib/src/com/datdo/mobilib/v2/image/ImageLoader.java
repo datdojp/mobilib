@@ -174,7 +174,7 @@ public class ImageLoader {
 
         public LoadRequest scaleToImageViewSizes(boolean scaleToImageViewSizes, int scaleToWidth, int scaleToHeight) {
             if (!scaleToImageViewSizes && (scaleToWidth == 0 || scaleToHeight == 0)) {
-                throw new IllegalStateException("If you don't want to scale bitmap to ImageView 's sizes, please specify scaleToWidth and scaleToWidth. Specify -1 if you don't care about the size");
+                throw new IllegalArgumentException("If you don't want to scale bitmap to ImageView 's sizes, please specify scaleToWidth and scaleToWidth. Specify -1 if you don't care about the size");
             }
             this.scaleToImageViewSizes = scaleToImageViewSizes;
             this.scaleToWidth = scaleToWidth;
@@ -233,12 +233,12 @@ public class ImageLoader {
 
         public void into(ImageView imageView) {
             if (imageView.getTag() != null && !(imageView.getTag() instanceof LoadRequest)) {
-                throw new IllegalStateException("ImageView 's tag is used by "
+                throw new IllegalArgumentException("ImageView 's tag is used by "
                         + ImageLoader.class.getSimpleName()
                         + ", you should not set any value for it.");
             }
             if (!oneObjectNotNull(url, file, bytes, customLoad)) {
-                throw new IllegalStateException("You must specify one and only one of these options: url, file, bytes, customeLoad");
+                throw new IllegalArgumentException("You must specify one and only one of these options: url, file, bytes, customeLoad");
             }
             imageView.setTag(this);
             imageLoader.load(imageView, this);
@@ -282,10 +282,6 @@ public class ImageLoader {
         void onError(Throwable t, ImageView image, LoadRequest request);
     }
 
-    public void clearMemmoryCache() {
-        memoryCache.evictAll();
-    }
-
     protected void onBeforeLoad(ImageView imageView, LoadRequest request) {
         if (request.placeHolderResId > 0) {
             imageView.setImageResource(request.placeHolderResId);
@@ -313,7 +309,6 @@ public class ImageLoader {
 
     private final int FRAME_ID = new Random().nextInt();
     private LruCache<String, Bitmap> memoryCache;
-    private Set<String> memoryCacheKeySet;
     private Set<String> invalidUrls;
     private MblSerializer serializer;
     private Map<String, Set<Runnable>> pendingLoads;
@@ -336,7 +331,6 @@ public class ImageLoader {
                 memoryCacheKeySet.remove(key);
             }
         };
-        memoryCacheKeySet = Collections.synchronizedSet(new HashSet<String>());
 
         // ...others
         serializer = new MblSerializer();
@@ -529,7 +523,6 @@ public class ImageLoader {
                                             }
                                         }
                                         memoryCache.put(key, bm[0]);
-                                        memoryCacheKeySet.add(key);
 
                                         MblUtils.executeOnMainThread(new Runnable() {
                                             @Override
@@ -604,7 +597,7 @@ public class ImageLoader {
         if (request.serialized) {
             serializer.run(task);
         } else {
-            if (request.url != null && !hasValidDiskCache) {
+            if (request.url != null && !hasValidDiskCache && request.loadDelayed > 0) {
                 MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -817,7 +810,10 @@ public class ImageLoader {
     }
 
     private boolean isStillBound(ImageView imageView, LoadRequest request) {
-        if (imageView.getContext() != null && imageView.getContext() instanceof Activity) {
+        if (imageView.getContext() == null) {
+            return false;
+        }
+        if (imageView.getContext() instanceof Activity) {
             Activity activity = (Activity) imageView.getContext();
             if (activity.isFinishing()) {
                 return false;
