@@ -1,7 +1,6 @@
 package com.datdo.mobilib.v2.image;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -24,7 +23,7 @@ import com.datdo.mobilib.util.MblUtils;
 import com.nineoldandroids.animation.ObjectAnimator;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,7 +128,7 @@ public class ImageLoader {
             if (transformation != null) {
                 tokens.add("transformation=" + transformation.key());
             }
-            return TextUtils.join(";", tokens);
+            return MblUtils.md5(TextUtils.join(";", tokens));
         }
 
         public LoadRequest load(String url) {
@@ -309,6 +308,7 @@ public class ImageLoader {
 
     private final int FRAME_ID = new Random().nextInt();
     private LruCache<String, Bitmap> memoryCache;
+    private DiskLruCache diskCache;
     private Set<String> invalidUrls;
     private MblSerializer serializer;
     private Map<String, Set<Runnable>> pendingLoads;
@@ -316,21 +316,25 @@ public class ImageLoader {
     public ImageLoader(Context context) {
 
         // initialize memory cache
-        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        int memoryClassBytes = am.getMemoryClass() * 1024 * 1024;
-        int cacheSize = memoryClassBytes / 8;
-        memoryCache = new LruCache<String, Bitmap>(cacheSize) {
+        int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
+        int memoryCacheSize = maxMemory / 8;
+        memoryCache = new LruCache<String, Bitmap>(memoryCacheSize) {
             @Override
-            protected int sizeOf(String key, Bitmap value) {
-                return value.getRowBytes() * value.getHeight();
-            }
-
-            @Override
-            protected void entryRemoved(boolean evicted, String key, Bitmap oldValue, Bitmap newValue) {
-                super.entryRemoved(evicted, key, oldValue, newValue);
-                memoryCacheKeySet.remove(key);
+            protected int sizeOf(String key, Bitmap bitmap) {
+                return bitmap.getRowBytes() * bitmap.getHeight() / 1024;
             }
         };
+
+        // initialize disk cache
+        try {
+            File diskCacheDir = new File(context.getCacheDir() + "/" + ImageLoader.class.getCanonicalName());
+            if (!diskCacheDir.exists()) {
+                diskCacheDir.mkdirs();
+            }
+            diskCache = DiskLruCache.open(diskCacheDir, 1, 1, 1024 * 1024 * 20);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to create disk cache", e);
+        }
 
         // ...others
         serializer = new MblSerializer();
@@ -400,10 +404,16 @@ public class ImageLoader {
         }
 
         // check disk cache
-        boolean hasValidDiskCache = false;
+        final boolean[] hasValidDiskCache = new boolean[] { false };
         if (request.cacheToDisk) {
-            File diskCacheFile = getDiskCachedFile(key);
-            hasValidDiskCache = MblUtils.isValidFile(diskCacheFile);
+            try {
+                DiskLruCache.Snapshot snapshot = diskCache.get(key);
+                if (snapshot != null) {
+                    hasValidDiskCache[0] = true;
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Disk cache not found", e);
+            }
         }
 
         // check if loading from an invalid url
@@ -472,7 +482,7 @@ public class ImageLoader {
                         });
                     }
                 };
-                loadBitmapFromSource(imageView, request, key, new LoadBitmapFromSourceCallback() {
+                loadBitmapFromSource(imageView, request, key, hasValidDiskCache[0], new LoadBitmapFromSourceCallback() {
 
                     private void handleSuccess(final Object data, final boolean fromDiskCache) {
 
@@ -495,7 +505,7 @@ public class ImageLoader {
                                     final Bitmap[] bm = new Bitmap[] { null };
                                     if (data instanceof File) {
                                         if (!fromDiskCache) {
-                                            bm[0] = ImageTool.loadBitmap(w, h, (File) data, request.fittingType, request.autoCorrectOrientation);
+                                        bm[0] = ImageTool.loadBitmap(w, h, (File) data, request.fittingType, request.autoCorrectOrientation);
                                         } else {
                                             bm[0] = ImageTool.loadBitmap(-1, -1, (File) data, request.fittingType, request.autoCorrectOrientation);
                                         }
@@ -519,7 +529,20 @@ public class ImageLoader {
 
                                             // save to disk cache
                                             if (request.cacheToDisk) {
-                                                bm[0].compress(Bitmap.CompressFormat.JPEG, 100, new FileOutputStream(getDiskCachedFile(key)));
+                                                try {
+                                                    DiskLruCache.Snapshot snapshot = diskCache.get(key);
+                                                    if (snapshot == null) {
+                                                        DiskLruCache.Editor editor = diskCache.edit(key);
+                                                        if (editor != null) {
+                                                            OutputStream outputStream = editor.newOutputStream(0);
+                                                            bm[0].compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+                                                            editor.commit();
+                                                            outputStream.close();
+                                                        }
+                                                    }
+                                                } catch (Exception e) {
+                                                    Log.e(TAG, "Failed to save processed bitmap to disk cache", e);
+                                                }
                                             }
                                         }
                                         memoryCache.put(key, bm[0]);
@@ -597,7 +620,7 @@ public class ImageLoader {
         if (request.serialized) {
             serializer.run(task);
         } else {
-            if (request.url != null && !hasValidDiskCache && request.loadDelayed > 0) {
+            if (request.url != null && !hasValidDiskCache[0] && request.loadDelayed > 0) {
                 MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -621,13 +644,37 @@ public class ImageLoader {
         void onError(Throwable t);
     }
 
-    private void loadBitmapFromSource(final ImageView imageView, final LoadRequest request, String key, final LoadBitmapFromSourceCallback cb) {
+    private void loadBitmapFromSource(final ImageView imageView,
+                                      final LoadRequest request,
+                                      final String key,
+                                      final boolean tryToLoadFromDiskCache,
+                                      final LoadBitmapFromSourceCallback cb) {
         // check if we have disk cache
         if (request.cacheToDisk) {
-            File diskCacheFile = getDiskCachedFile(key);
-            if (MblUtils.isValidFile(diskCacheFile)) {
-                cb.onSuccess(diskCacheFile, true);
-                return;
+            try {
+                DiskLruCache.Snapshot snapshot = diskCache.get(key);
+                if (snapshot != null) {
+                    cb.onSuccess(snapshot.getFile(0), true);
+                    return;
+                } else {
+                    // disk cache is expected to exist, but actually not
+                    // this case is very rare, but can happen in real life
+                    // try to restart loading when it happens to load from bitmap source instead of disk cache
+                    if (tryToLoadFromDiskCache) {
+                        Log.d(TAG, "Disk cache is expected to exist, but actually not: key=" + key);
+                        cb.onError(new RuntimeException("Disk cache is expected to exist, but actually not"));
+
+                        // restart loading
+                        MblUtils.getMainThreadHandler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                load(imageView, request);
+                            }
+                        }, 500);
+                    }
+                }
+            } catch (Exception e) {
+                Log.d(TAG, "Disk cache not found", e);
             }
         }
 
@@ -848,10 +895,5 @@ public class ImageLoader {
             bm.recycle();
         }
         return result;
-    }
-
-    private File getDiskCachedFile(String key) {
-        return new File(MblUtils.getCacheAsbPath(
-                ImageLoader.class.getSimpleName() + "_" + MblUtils.md5(key) + ".jpg"));
     }
 }

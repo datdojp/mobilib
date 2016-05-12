@@ -16,13 +16,14 @@
 
 package com.datdo.mobilib.v2.image;
 
+import com.datdo.mobilib.util.MblUtils;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilterOutputStream;
@@ -487,14 +488,14 @@ public final class DiskLruCache implements Closeable {
          * snapshot. If we opened streams lazily then the streams could come
          * from different edits.
          */
-        InputStream[] ins = new InputStream[valueCount];
-        try {
-            for (int i = 0; i < valueCount; i++) {
-                ins[i] = new FileInputStream(entry.getCleanFile(i));
+        File[] files = new File[valueCount];
+        for (int i = 0; i < valueCount; i++) {
+            File f = entry.getCleanFile(i);
+            if (MblUtils.isValidFile(f)) {
+                files[i] = f;
+            } else {
+                return null;
             }
-        } catch (FileNotFoundException e) {
-            // a file must have been deleted manually!
-            return null;
         }
 
         redundantOpCount++;
@@ -503,7 +504,7 @@ public final class DiskLruCache implements Closeable {
             executorService.submit(cleanupCallable);
         }
 
-        return new Snapshot(key, entry.sequenceNumber, ins);
+        return new Snapshot(key, entry.sequenceNumber, files);
     }
 
     /**
@@ -727,15 +728,15 @@ public final class DiskLruCache implements Closeable {
     /**
      * A snapshot of the values for an entry.
      */
-    public final class Snapshot implements Closeable {
+    public final class Snapshot {
         private final String key;
         private final long sequenceNumber;
-        private final InputStream[] ins;
+        private final File[] files;
 
-        private Snapshot(String key, long sequenceNumber, InputStream[] ins) {
+        private Snapshot(String key, long sequenceNumber, File[] files) {
             this.key = key;
             this.sequenceNumber = sequenceNumber;
-            this.ins = ins;
+            this.files = files;
         }
 
         /**
@@ -748,23 +749,10 @@ public final class DiskLruCache implements Closeable {
         }
 
         /**
-         * Returns the unbuffered stream with the value for {@code index}.
+         * Returns the file with the value for {@code index}.
          */
-        public InputStream getInputStream(int index) {
-            return ins[index];
-        }
-
-        /**
-         * Returns the string value for {@code index}.
-         */
-        public String getString(int index) throws IOException {
-            return inputStreamToString(getInputStream(index));
-        }
-
-        @Override public void close() {
-            for (InputStream in : ins) {
-                closeQuietly(in);
-            }
+        public File getFile(int index) {
+            return files[index];
         }
     }
 
