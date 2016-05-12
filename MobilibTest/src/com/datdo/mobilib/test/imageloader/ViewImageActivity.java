@@ -40,7 +40,7 @@ public class ViewImageActivity extends MblBaseActivity {
             imageLoader.forOneImageView(this)
                     .load(link)
                     .error(R.drawable.error)
-                    .enableProgressView(true)
+                    .showProgressView(true)
                     .callback(new ImageLoader.Callback() {
                         @Override
                         public void onSuccess(ImageView image, Bitmap bm, ImageLoader.LoadRequest request) {

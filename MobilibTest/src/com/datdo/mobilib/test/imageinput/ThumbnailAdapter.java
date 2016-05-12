@@ -2,6 +2,7 @@ package com.datdo.mobilib.test.imageinput;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -28,7 +29,7 @@ public class ThumbnailAdapter extends MblBaseAdapter<String> {
     @Override
     public View getView(int pos, View view, ViewGroup parent) {
         if (view == null) {
-            view = MblUtils.getLayoutInflater().inflate(R.layout.cell_input_image, null);
+            view = LayoutInflater.from(context).inflate(R.layout.cell_input_image, null);
         }
 
         String path = (String) getItem(pos);
