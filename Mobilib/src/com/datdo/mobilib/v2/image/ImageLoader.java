@@ -107,18 +107,7 @@ public class ImageLoader {
 
         String key(int toWidth, int toHeight) {
             List<String> tokens = new ArrayList<>();
-            if (url != null) {
-                tokens.add("src=" + url);
-            }
-            else if (file != null) {
-                tokens.add("src=" + file.getAbsolutePath());
-            }
-            else if (bytes != null) {
-                tokens.add("src=" + Arrays.hashCode(bytes));
-            }
-            if (customLoad != null) {
-                tokens.add("customLoad=" + customLoad.key());
-            }
+            tokens.add("src=" + sourceKey());
             tokens.add("scaleToImageViewSizes=" + scaleToImageViewSizes);
             tokens.add("toWidth=" + toWidth);
             tokens.add("toHeight=" + toHeight);
@@ -129,6 +118,24 @@ public class ImageLoader {
                 tokens.add("transformation=" + transformation.key());
             }
             return MblUtils.md5(TextUtils.join(";", tokens));
+        }
+
+        String sourceKey() {
+            if (url != null) {
+                return url;
+            }
+            else if (file != null) {
+                return file.getAbsolutePath();
+            }
+            else if (bytes != null) {
+                return "bytes_" + String.valueOf(Arrays.hashCode(bytes));
+            }
+            else if (customLoad != null) {
+                return "custom_" + customLoad.key();
+            }
+            else {
+                return null;
+            }
         }
 
         public LoadRequest load(String url) {
@@ -448,9 +455,10 @@ public class ImageLoader {
                 }
 
                 // load bitmap from server/file
-                // prevent duplicated loads by putting requests having the same key into pending
-                if (pendingLoads.containsKey(key)) {
-                    Set<Runnable> loads = pendingLoads.get(key);
+                // prevent duplicated loads by putting requests having the same source key into pending
+                final String sourceKey = request.sourceKey();
+                if (pendingLoads.containsKey(sourceKey)) {
+                    Set<Runnable> loads = pendingLoads.get(sourceKey);
                     if (loads != null) {
                         loads.add(new Runnable() {
                             @Override
@@ -464,7 +472,7 @@ public class ImageLoader {
                         return;
                     }
                 }
-                pendingLoads.put(key, new HashSet<Runnable>());
+                pendingLoads.put(sourceKey, new HashSet<Runnable>());
                 final Runnable extendedFinishCallback = new Runnable() {
                     @Override
                     public void run() {
@@ -472,7 +480,7 @@ public class ImageLoader {
                         MblUtils.executeOnMainThread(new Runnable() {
                             @Override
                             public void run() {
-                                Set<Runnable> loads = pendingLoads.remove(key);
+                                Set<Runnable> loads = pendingLoads.remove(sourceKey);
                                 if (loads != null) {
                                     for (Runnable r : loads) {
                                         r.run();
