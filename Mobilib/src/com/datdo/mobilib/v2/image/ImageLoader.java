@@ -260,6 +260,90 @@ public class ImageLoader {
             }
             return count == 1;
         }
+
+        public Context context() {
+            return context;
+        }
+
+        public ImageLoader imageLoader() {
+            return imageLoader;
+        }
+
+        public String url() {
+            return url;
+        }
+
+        public File file() {
+            return file;
+        }
+
+        public byte[] bytes() {
+            return bytes;
+        }
+
+        public CustomLoad customLoad() {
+            return customLoad;
+        }
+
+        public int placeHolderResId() {
+            return placeHolderResId;
+        }
+
+        public int errorResId() {
+            return errorResId;
+        }
+
+        public FittingType fittingType() {
+            return fittingType;
+        }
+
+        public boolean scaleToImageViewSizes() {
+            return scaleToImageViewSizes;
+        }
+
+        public int scaleToWidth() {
+            return scaleToWidth;
+        }
+
+        public int scaleToHeight() {
+            return scaleToHeight;
+        }
+
+        public boolean cropBitmapToImageViewSizes() {
+            return cropBitmapToImageViewSizes;
+        }
+
+        public boolean autoCorrectOrientation() {
+            return autoCorrectOrientation;
+        }
+
+        public Transformation transformation() {
+            return transformation;
+        }
+
+        public boolean serialized() {
+            return serialized;
+        }
+
+        public long loadDelayed() {
+            return loadDelayed;
+        }
+
+        public boolean showProgressView() {
+            return showProgressView;
+        }
+
+        public boolean showFadingAnimation() {
+            return showFadingAnimation;
+        }
+
+        public boolean cacheToDisk() {
+            return cacheToDisk;
+        }
+
+        public Callback callback() {
+            return callback;
+        }
     }
 
     public interface Transformation {
