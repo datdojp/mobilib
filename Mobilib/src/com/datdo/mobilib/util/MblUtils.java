@@ -75,6 +75,7 @@ import com.datdo.mobilib.event.MblCommonEvents;
 import com.datdo.mobilib.event.MblEventCenter;
 import com.datdo.mobilib.event.MblStrongEventListener;
 import com.datdo.mobilib.exception.CurrentSdkNotSupportedException;
+import com.datdo.mobilib.v2.image.ImageTool;
 
 import junit.framework.Assert;
 
@@ -1025,6 +1026,20 @@ public class MblUtils {
 
     public static boolean isValidFile(File file) {
         return file != null && file.exists() && file.isFile() && file.length() > 0;
+    }
+
+    public static boolean isValidBitmap(String path) {
+        return isValidBitmap(new File(path));
+    }
+
+    public static boolean isValidBitmap(File file) {
+        try {
+            int[] sizes = ImageTool.getBitmapSizes(file);
+            return sizes != null && sizes.length == 2 && sizes[0] > 0 && sizes[1] > 0;
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to check if bitmap is valid: path=" + file.getAbsolutePath(), e);
+            return false;
+        }
     }
 
     /**
