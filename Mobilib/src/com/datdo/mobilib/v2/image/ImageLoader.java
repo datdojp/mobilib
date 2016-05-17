@@ -933,11 +933,25 @@ public class ImageLoader {
     }
 
     private int getImageViewWidth(ImageView imageView) {
-        return imageView.getWidth();
+        int w = imageView.getWidth();
+        if (w == 0) {
+            ViewGroup.LayoutParams lp = imageView.getLayoutParams();
+            if (lp != null && lp.width > 0) {
+                w = lp.width;
+            }
+        }
+        return w;
     }
 
     private int getImageViewHeight(ImageView imageView) {
-        return imageView.getHeight();
+        int h = imageView.getHeight();
+        if (h == 0) {
+            ViewGroup.LayoutParams lp = imageView.getLayoutParams();
+            if (lp != null && lp.height > 0) {
+                h = lp.height;
+            }
+        }
+        return h;
     }
 
     private boolean isValidBitmap(Bitmap bm) {
