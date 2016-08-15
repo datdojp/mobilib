@@ -54,6 +54,7 @@ public class MblSerializer {
     }
 
     private final List<Task>    mTasks              = new ArrayList<Task>();
+    private Runnable onCancelAllAction;
     private boolean             mIsRunning          = false;
     private final Runnable      mFinishCallback     = new Runnable() {
         @Override
@@ -142,6 +143,10 @@ public class MblSerializer {
         run(subtasks.toArray(new Task[subtasks.size()]));
     }
 
+    public void onCancelAll(Runnable action) {
+        onCancelAllAction = action;
+    }
+
     /**
      * Cancel a specific task.
      * @return true if task exists in queue
@@ -158,6 +163,9 @@ public class MblSerializer {
     public void cancelAll() {
         synchronized (this) {
             mTasks.clear();
+            if (onCancelAllAction != null) {
+                onCancelAllAction.run();
+            }
         }
     }
 }
