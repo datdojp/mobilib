@@ -14,6 +14,8 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -37,6 +39,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     private static final String EXTRA_CROP_SIZE_WIDTH_IN_PX     = "crop_size_width_in_px";
     private static final String EXTRA_CROP_SIZE_HEIGHT_IN_PX    = "crop_size_height_in_px";
     private static final String EXTRA_NATIVE_CAMERA_RETURN_DATA = "return-data";
+    private static final String FILE_PROVIDER_AUTHORITY         = "file_provider_authority";
 
     private MblTouchImageView mPreviewImageView;
     private Uri     mTakenPhotoUri;
@@ -47,6 +50,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     private View    mCropFrameMid;
     private boolean mStartTakePhotoOnResume;
     private boolean mIsPortrait;
+    private String  mFileProviderAuthority;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,9 +59,10 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
         // get data from extra
         if (getIntent().getExtras() != null) {
-            mInputImagePath     = getIntent().getExtras().getString(EXTRA_INPUT_IMAGE_PATH);
-            mCropSizeWidthInPx  = getIntent().getExtras().getInt(EXTRA_CROP_SIZE_WIDTH_IN_PX);
-            mCropSizeHeightInPx = getIntent().getExtras().getInt(EXTRA_CROP_SIZE_HEIGHT_IN_PX);
+            mInputImagePath        = getIntent().getExtras().getString(EXTRA_INPUT_IMAGE_PATH);
+            mCropSizeWidthInPx     = getIntent().getExtras().getInt(EXTRA_CROP_SIZE_WIDTH_IN_PX);
+            mCropSizeHeightInPx    = getIntent().getExtras().getInt(EXTRA_CROP_SIZE_HEIGHT_IN_PX);
+            mFileProviderAuthority = getIntent().getExtras().getString(FILE_PROVIDER_AUTHORITY);
         }
 
         // init UI
@@ -179,8 +184,8 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         deallocatePreviewImageView();
 
         File tempFile = getTempFile(UUID.randomUUID().toString() + ".jpg");
-        if (tempFile != null) {
-            mTakenPhotoUri = Uri.fromFile(tempFile);
+        if (tempFile != null && !TextUtils.isEmpty(mFileProviderAuthority)) {
+            mTakenPhotoUri = FileProvider.getUriForFile(MblTakeImageActivity.this, mFileProviderAuthority, tempFile);
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mTakenPhotoUri);
             try {
@@ -379,6 +384,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
             String inputImagePath,
             int cropSizeWidthInPx,
             int cropSizeHeightInPx,
+            String fileProviderAuthority,
             final MblTakeImageCallback callback) {
 
         Intent intent = createIntent(MblTakeImageActivity.class, new CmDataInputActivityCallback() {
@@ -399,6 +405,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         intent.putExtra(EXTRA_INPUT_IMAGE_PATH,         inputImagePath);
         intent.putExtra(EXTRA_CROP_SIZE_WIDTH_IN_PX,    cropSizeWidthInPx);
         intent.putExtra(EXTRA_CROP_SIZE_HEIGHT_IN_PX,   cropSizeHeightInPx);
+        intent.putExtra(FILE_PROVIDER_AUTHORITY, fileProviderAuthority);
         MblUtils.getCurrentContext().startActivity(intent);
     }
 
