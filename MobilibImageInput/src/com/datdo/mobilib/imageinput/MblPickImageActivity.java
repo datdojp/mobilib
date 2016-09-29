@@ -32,6 +32,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
     private static final String EXTRA_PHOTO_NUMBER_LIMIT        = "photo_number_limit";
     private static final String EXTRA_CROP_SIZE_WIDTH_IN_PX     = "crop_size_width_in_px";
     private static final String EXTRA_CROP_SIZE_HEIGHT_IN_PX    = "crop_size_height_in_px";
+    private static final String FILE_PROVIDER_AUTHORITY         = "file_provider_authority";
 
     private static final int IMAGE_LOADER_ID = 193;
 
@@ -39,6 +40,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
     private int     mCropSizeWidthInPx;
     private int     mCropSizeHeightInPx;
     private boolean mShouldRescanMediaFilesOnResume = true;
+    private String  mFileProviderAuthority;
 
     private Button mSelectBtn;
 
@@ -55,6 +57,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
             photoNumberLimit    = getIntent().getExtras().getInt(EXTRA_PHOTO_NUMBER_LIMIT);
             mCropSizeWidthInPx  = getIntent().getExtras().getInt(EXTRA_CROP_SIZE_WIDTH_IN_PX);
             mCropSizeHeightInPx = getIntent().getExtras().getInt(EXTRA_CROP_SIZE_HEIGHT_IN_PX);
+            mFileProviderAuthority = getIntent().getExtras().getString(FILE_PROVIDER_AUTHORITY);
         }
 
         // back button
@@ -117,6 +120,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
                 imagePath,
                 mCropSizeWidthInPx,
                 mCropSizeHeightInPx,
+                mFileProviderAuthority,
                 new MblTakeImageCallback() {
                     @Override
                     public void onFinish(String path) {
@@ -159,6 +163,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
                 null,
                 mCropSizeWidthInPx,
                 mCropSizeHeightInPx,
+                mFileProviderAuthority,
                 new MblTakeImageCallback() {
 
                     @Override
@@ -191,6 +196,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
             int maxNumberOfImages,
             int cropSizeWidthInPx,
             int cropSizeHeightInPx,
+            String fileProviderAuthority,
             final MblPickImageCallback callback) {
 
         if (cropSizeWidthInPx > 0 && cropSizeHeightInPx > 0 && maxNumberOfImages != 1) {
@@ -220,6 +226,7 @@ public class MblPickImageActivity extends MblDataInputActivity {
         intent.putExtra(EXTRA_PHOTO_NUMBER_LIMIT,       maxNumberOfImages);
         intent.putExtra(EXTRA_CROP_SIZE_WIDTH_IN_PX,    cropSizeWidthInPx);
         intent.putExtra(EXTRA_CROP_SIZE_HEIGHT_IN_PX,   cropSizeHeightInPx);
+        intent.putExtra(FILE_PROVIDER_AUTHORITY, fileProviderAuthority);
         context.startActivity(intent);
     }
 
