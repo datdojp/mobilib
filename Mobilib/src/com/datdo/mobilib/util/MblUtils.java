@@ -21,6 +21,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.pm.ProviderInfo;
 import android.content.pm.Signature;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -2549,5 +2550,29 @@ public class MblUtils {
         return false;
     }
 
-
+    /**
+     * <pre>
+     * Get current file provider authority from app for Android N above
+     * Ref: https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en
+     * </pre>
+     * @return the file provider authority
+     */
+    public static String getFileProviderAuthority() {
+        PackageInfo pack = null;
+        try {
+            Context context = MblUtils.getCurrentContext();
+            String packageName = context.getPackageName();
+            pack = context.getPackageManager().getPackageInfo(packageName, PackageManager.GET_PROVIDERS);
+        } catch (NameNotFoundException e) {
+            Log.i(TAG, "Could not get app name and version", e);
+        }
+        if (pack != null) {
+            for (ProviderInfo provider : pack.providers) {
+                if (TextUtils.equals("android.support.v4.content.FileProvider", provider.name)) {
+                    return provider.authority;
+                }
+            }
+        }
+        throw new RuntimeException("Define provider in AndroidManifest for FileProvider. Ref: https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en");
+    }
 }

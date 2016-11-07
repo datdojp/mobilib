@@ -9,6 +9,7 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -43,7 +44,7 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     private static final String EXTRA_NATIVE_CAMERA_RETURN_DATA = "return-data";
 
     private MblTouchImageView mPreviewImageView;
-    private Uri     mTakenPhotoUri;
+    private String  mTakenPhotoPath;
     private String  mInputImagePath;
     private int     mCropSizeWidthInPx;
     private int     mCropSizeHeightInPx;
@@ -189,9 +190,10 @@ public class MblTakeImageActivity extends MblDataInputActivity {
 
         File tempFile = getTempFile(UUID.randomUUID().toString() + ".jpg");
         if (tempFile != null) {
-            mTakenPhotoUri = Uri.fromFile(tempFile);
+            mTakenPhotoPath = tempFile.getAbsolutePath();
+            Uri takenPhotoUri = FileProvider.getUriForFile(MblTakeImageActivity.this, MblUtils.getFileProviderAuthority(), tempFile);
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mTakenPhotoUri);
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, takenPhotoUri);
             try {
                 cameraIntent.putExtra(EXTRA_NATIVE_CAMERA_RETURN_DATA, true);
                 startActivityForResult(cameraIntent, REQUEST_CODE);
@@ -205,8 +207,8 @@ public class MblTakeImageActivity extends MblDataInputActivity {
     }
 
     private void usePhoto() {
-        if (mTakenPhotoUri != null) {
-            finishInput(mTakenPhotoUri.getPath());
+        if (mTakenPhotoPath != null) {
+            finishInput(mTakenPhotoPath);
         }
     }
 
@@ -265,13 +267,13 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         if (requestCode == REQUEST_CODE) {
             resetDefaultMaxAllowedTrasitionBetweenActivity();
             if (resultCode == RESULT_OK) {
-                loadPhotoFromExternal(mTakenPhotoUri.getPath());
+                loadPhotoFromExternal(mTakenPhotoPath);
                 if (needCrop()) {
                     mCropFrame.setVisibility(View.VISIBLE);
                 }
             } else if (resultCode == RESULT_CANCELED) {
                 // delete temp file
-                new File(mTakenPhotoUri.getPath()).delete();
+                new File(mTakenPhotoPath).delete();
 
                 // cancel input
                 cancelInput();
