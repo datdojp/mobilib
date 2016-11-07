@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
@@ -191,7 +192,12 @@ public class MblTakeImageActivity extends MblDataInputActivity {
         File tempFile = getTempFile(UUID.randomUUID().toString() + ".jpg");
         if (tempFile != null) {
             mTakenPhotoPath = tempFile.getAbsolutePath();
-            Uri takenPhotoUri = FileProvider.getUriForFile(MblTakeImageActivity.this, MblUtils.getFileProviderAuthority(), tempFile);
+            Uri takenPhotoUri;
+            if (Build.VERSION.SDK_INT >= 24) {
+                takenPhotoUri = FileProvider.getUriForFile(MblTakeImageActivity.this, MblUtils.getFileProviderAuthority(), tempFile);
+            } else {
+                takenPhotoUri = Uri.fromFile(tempFile);
+            }
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, takenPhotoUri);
             try {
