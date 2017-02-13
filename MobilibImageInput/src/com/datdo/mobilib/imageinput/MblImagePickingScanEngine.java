@@ -17,6 +17,9 @@ import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.datdo.mobilib.event.MblCommonEvents;
+import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblStrongEventListener;
 import com.datdo.mobilib.util.MblUtils;
 
 // reference: https://github.com/jerickson314/sdscanner
@@ -40,6 +43,8 @@ public class MblImagePickingScanEngine {
 
         sImagePattern = Pattern.compile(imageRegExBuilder.toString());
     }
+
+    private static MediaScannerConnection mediaScannerConnection;
 
     public static String buildMediaQuerySelection(String[] imageFolders) {
         StringBuilder ret = new StringBuilder();
@@ -82,19 +87,38 @@ public class MblImagePickingScanEngine {
         return ret.toArray(new String[ret.size()]);
     }
 
-    public static interface CmScanCallback {
-        public void onFinish(int nUpdatedFiles);
-        public void onFailure();
+    public interface CmScanCallback {
+        void onFinish(int nUpdatedFiles);
+        void onFailure();
+    }
+
+    private static void disconnectMediaScannerConnection() {
+        if (mediaScannerConnection != null) {
+            mediaScannerConnection.disconnect();
+            mediaScannerConnection = null;
+        }
     }
 
     public static void scan(final String[] imageFolders, final CmScanCallback callback) {
 
         final Context context = MblUtils.getCurrentContext();
 
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                // disconnect media scanner connection to prevent memory leak
+                if (args[0] == context && TextUtils.equals(name, MblCommonEvents.ACTIVITY_DESTROYED)) {
+                    disconnectMediaScannerConnection();
+                    terminate();
+                }
+            }
+        }, new String[]{
+                MblCommonEvents.ACTIVITY_DESTROYED
+        });
+
         MblUtils.executeOnAsyncThread(new Runnable() {
 
-            private Set<File> mFilesToProcess = new TreeSet<File>();
-            private int mNumberOfScannedFiles;
+            private Set<File> mFilesToProcess = new TreeSet<>();
 
             private void recursiveAddFiles(File file) throws IOException {
 
@@ -171,26 +195,36 @@ public class MblImagePickingScanEngine {
                             paths[i++] = file.getPath();
                         }
 
-                        mNumberOfScannedFiles = 0;
-                        MediaScannerConnection.scanFile(
-                                context.getApplicationContext(),
-                                paths,
-                                null,
-                                new MediaScannerConnection.OnScanCompletedListener() {
-                                    public void onScanCompleted(String path, Uri uri) {
-                                        mNumberOfScannedFiles++;
-                                        if (mNumberOfScannedFiles >= n) {
-                                            if (callback != null) {
-                                                MblUtils.executeOnMainThread(new Runnable() {
-                                                    @Override
-                                                    public void run() {
-                                                        callback.onFinish(n);
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    }
-                                });
+                        disconnectMediaScannerConnection();
+
+                        mediaScannerConnection = new MediaScannerConnection(context.getApplicationContext(), new MediaScannerConnection.MediaScannerConnectionClient() {
+                            private int mNextPath;
+
+                            @Override
+                            public void onMediaScannerConnected() {
+                                mNextPath = 0;
+                                scanNextPath();
+                            }
+
+                            @Override
+                            public void onScanCompleted(String path, Uri uri) {
+                                scanNextPath();
+                            }
+
+                            private void scanNextPath() {
+                                if (mediaScannerConnection == null) {
+                                    return;
+                                }
+                                if (mNextPath >= paths.length) {
+                                    callback.onFinish(paths.length);
+                                    disconnectMediaScannerConnection();
+                                    return;
+                                }
+                                mediaScannerConnection.scanFile(paths[mNextPath], null);
+                                mNextPath++;
+                            }
+                        });
+                        mediaScannerConnection.connect();
                     } else {
                         if (callback != null) {
                             MblUtils.executeOnMainThread(new Runnable() {
