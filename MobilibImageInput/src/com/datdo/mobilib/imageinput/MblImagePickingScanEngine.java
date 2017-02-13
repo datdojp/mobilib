@@ -17,6 +17,9 @@ import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.datdo.mobilib.event.MblCommonEvents;
+import com.datdo.mobilib.event.MblEventCenter;
+import com.datdo.mobilib.event.MblStrongEventListener;
 import com.datdo.mobilib.util.MblUtils;
 
 // reference: https://github.com/jerickson314/sdscanner
@@ -89,7 +92,7 @@ public class MblImagePickingScanEngine {
         void onFailure();
     }
 
-    public static void disconnectMediaScannerConnection() {
+    private static void disconnectMediaScannerConnection() {
         if (mediaScannerConnection != null) {
             mediaScannerConnection.disconnect();
             mediaScannerConnection = null;
@@ -99,6 +102,19 @@ public class MblImagePickingScanEngine {
     public static void scan(final String[] imageFolders, final CmScanCallback callback) {
 
         final Context context = MblUtils.getCurrentContext();
+
+        MblEventCenter.addListener(new MblStrongEventListener() {
+            @Override
+            public void onEvent(Object sender, String name, Object... args) {
+                // disconnect media scanner connection to prevent memory leak
+                if (args[0] == context && TextUtils.equals(name, MblCommonEvents.ACTIVITY_DESTROYED)) {
+                    disconnectMediaScannerConnection();
+                    terminate();
+                }
+            }
+        }, new String[]{
+                MblCommonEvents.ACTIVITY_DESTROYED
+        });
 
         MblUtils.executeOnAsyncThread(new Runnable() {
 

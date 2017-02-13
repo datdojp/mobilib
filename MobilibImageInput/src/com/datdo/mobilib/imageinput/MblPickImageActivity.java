@@ -146,7 +146,6 @@ public class MblPickImageActivity extends MblDataInputActivity {
                 mAdapter.changeCursor(null);
                 mAdapter = null;
             }
-            MblImagePickingScanEngine.disconnectMediaScannerConnection();
         } catch (Exception e) {
             Log.e(TAG, "Failed to release loader", e);
         }
