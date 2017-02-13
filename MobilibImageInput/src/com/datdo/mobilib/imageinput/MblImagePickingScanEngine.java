@@ -217,7 +217,7 @@ public class MblImagePickingScanEngine {
                                 }
                                 if (mNextPath >= paths.length) {
                                     callback.onFinish(paths.length);
-                                    mediaScannerConnection.disconnect();
+                                    disconnectMediaScannerConnection();
                                     return;
                                 }
                                 mediaScannerConnection.scanFile(paths[mNextPath], null);
