@@ -1854,7 +1854,7 @@ public class MblUtils {
         // start main activity
         Context context = getCurrentContext();
         Intent intent = new Intent(context, mainActivityClass);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
 
         // wait until main activity is resumed
