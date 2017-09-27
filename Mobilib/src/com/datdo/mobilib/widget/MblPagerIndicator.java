@@ -56,7 +56,7 @@ public class MblPagerIndicator extends LinearLayout {
         dotSize             = ta.getInt(R.styleable.MblPagerIndicator_dotSize,          MblUtils.pxFromDp(7));
         dotSpacing          = ta.getInt(R.styleable.MblPagerIndicator_dotSpacing,       MblUtils.pxFromDp(10));
         defaultIndex        = ta.getInt(R.styleable.MblPagerIndicator_defaultIndex,     0);
-        dotIconResourceID   = ta.getInt(R.styleable.MblPagerIndicator_dotIcon,          R.drawable.states_pager_indicator_dot);
+        dotIconResourceID   = ta.getResourceId(R.styleable.MblPagerIndicator_dotIcon,   R.drawable.states_pager_indicator_dot);
 
         // add dots to layout
         super.setOrientation(HORIZONTAL);
