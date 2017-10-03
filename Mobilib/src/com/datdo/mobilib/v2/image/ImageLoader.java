@@ -812,7 +812,11 @@ public class ImageLoader {
                             @Override
                             public void onSuccess(MblResponse response) {
                                 String path = MblApi.getCacheFilePath(request.url, null);
-                                cb.onSuccess(new File(path), false);
+                                if (path != null) {
+                                    cb.onSuccess(new File(path), false);
+                                } else {
+                                    cb.onError(new RuntimeException("Cache not found, url: " + request.url));
+                                }
                             }
 
                             @Override
