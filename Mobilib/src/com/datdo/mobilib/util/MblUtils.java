@@ -1220,7 +1220,7 @@ public class MblUtils {
             @Override
             public void run() {
                 if (sProgressDialog != null && sProgressDialog.isShowing()) {
-                    sProgressDialog.hide();
+                    sProgressDialog.dismiss();
                 }
                 sProgressDialog = null;
             }
