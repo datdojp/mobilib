@@ -190,13 +190,7 @@ public class MblUtils {
             action.run();
             return;
         }
-        MblAsyncTask task = new MblAsyncTask() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                action.run();
-                return null;
-            }
-        };
+        MblAsyncTask task = new MblAsyncTask(sCurrentContext, action);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
