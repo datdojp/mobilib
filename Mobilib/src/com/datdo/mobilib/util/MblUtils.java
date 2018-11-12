@@ -838,9 +838,18 @@ public class MblUtils {
      * </pre>
      */
     public static void logLongString(final String tag, final String str) {
-        if(str.length() > 4000) {
-            Log.d(tag, str.substring(0, 4000));
-            logLongString(tag, str.substring(4000));
+        if (str.length() > 4000) {
+            // Split by line, then ensure each line can fit into Log's maximum length.
+            for (int i = 0, length = str.length(); i < length; i++) {
+                int newline = str.indexOf('\n', i);
+                newline = newline != -1 ? newline : length;
+                do {
+                    int end = Math.min(newline, i + 4000);
+                    String part = str.substring(i, end);
+                    Log.d(tag, part);
+                    i = end;
+                } while (i < newline);
+            }
         } else {
             Log.d(tag, str);
         }
