@@ -27,5 +27,5 @@ android {
 }
 
 dependencies {
-    compile project(':Mobilib')
+    compile project(':mobilib:Mobilib')
 }

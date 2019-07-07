@@ -190,13 +190,7 @@ public class MblUtils {
             action.run();
             return;
         }
-        MblAsyncTask task = new MblAsyncTask() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                action.run();
-                return null;
-            }
-        };
+        MblAsyncTask task = new MblAsyncTask(sCurrentContext, action);
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
@@ -844,9 +838,18 @@ public class MblUtils {
      * </pre>
      */
     public static void logLongString(final String tag, final String str) {
-        if(str.length() > 4000) {
-            Log.d(tag, str.substring(0, 4000));
-            logLongString(tag, str.substring(4000));
+        if (str.length() > 4000) {
+            // Split by line, then ensure each line can fit into Log's maximum length.
+            for (int i = 0, length = str.length(); i < length; i++) {
+                int newline = str.indexOf('\n', i);
+                newline = newline != -1 ? newline : length;
+                do {
+                    int end = Math.min(newline, i + 4000);
+                    String part = str.substring(i, end);
+                    Log.d(tag, part);
+                    i = end;
+                } while (i < newline);
+            }
         } else {
             Log.d(tag, str);
         }
@@ -1220,7 +1223,7 @@ public class MblUtils {
             @Override
             public void run() {
                 if (sProgressDialog != null && sProgressDialog.isShowing()) {
-                    sProgressDialog.hide();
+                    sProgressDialog.dismiss();
                 }
                 sProgressDialog = null;
             }
@@ -1854,7 +1857,11 @@ public class MblUtils {
         // start main activity
         Context context = getCurrentContext();
         Intent intent = new Intent(context, mainActivityClass);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (Build.VERSION.SDK_INT < 11) {
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        } else {
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        }
         context.startActivity(intent);
 
         // wait until main activity is resumed

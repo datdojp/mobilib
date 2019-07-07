@@ -33,6 +33,7 @@
         <attr name="dotSize" format="dimension"/>
         <attr name="dotSpacing" format="dimension"/>
         <attr name="defaultIndex" format="integer"/>
+        <attr name="dotIcon" format="reference"/>
     </declare-styleable>
 
 </resources>
